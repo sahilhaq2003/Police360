@@ -15,7 +15,6 @@ function Home() {
 
   return (
     <div>
-      {/* Header */}
       <header className="main-header">
         <div className="left-header">
           <img src="/images/PTLogo.png" alt="Police360 Logo" className="logom" />
@@ -125,6 +124,6 @@ function Home() {
     </div>
   );
 }
-// hi
+
 
 export default Home;
