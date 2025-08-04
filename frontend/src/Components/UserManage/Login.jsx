@@ -2,13 +2,7 @@ import React, { useState } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import loginBg from '../../assets/loginbg.jpg';
-
-const shakeAnimation = {
-  x: [0, -6, 6, -6, 6, 0],
-  transition: { duration: 0.3 }
-};
 
 const Login = () => {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -33,7 +27,7 @@ const Login = () => {
       storage.setItem('role', officer.role);
       navigate(
         officer.role === 'Admin'
-          ? '/admin/register-officer'
+          ? '/admin/dashboard'
           : '/dashboard'
       );
     } catch (err) {
@@ -46,17 +40,12 @@ const Login = () => {
   const { username, password } = formData;
 
   return (
-    <motion.div
+    <div
       className="relative min-h-screen flex items-center justify-center bg-black"
       style={{ backgroundImage: `url(${loginBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
     >
       <div className="absolute inset-0 bg-black opacity-75" />
-      <motion.div
-        className="relative bg-gray-900 bg-opacity-85 rounded-lg shadow-lg backdrop-blur-sm w-full max-w-sm p-6"
-        animate={error ? shakeAnimation : { x: 0 }}
-      >
+      <div className="relative bg-gray-900 bg-opacity-85 rounded-lg shadow-lg backdrop-blur-sm w-full max-w-sm p-6">
         <div className="text-center mb-4">
           <img src="/police-badge.png" alt="Badge" className="h-12 mx-auto filter brightness-0 invert" />
           <h1 className="mt-2 text-xl font-semibold text-gray-100">Police360</h1>
@@ -64,13 +53,7 @@ const Login = () => {
         </div>
 
         {error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-3 text-red-400 text-xs text-center"
-          >
-            {error}
-          </motion.div>
+          <div className="mb-3 text-red-400 text-xs text-center">{error}</div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,8 +61,7 @@ const Login = () => {
             <label className="block text-xs text-gray-300 mb-1">Username</label>
             <div className={`flex items-center rounded-md px-2 py-1.5 transition-colors ${
               username ? 'bg-gray-700 border border-indigo-500' : 'bg-gray-800 border border-gray-700'
-            } focus-within:ring-1 focus-within:ring-indigo-500`}
-            >
+            } focus-within:ring-1 focus-within:ring-indigo-500`}>
               <User className={`text-sm ${username ? 'text-indigo-400' : 'text-gray-500'}`} />
               <input
                 type="text"
@@ -97,8 +79,7 @@ const Login = () => {
             <label className="block text-xs text-gray-300 mb-1">Password</label>
             <div className={`flex items-center rounded-md px-2 py-1.5 transition-colors ${
               password ? 'bg-gray-700 border border-indigo-500' : 'bg-gray-800 border border-gray-700'
-            } focus-within:ring-1 focus-within:ring-indigo-500`}
-            >
+            } focus-within:ring-1 focus-within:ring-indigo-500`}>
               <Lock className={`text-sm ${password ? 'text-indigo-400' : 'text-gray-500'}`} />
               <input
                 type="password"
@@ -143,8 +124,8 @@ const Login = () => {
         <p className="mt-4 text-center text-[10px] text-gray-500">
           &copy; {new Date().getFullYear()} Police360.
         </p>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 
