@@ -3,12 +3,17 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './Components/UserManage/Login';
 import RegisterOfficer from './Components/admin/RegisterOfficer';
 import AdminDashboard from  './Components/admin/AdminDashboard';
+import Home from './Components/Home/Home'; // <-- Add this import
 
 
 function App() {
   return (
     <Router>
       <Routes>
+
+        {/* Home Route */}
+        <Route path="/" element={<Home />} /> {/* <-- Add this line */}
+
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
 
