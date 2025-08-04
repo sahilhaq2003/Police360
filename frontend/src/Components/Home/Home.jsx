@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Home.css';
 
 function Home() {
   const [activeService, setActiveService] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate();
 
   const services = [
     ['/images/2190967.png', 'Reporting Services', 'E-services for reporting and inquiring about incidents'],
@@ -35,7 +37,12 @@ function Home() {
             <option>සිංහල</option>
             <option>தமிழ்</option>
           </select>
-          <button className="login-btn">Login</button>
+          <button
+          className="login-btn"
+          onClick={() => navigate('/login')} // Add this onClick
+        >
+          Login
+        </button>
         </div>
       </header>
 
