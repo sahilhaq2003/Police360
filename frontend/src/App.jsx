@@ -1,3 +1,7 @@
+
+import React from 'react'
+import Home from './Components/Home/Home';
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './Components/UserManage/Login';
@@ -6,8 +10,19 @@ import AdminDashboard from  './Components/admin/AdminDashboard';
 import Home from './Components/Home/Home'; // <-- Add this import
 
 
+
+
 function App() {
   return (
+    <div>
+      <Home></Home>
+    </div>
+  )
+}
+
+export default App;
+
+
     <Router>
       <Routes>
 
@@ -32,3 +47,4 @@ function App() {
 }
 
 export default App;
+
