@@ -98,6 +98,12 @@ body {
   font-weight: bold;
 }
 
+.login-btn:hover {
+  background: #00bfff;
+  color: rgb(0, 0, 0);
+  cursor: pointer;
+}
+
 .hero {
   position: relative;
   height: 100vh;
