@@ -13,7 +13,14 @@ const shake = {
 export default function RegisterOfficer() {
   const navigate = useNavigate();
   const [data, setData] = useState({
-    name: '', officerId: '', email: '', contactNumber: '', station: '', role: 'Officer', username: '', password: ''
+    name: '',
+    officerId: '',
+    email: '',
+    contactNumber: '',
+    station: '',
+    role: 'Officer',
+    username: '',
+    password: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,25 +34,47 @@ export default function RegisterOfficer() {
   }, [navigate]);
 
   const onChange = ({ target: { name, value } }) => {
-    setData(d => ({ ...d, [name]: value }));
+    setData((d) => ({ ...d, [name]: value }));
     if (error) setError('');
   };
 
-  const onSubmit = async e => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       await axiosInstance.post('/officers', data);
       alert('Officer registered successfully');
-      setData({ name: '', officerId: '', email: '', contactNumber: '', station: '', role: 'Officer', username: '', password: '' });
+      setData({
+        name: '',
+        officerId: '',
+        email: '',
+        contactNumber: '',
+        station: '',
+        role: 'Officer',
+        username: '',
+        password: ''
+      });
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed.');
+      setError(
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        'Registration failed.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const IconMap = { name: User, officerId: Server, email: Mail, contactNumber: Phone, station: Home, username: User, password: Key };
+  const IconMap = {
+    name: User,
+    officerId: Server,
+    email: Mail,
+    contactNumber: Phone,
+    station: Home,
+    username: User,
+    password: Key
+  };
+
   const fields = [
     { key: 'name', label: 'Full Name', type: 'text' },
     { key: 'officerId', label: 'Officer ID', type: 'text' },
@@ -75,7 +104,9 @@ export default function RegisterOfficer() {
         {/* Side Panel */}
         <div className="hidden md:flex md:w-1/3 bg-[#0B214A] p-8 flex-col justify-center text-white">
           <h2 className="text-2xl font-bold text-center">Welcome, Admin</h2>
-          <p className="mt-2 text-center text-yellow-300">Create officer accounts efficiently and securely.</p>
+          <p className="mt-2 text-center text-yellow-300">
+            Create officer accounts efficiently and securely.
+          </p>
         </div>
 
         {/* Form Panel */}
@@ -89,7 +120,12 @@ export default function RegisterOfficer() {
               const Icon = IconMap[key];
               return (
                 <div key={key} className="col-span-full sm:col-span-1">
-                  <label htmlFor={key} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                  <label
+                    htmlFor={key}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    {label}
+                  </label>
                   <div className="flex items-center bg-gray-100 rounded-md border border-gray-300 px-3 py-2 focus-within:ring-2 focus-within:ring-yellow-400">
                     {Icon && <Icon className="text-gray-500 mr-2" size={16} />}
                     {type === 'select' ? (
@@ -101,7 +137,9 @@ export default function RegisterOfficer() {
                         className="w-full bg-transparent text-gray-700 text-sm outline-none"
                         required
                       >
-                        {options.map(opt => <option key={opt}>{opt}</option>)}
+                        {options.map((opt) => (
+                          <option key={opt}>{opt}</option>
+                        ))}
                       </select>
                     ) : (
                       <input
@@ -129,7 +167,9 @@ export default function RegisterOfficer() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-xs text-gray-500">&copy; {new Date().getFullYear()} Police360</p>
+          <p className="mt-6 text-center text-xs text-gray-500">
+            &copy; {new Date().getFullYear()} Police360
+          </p>
         </div>
       </motion.div>
     </div>

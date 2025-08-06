@@ -8,11 +8,15 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-[#F9FAFB] text-[#0B214A] px-4 py-12">
       <div className="max-w-6xl mx-auto">
+        {/* Title */}
         <h1 className="text-4xl font-extrabold text-center mb-12 tracking-tight">
           👮 Admin Dashboard
-          <span className="block text-[#FFD700] text-lg font-medium mt-1">Police360 Management Panel</span>
+          <span className="block text-[#FFD700] text-lg font-medium mt-1">
+            Police360 Management Panel
+          </span>
         </h1>
 
+        {/* Dashboard Action Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* View Reports */}
           <div
@@ -51,6 +55,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* Footer */}
         <p className="mt-12 text-center text-xs text-gray-500">
           &copy; {new Date().getFullYear()} Police360 Admin Panel. All rights reserved.
         </p>

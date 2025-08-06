@@ -5,22 +5,19 @@ import Home from './Components/Home/Home';
 import Login from './Components/UserManage/Login';
 import RegisterOfficer from './Components/admin/RegisterOfficer';
 import AdminDashboard from './Components/admin/AdminDashboard';
+import Officers from './Components/admin/Officers';
+import OfficerProfile from './Components/admin/OfficerProfile';
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Home Route */}
         <Route path="/" element={<Home />} />
-
-        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
-        <Route path="/Admin/register-officer" element={<RegisterOfficer />} />
+        <Route path="/admin/register-officer" element={<RegisterOfficer />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
-
-        {/* Add more routes below if needed */}
-        {/* Example: */}
-        {/* <Route path="/officer/dashboard" element={<OfficerDashboard />} /> */}
+        <Route path="/admin/officers" element={<Officers />} />
+        <Route path="/admin/officer/:id" element={<OfficerProfile />} />
       </Routes>
     </Router>
   );
