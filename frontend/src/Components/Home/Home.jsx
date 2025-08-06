@@ -149,12 +149,12 @@ function Home() {
           <source src="/images/police360-ve.mp4" type="video/mp4" />
         </video>
         <div className="hero-content">
-          <h1>Drone Box</h1>
+          <h1>Police </h1>
           <p>A smart solution to enhance Police360 emergency response</p>
           <input type="text" placeholder="Search for the service..." />
         </div>
       </section>
-
+  
       {/* Services */}
       <section className="services-grid">
         {services.map(([icon, title, desc, subServices], i) => (

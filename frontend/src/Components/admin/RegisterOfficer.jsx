@@ -58,38 +58,47 @@ export default function RegisterOfficer() {
   ];
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-black">
-      <div className="absolute inset-0 bg-black opacity-60" />
+    <div
+      className="relative min-h-screen flex items-center justify-center bg-white"
+      style={{
+        backgroundImage: `url(${loginBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
+    >
+      <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" />
+
       <motion.div
-        className="relative w-full max-w-5xl mx-auto bg-gray-900 bg-opacity-85 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
+        className="relative w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row border border-gray-200 z-10"
         animate={error ? shake : undefined}
       >
-        {/* Side panel */}
-        <div className="hidden md:block md:w-1/3 bg-gradient-to-b from-indigo-600 to-indigo-800 p-8 flex flex-col justify-center">
-          <img src="/police-badge.png" alt="Badge" className="h-16 mb-4 filter brightness-0 invert mx-auto" />
-          <h2 className="text-white text-2xl font-bold text-center">Welcome, Admin</h2>
-          <p className="mt-2 text-gray-300 text-center">Create officer accounts efficiently.</p>
+        {/* Side Panel */}
+        <div className="hidden md:flex md:w-1/3 bg-[#0B214A] p-8 flex-col justify-center text-white">
+          <h2 className="text-2xl font-bold text-center">Welcome, Admin</h2>
+          <p className="mt-2 text-center text-yellow-300">Create officer accounts efficiently and securely.</p>
         </div>
 
-        {/* Form panel */}
-        <div className="w-full md:w-2/3 p-6 md:p-8">
-          <h3 className="text-xl font-semibold text-white mb-4">Register New Officer</h3>
-          {error && <div className="mb-4 text-red-500 text-sm">{error}</div>}
+        {/* Form Panel */}
+        <div className="w-full md:w-2/3 p-6 md:p-8 bg-white">
+          <h3 className="text-2xl font-bold text-[#0B214A] mb-6">Register New Officer</h3>
+
+          {error && <div className="mb-4 text-red-600 text-sm">{error}</div>}
+
           <form onSubmit={onSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {fields.map(({ key, label, type, options }) => {
               const Icon = IconMap[key];
               return (
                 <div key={key} className="col-span-full sm:col-span-1">
-                  <label htmlFor={key} className="block text-sm text-gray-200 mb-1">{label}</label>
-                  <div className="flex items-center bg-gray-800 rounded-lg border border-gray-700 px-3 py-2 focus-within:ring-2 focus-within:ring-indigo-500">
-                    {Icon && <Icon className="text-gray-400 mr-2" size={16} />}
+                  <label htmlFor={key} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                  <div className="flex items-center bg-gray-100 rounded-md border border-gray-300 px-3 py-2 focus-within:ring-2 focus-within:ring-yellow-400">
+                    {Icon && <Icon className="text-gray-500 mr-2" size={16} />}
                     {type === 'select' ? (
                       <select
                         id={key}
                         name={key}
                         value={data[key]}
                         onChange={onChange}
-                        className="w-full bg-transparent text-gray-100 text-sm outline-none"
+                        className="w-full bg-transparent text-gray-700 text-sm outline-none"
                         required
                       >
                         {options.map(opt => <option key={opt}>{opt}</option>)}
@@ -102,7 +111,7 @@ export default function RegisterOfficer() {
                         value={data[key]}
                         onChange={onChange}
                         placeholder={label}
-                        className="w-full bg-transparent text-gray-100 text-sm placeholder-gray-500 outline-none"
+                        className="w-full bg-transparent text-gray-700 text-sm placeholder-gray-400 outline-none"
                         required
                       />
                     )}
@@ -110,15 +119,17 @@ export default function RegisterOfficer() {
                 </div>
               );
             })}
+
             <button
               type="submit"
               disabled={loading}
-              className="col-span-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition"
+              className="col-span-full mt-4 bg-[#FFD700] hover:bg-[#e5c200] text-[#0B214A] font-semibold py-2 rounded-md transition"
             >
               {loading ? <Loader2 className="animate-spin h-5 w-5 mx-auto" /> : 'Register Officer'}
             </button>
           </form>
-          <p className="mt-6 text-center text-xs text-gray-400">&copy; {new Date().getFullYear()} Police360</p>
+
+          <p className="mt-6 text-center text-xs text-gray-500">&copy; {new Date().getFullYear()} Police360</p>
         </div>
       </motion.div>
     </div>
