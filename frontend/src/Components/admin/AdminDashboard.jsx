@@ -42,7 +42,7 @@ const AdminDashboard = () => {
             <h2 className="text-xl font-semibold mb-1">Register Officer</h2>
             <p className="text-gray-400 text-sm">Onboard new officers into the system.</p>
           </div>
-        </div>
+        </div>a
 
         <p className="mt-10 text-center text-sm text-gray-600">
           &copy; {new Date().getFullYear()} Police360 Admin Panel
