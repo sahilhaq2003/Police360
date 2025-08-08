@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
 
@@ -6,6 +6,39 @@ function Home() {
   const [activeService, setActiveService] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
+
+  // Load Google Translate widget
+  useEffect(() => {
+    if (!window.googleTranslateElementInit) {
+      window.googleTranslateElementInit = () => {
+        new window.google.translate.TranslateElement(
+          { pageLanguage: 'en', includedLanguages: 'en,si,ta' },
+          'google_translate_element'
+        );
+      };
+
+      const script = document.createElement('script');
+      script.src =
+        '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Change language with retry until .goog-te-combo exists
+  const changeLanguage = (lang) => {
+    let tries = 0;
+    const tryChange = () => {
+      const combo = document.querySelector('.goog-te-combo');
+      if (combo) {
+        combo.value = lang;
+        combo.dispatchEvent(new Event('change'));
+      } else if (tries < 20) {
+        tries++;
+        setTimeout(tryChange, 100);
+      }
+    };
+    tryChange();
+  };
 
   const services = [
     [
@@ -17,21 +50,21 @@ function Home() {
           icon: '/images/2190967.png',
           title: 'OCEC',
           desc: 'This service allows handling of banking info.',
-          link: '/apply/ocec'
+          link: '/apply/ocec',
         },
         {
           icon: '/images/893905.png',
           title: 'Tourist Police',
           desc: 'Submit a report related to tourism.',
-          link: '/apply/tourist-police'
+          link: '/apply/tourist-police',
         },
         {
           icon: '/images/893881.png',
           title: 'Police Report Inquiry',
           desc: 'Check status of existing police reports.',
-          link: '/apply/report-inquiry'
-        }
-      ]
+          link: '/apply/report-inquiry',
+        },
+      ],
     ],
     [
       '/images/4344337.png',
@@ -42,15 +75,15 @@ function Home() {
           icon: '/images/traffic1.png',
           title: 'Pay Traffic Fines',
           desc: 'Pay your outstanding traffic fines online.',
-          link: '/apply/pay-fines'
+          link: '/apply/pay-fines',
         },
         {
           icon: '/images/traffic2.png',
           title: 'Traffic Violation Inquiry',
           desc: 'Check and inquire about violations.',
-          link: '/apply/violations'
-        }
-      ]
+          link: '/apply/violations',
+        },
+      ],
     ],
     [
       '/images/893905.png',
@@ -61,15 +94,15 @@ function Home() {
           icon: '/images/permit1.png',
           title: 'Event Permit',
           desc: 'Apply for public event permits.',
-          link: '/apply/event-permit'
+          link: '/apply/event-permit',
         },
         {
           icon: '/images/permit2.png',
           title: 'Photography Permit',
           desc: 'Request photo/video shooting permits.',
-          link: '/apply/photo-permit'
-        }
-      ]
+          link: '/apply/photo-permit',
+        },
+      ],
     ],
     [
       '/images/893881.png',
@@ -80,15 +113,15 @@ function Home() {
           icon: '/images/permit1.png',
           title: 'Event Permit',
           desc: 'Apply for public event permits.',
-          link: '/apply/event-permit'
+          link: '/apply/event-permit',
         },
         {
           icon: '/images/permit2.png',
           title: 'Photography Permit',
           desc: 'Request photo/video shooting permits.',
-          link: '/apply/photo-permit'
-        }
-      ]
+          link: '/apply/photo-permit',
+        },
+      ],
     ],
     [
       '/images/1414884.png',
@@ -99,16 +132,16 @@ function Home() {
           icon: '/images/permit1.png',
           title: 'Event Permit',
           desc: 'Apply for public event permits.',
-          link: '/apply/event-permit'
+          link: '/apply/event-permit',
         },
         {
           icon: '/images/permit2.png',
           title: 'Photography Permit',
           desc: 'Request photo/video shooting permits.',
-          link: '/apply/photo-permit'
-        }
-      ]
-    ]
+          link: '/apply/photo-permit',
+        },
+      ],
+    ],
   ];
 
   return (
@@ -119,7 +152,9 @@ function Home() {
           <div className="logo">Police360</div>
         </div>
         <nav className="navbar">
-          <a href="Home.jsx" className="active">Home</a>
+          <a href="Home.jsx" className="active">
+            Home
+          </a>
           <a href="#">About Us</a>
           <a href="#">Open Data</a>
           <a href="#">Application Status</a>
@@ -128,17 +163,23 @@ function Home() {
         </nav>
         <div className="top-actions">
           <input type="text" placeholder="Search..." className="top-search" />
-          <select>
-            <option>English</option>
-            <option>සිංහල</option>
-            <option>தமிழ்</option>
+
+          {/* Language selector */}
+          <select onChange={(e) => changeLanguage(e.target.value)} defaultValue="en">
+            <option value="en">English</option>
+            <option value="si">සිංහල</option>
+            <option value="ta">தமிழ்</option>
           </select>
-          <button
-          className="login-btn"
-          onClick={() => navigate('/login')} // Add this onClick
-        >
-          Login
-        </button>
+
+          {/* Google Translate element (hidden but needs to be present) */}
+          <div
+            id="google_translate_element"
+            style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+          />
+
+          <button className="login-btn" onClick={() => navigate('/login')}>
+            Login
+          </button>
         </div>
       </header>
 
@@ -149,7 +190,7 @@ function Home() {
           <source src="/images/police360-ve.mp4" type="video/mp4" />
         </video>
         <div className="hero-content">
-          <h1>Drone Box</h1>
+          <h1>Police</h1>
           <p>A smart solution to enhance Police360 emergency response</p>
           <input type="text" placeholder="Search for the service..." />
         </div>
@@ -179,7 +220,9 @@ function Home() {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
+            <button className="close-btn" onClick={() => setShowModal(false)}>
+              ×
+            </button>
             <div className="modal-header">
               <img src={activeService.icon} alt={activeService.title} />
               <h2>{activeService.title}</h2>
@@ -206,7 +249,6 @@ function Home() {
           </div>
         </div>
       )}
-    
 
       {/* Footer */}
       <footer>
@@ -221,5 +263,4 @@ function Home() {
   );
 }
 
-
-export default Home;
+export default Home;
