@@ -5,6 +5,7 @@ import './Home.css';
 function Home() {
   const [activeService, setActiveService] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const navigate = useNavigate();
 
   // Load Google Translate widget
@@ -236,6 +237,11 @@ function Home() {
     ],
   ];
 
+  const handleApplyClick = (service) => {
+    // Navigate to report form with service type
+    navigate('/report-form', { state: { reportType: service.title } });
+  };
+
   return (
     <div>
       <header className="main-header">
@@ -331,7 +337,7 @@ function Home() {
                   </div>
                   <button
                     className="apply-btn"
-                    onClick={() => navigate(sub.link)}
+                    onClick={() => handleApplyClick(sub)}
                   >
                     Apply
                   </button>
@@ -355,4 +361,4 @@ function Home() {
   );
 }
 
-export default Home;
+export default Home;
