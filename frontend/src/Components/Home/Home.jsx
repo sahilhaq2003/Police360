@@ -288,9 +288,11 @@ function Home() {
           <source src="/images/police360-ve.mp4" type="video/mp4" />
         </video>
         <div className="hero-content">
-          <h1>Police</h1>
+          <h1>Police Service</h1>
           <p>A smart solution to enhance Police360 emergency response</p>
-          <input type="text" placeholder="Search for the service..." />
+          <button className="report-btn" onClick={() => navigate('/report-form')}>
+            Report an Incident
+          </button>
         </div>
       </section>
 

@@ -71,7 +71,7 @@ body {
 }
 
 .navbar a.active {
-  color: #00bfff; /* Optional: color highlight for active link */
+  color: yellow; /* Optional: color highlight for active link */
   width: 100%;
 }
 
@@ -111,9 +111,14 @@ body {
   overflow: hidden;
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
+  justify-content: left;
+  /*text-align: center;*/
   margin-top: 0; /* removed auto */
+}
+
+.hero-content{
+  margin-left: 10%;
+  font-size: 20px;
 }
 
 .background-video {
@@ -154,7 +159,38 @@ body {
 .hero-content p {
   font-size: 1.4em;
   margin-top: 10px;
+  color: yellow;
 }
+
+.report-btn {
+  margin-top: 25px;
+  padding: 14px 32px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 30px;
+
+  /* red gradient background */
+  background: linear-gradient(135deg, #ff3b3b, #b30000);
+  color: #fff;
+
+  /* subtle shadow */
+  box-shadow: 0 6px 15px rgba(255, 59, 59, 0.35);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.report-btn:hover {
+  transform: translateY(-3px) scale(1.03);
+  background: linear-gradient(135deg, #b30000, #800000);
+  box-shadow: 0 8px 20px rgba(179, 0, 0, 0.5);
+}
+
+.report-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(179, 0, 0, 0.4);
+}
+
 
 .hero-content input {
   margin-top: 25px;
@@ -242,7 +278,31 @@ footer {
 .service-tile:hover {
   transform: translateY(-25px);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+
+  /* semi-transparent blue background */
+  background: rgba(0, 123, 255, 0.15);  /* (R,G,B,A) → A=0.15 means 15% visible */
+
+  /* bluish border */
+  border: 1px solid rgba(0, 123, 255, 0.6);
+
+  color: #000000;
 }
+
+
+/* smooth effect */
+.service-icon img {
+  transition: transform .3s ease, filter .3s ease;
+}
+
+/* turn the image black on hover */
+.service-tile:hover .service-icon img {
+  filter: brightness(0) saturate(100%);
+}
+
+/* optional: pointer cursor */
+.service-tile { cursor: pointer; }
+
+
 
 .service-icon {
   font-size: 40px;
@@ -256,14 +316,23 @@ footer {
   color: #000;
 }
 
-/* .service-tile h3:hover{
-  transform: scale(1.5);
-} */
+.service-tile:hover h3 {
+  color: #FFD400;   /* bright yellow */
+  transition: color 0.3s ease;
+}
 
 .service-tile p {
   font-size: 0.9em;
-  color: #444;
+  color: #000000;
   line-height: 1.4;
+}
+
+.service-tile:hover p {
+  font-size: 0.9em;
+  color: #ffffff;
+  line-height: 1.4;
+  transition: color 0.3s ease;
+  font: bold;
 }
 
 .service-icon img {
@@ -388,11 +457,11 @@ footer {
 }
 
 .modal-header img {
-  width: 44px;
-  height: 44px;
+  width: 50px;
+  height: 50px;
   padding: 10px;
-  background: #ffeceb;                /* soft red chip bg */
-  border: 1px solid #ffd6d6;          /* chip border */
+  /*background: #ffeceb;                /* soft red chip bg */
+  /*border: 1px solid #ffd6d6;          /* chip border */
   border-radius: 12px;
   object-fit: contain;
 }
@@ -440,11 +509,11 @@ footer {
 
 /* icon “chip” like the screenshot */
 .service-option img {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   padding: 8px;
-  background: #ffeceb;
-  border: 1px solid #ffd6d6;
+  /*background: #ffeceb;
+  border: 1px solid #ffd6d6;*/
   border-radius: 10px;
   object-fit: contain;
   flex-shrink: 0;
@@ -476,6 +545,22 @@ footer {
   font-weight: 700;
   cursor: pointer;
   transition: background .15s ease, color .15s ease, transform .1s ease;
+}
+
+/* title + description */
+.service-option h4,
+.service-option p {
+  transition: color 0.2s ease;  /* smooth color change */
+}
+
+.service-option:hover h4,
+.service-option:hover p {
+  color: #2563eb;  /* Tailwind blue-600 */
+}
+
+/* Hover → turn icon blue */
+.service-option:hover img {
+  filter: brightness(0) saturate(100%) invert(27%) sepia(98%) saturate(7496%) hue-rotate(209deg) brightness(97%) contrast(104%);
 }
 
 .apply-btn:hover {
