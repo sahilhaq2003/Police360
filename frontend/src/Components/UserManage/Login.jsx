@@ -27,6 +27,7 @@ const Login = () => {
       storage.setItem('token', token);
       storage.setItem('role', officer.role);
       navigate(officer.role === 'Admin' ? '/admin/dashboard' : '/dashboard');
+      navigate(officer.role === 'Officer' ? '/officer/officerDashboard' : '/officerDashboard'); 
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid credentials.');
     } finally {
