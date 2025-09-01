@@ -2,13 +2,8 @@ import React, { useState } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import loginBg from '../../assets/loginbg.jpg';
-
-const shakeAnimation = {
-  x: [0, -6, 6, -6, 6, 0],
-  transition: { duration: 0.3 }
-};
+import PLogo from '../../assets/PLogo.png'; // Custom logo
 
 const Login = () => {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -22,129 +17,131 @@ const Login = () => {
     if (error) setError('');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await axiosInstance.post('/auth/login', formData);
-      const { token, officer } = res.data;
-      const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem('token', token);
-      storage.setItem('role', officer.role);
-      navigate(
-        officer.role === 'Admin'
-          ? '/admin/register-officer'
-          : '/dashboard'
-      );
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials.');
-    } finally {
-      setLoading(false);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  try {
+    const res = await axiosInstance.post('/auth/login', formData);
+    const { token, officer } = res.data;
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem('token', token);
+    storage.setItem('role', officer.role);
+
+    // Only Admins go to /admin/dashboard, all others go to /officer/officerDashboard
+    if (officer.role === 'Admin') {
+      navigate('/admin/dashboard');
+    } else {
+      navigate('/officer/officerDashboard');
     }
-  };
+  } catch (err) {
+    setError(err.response?.data?.message || 'Invalid credentials.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const { username, password } = formData;
 
   return (
-    <motion.div
-      className="relative min-h-screen flex items-center justify-center bg-black"
-      style={{ backgroundImage: `url(${loginBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+    <div
+      className="relative min-h-screen flex items-center justify-center"
+      style={{
+        backgroundImage: `url(${loginBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
     >
-      <div className="absolute inset-0 bg-black opacity-75" />
-      <motion.div
-        className="relative bg-gray-900 bg-opacity-85 rounded-lg shadow-lg backdrop-blur-sm w-full max-w-sm p-6"
-        animate={error ? shakeAnimation : { x: 0 }}
-      >
-        <div className="text-center mb-4">
-          <img src="/police-badge.png" alt="Badge" className="h-12 mx-auto filter brightness-0 invert" />
-          <h1 className="mt-2 text-xl font-semibold text-gray-100">Police360</h1>
-          <p className="text-gray-400 text-xs">Officer Login</p>
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/90 to-gray-100 backdrop-blur-sm" />
+
+      {/* Login Card */}
+      <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md p-8 z-10 border border-gray-200">
+        {/* Logo Section */}
+        <div className="text-center mb-6">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-[#0B214A] flex items-center justify-center shadow">
+            <img src={PLogo} alt="Police360 Logo" className="h-10 w-10 object-contain" />
+          </div>
+          <h1 className="text-3xl font-bold text-[#0B214A]">Police360</h1>
+          <p className="text-sm text-gray-500">Secure Officer Login</p>
         </div>
 
+        {/* Error Message */}
         {error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-3 text-red-400 text-xs text-center"
-          >
-            {error}
-          </motion.div>
+          <div className="mb-4 text-red-600 text-sm text-center font-medium">{error}</div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Username */}
           <div>
-            <label className="block text-xs text-gray-300 mb-1">Username</label>
-            <div className={`flex items-center rounded-md px-2 py-1.5 transition-colors ${
-              username ? 'bg-gray-700 border border-indigo-500' : 'bg-gray-800 border border-gray-700'
-            } focus-within:ring-1 focus-within:ring-indigo-500`}
-            >
-              <User className={`text-sm ${username ? 'text-indigo-400' : 'text-gray-500'}`} />
+            <label className="block text-sm font-medium text-[#0B214A] mb-1">Username</label>
+            <div className="flex items-center bg-gray-50 px-3 py-2 rounded-md border border-gray-300 shadow-sm focus-within:ring-2 focus-within:ring-[#FFD700]">
+              <User className="text-gray-400" size={18} />
               <input
                 type="text"
                 name="username"
                 value={username}
                 onChange={handleChange}
-                placeholder="Username"
-                className="w-full ml-2 text-gray-200 placeholder-gray-500 bg-transparent outline-none text-sm"
+                placeholder="Enter your username"
+                className="ml-3 w-full bg-transparent outline-none text-gray-800 text-sm"
                 required
               />
             </div>
           </div>
 
+          {/* Password */}
           <div>
-            <label className="block text-xs text-gray-300 mb-1">Password</label>
-            <div className={`flex items-center rounded-md px-2 py-1.5 transition-colors ${
-              password ? 'bg-gray-700 border border-indigo-500' : 'bg-gray-800 border border-gray-700'
-            } focus-within:ring-1 focus-within:ring-indigo-500`}
-            >
-              <Lock className={`text-sm ${password ? 'text-indigo-400' : 'text-gray-500'}`} />
+            <label className="block text-sm font-medium text-[#0B214A] mb-1">Password</label>
+            <div className="flex items-center bg-gray-50 px-3 py-2 rounded-md border border-gray-300 shadow-sm focus-within:ring-2 focus-within:ring-[#FFD700]">
+              <Lock className="text-gray-400" size={18} />
               <input
                 type="password"
                 name="password"
                 value={password}
                 onChange={handleChange}
-                placeholder="Password"
-                className="w-full ml-2 text-gray-200 placeholder-gray-500 bg-transparent outline-none text-sm"
+                placeholder="Enter your password"
+                className="ml-3 w-full bg-transparent outline-none text-gray-800 text-sm"
                 required
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs">
-            <label className="flex items-center space-x-1 text-gray-400">
+          {/* Remember Me & Forgot */}
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center gap-2 text-gray-600">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={() => setRememberMe(!rememberMe)}
-                className="h-3 w-3 text-indigo-500 rounded bg-gray-800 border-gray-600"
+                className="accent-[#0B214A] h-4 w-4"
               />
-              <span>Remember Me</span>
+              Remember Me
             </label>
             <button
               type="button"
               onClick={() => navigate('/forgot-password')}
-              className="text-indigo-400 hover:underline text-xs"
+              className="text-[#0B214A] hover:underline font-medium"
             >
-              Forgot?
+              Forgot Password?
             </button>
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md transition"
+            className="w-full py-2 flex items-center justify-center bg-[#0B214A] hover:bg-[#132e63] text-white font-semibold text-sm rounded-md transition duration-200"
           >
-            {loading ? <Loader2 className="animate-spin h-4 w-4" /> : 'Sign In'}
+            {loading ? <Loader2 className="animate-spin h-5 w-5" /> : 'Sign In'}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-[10px] text-gray-500">
-          &copy; {new Date().getFullYear()} Police360.
+        {/* Footer */}
+        <p className="mt-6 text-center text-xs text-gray-400">
+          &copy; {new Date().getFullYear()} Police360. All rights reserved.
         </p>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 
