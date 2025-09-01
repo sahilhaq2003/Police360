@@ -71,7 +71,7 @@ body {
 }
 
 .navbar a.active {
-  color: #00bfff; /* Optional: color highlight for active link */
+  color: yellow; /* Optional: color highlight for active link */
   width: 100%;
 }
 
@@ -111,9 +111,14 @@ body {
   overflow: hidden;
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
+  justify-content: left;
+  /*text-align: center;*/
   margin-top: 0; /* removed auto */
+}
+
+.hero-content{
+  margin-left: 10%;
+  font-size: 20px;
 }
 
 .background-video {
@@ -154,7 +159,38 @@ body {
 .hero-content p {
   font-size: 1.4em;
   margin-top: 10px;
+  color: yellow;
 }
+
+.report-btn {
+  margin-top: 25px;
+  padding: 14px 32px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 30px;
+
+  /* red gradient background */
+  background: linear-gradient(135deg, #ff3b3b, #b30000);
+  color: #fff;
+
+  /* subtle shadow */
+  box-shadow: 0 6px 15px rgba(255, 59, 59, 0.35);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.report-btn:hover {
+  transform: translateY(-3px) scale(1.03);
+  background: linear-gradient(135deg, #b30000, #800000);
+  box-shadow: 0 8px 20px rgba(179, 0, 0, 0.5);
+}
+
+.report-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(179, 0, 0, 0.4);
+}
+
 
 .hero-content input {
   margin-top: 25px;
@@ -242,7 +278,31 @@ footer {
 .service-tile:hover {
   transform: translateY(-25px);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+
+  /* semi-transparent blue background */
+  background: rgba(0, 123, 255, 0.15);  /* (R,G,B,A) → A=0.15 means 15% visible */
+
+  /* bluish border */
+  border: 1px solid rgba(0, 123, 255, 0.6);
+
+  color: #000000;
 }
+
+
+/* smooth effect */
+.service-icon img {
+  transition: transform .3s ease, filter .3s ease;
+}
+
+/* turn the image black on hover */
+.service-tile:hover .service-icon img {
+  filter: brightness(0) saturate(100%);
+}
+
+/* optional: pointer cursor */
+.service-tile { cursor: pointer; }
+
+
 
 .service-icon {
   font-size: 40px;
@@ -256,14 +316,23 @@ footer {
   color: #000;
 }
 
-/* .service-tile h3:hover{
-  transform: scale(1.5);
-} */
+.service-tile:hover h3 {
+  color: #FFD400;   /* bright yellow */
+  transition: color 0.3s ease;
+}
 
 .service-tile p {
   font-size: 0.9em;
-  color: #444;
+  color: #000000;
   line-height: 1.4;
+}
+
+.service-tile:hover p {
+  font-size: 0.9em;
+  color: #ffffff;
+  line-height: 1.4;
+  transition: color 0.3s ease;
+  font: bold;
 }
 
 .service-icon img {
@@ -367,3 +436,175 @@ footer {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ---------- Modal container ---------- */
+.modal-box {
+  background: #fff;
+  border-radius: 24px;
+  padding: 28px 28px 32px;
+  max-width: 1060px;
+  width: 92%;
+  border: 1px solid #e5e7eb;          /* light border */
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+
+/* header (icon + title + subtitle) */
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.modal-header img {
+  width: 50px;
+  height: 50px;
+  padding: 10px;
+  /*background: #ffeceb;                /* soft red chip bg */
+  /*border: 1px solid #ffd6d6;          /* chip border */
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #111827;
+}
+
+.modal-header p {
+  margin: 6px 0 0;
+  color: #6b7280;                      /* muted subtitle */
+  font-size: 14.5px;
+}
+
+/* ---------- Grid of service options ---------- */
+.modal-content {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* individual option tile */
+.service-option {
+  background: #f8fafc;                 /* very light gray */
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 0 rgba(2,6,23,0.02);
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.service-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(2,6,23,.06);
+  border-color: #d1d5db;
+}
+
+/* icon “chip” like the screenshot */
+.service-option img {
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  /*background: #ffeceb;
+  border: 1px solid #ffd6d6;*/
+  border-radius: 10px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* title + description */
+.service-option h4 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.service-option p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+/* outlined Apply button on the right */
+.apply-btn {
+  margin-left: auto;
+  padding: 10px 18px;
+  border: 1.6px solid #111827;
+  background: #fff;
+  color: #111827;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, transform .1s ease;
+}
+
+/* title + description */
+.service-option h4,
+.service-option p {
+  transition: color 0.2s ease;  /* smooth color change */
+}
+
+.service-option:hover h4,
+.service-option:hover p {
+  color: #2563eb;  /* Tailwind blue-600 */
+}
+
+/* Hover → turn icon blue */
+.service-option:hover img {
+  filter: brightness(0) saturate(100%) invert(27%) sepia(98%) saturate(7496%) hue-rotate(209deg) brightness(97%) contrast(104%);
+}
+
+.apply-btn:hover {
+  background: #111827;
+  color: #fff;
+}
+
+.apply-btn:active {
+  transform: translateY(1px);
+}
+
+/* close (×) button subtle styling */
+.close-btn {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  line-height: 34px;
+  text-align: center;
+  font-size: 20px;
+  color: #111827;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.close-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+/* ---------- Responsive breakpoints like the reference ---------- */
+@media (max-width: 1200px) {
+  .modal-content { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .modal-content { grid-template-columns: 1fr; }
+  .apply-btn { padding: 10px 14px; }
+}
+
+
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+}

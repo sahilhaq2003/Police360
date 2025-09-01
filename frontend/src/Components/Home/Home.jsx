@@ -5,6 +5,7 @@ import './Home.css';
 function Home() {
   const [activeService, setActiveService] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const navigate = useNavigate();
 
   // Load Google Translate widget
@@ -12,7 +13,8 @@ function Home() {
     if (!window.googleTranslateElementInit) {
       window.googleTranslateElementInit = () => {
         new window.google.translate.TranslateElement(
-          { pageLanguage: 'en', includedLanguages: 'en,si,ta' },
+          { pageLanguage: 'en', includedLanguages: 'en,si,ta',
+           },
           'google_translate_element'
         );
       };
@@ -48,14 +50,14 @@ function Home() {
       [
         {
           icon: '/images/2190967.png',
-          title: 'OCEC',
-          desc: 'This service allows handling of banking info.',
-          link: '/apply/ocec',
+          title: 'eCrime',
+          desc: 'This service allows applicants to file an e-crime complaint, whether the c.',
+          link: '/apply/ecrime',
         },
         {
           icon: '/images/893905.png',
           title: 'Tourist Police',
-          desc: 'Submit a report related to tourism.',
+          desc: 'This service allows tourists to submit a report or complaint to the Tourist Police.',
           link: '/apply/tourist-police',
         },
         {
@@ -63,6 +65,18 @@ function Home() {
           title: 'Police Report Inquiry',
           desc: 'Check status of existing police reports.',
           link: '/apply/report-inquiry',
+        },
+        {
+          icon: '/images/893881.png',
+          title: 'File Criminal Complaint',
+          desc: 'This service allows users to file a criminal complaint.',
+          link: '/apply/file-complaint',
+        },
+        {
+          icon: '/images/893881.png',
+          title: 'Criminal Status of Financial Cases',
+          desc: 'This service allows users to check the criminal status of financial cases.',
+          link: '/apply/criminal-status-financial-cases',
         },
       ],
     ],
@@ -73,15 +87,33 @@ function Home() {
       [
         {
           icon: '/images/traffic1.png',
-          title: 'Pay Traffic Fines',
-          desc: 'Pay your outstanding traffic fines online.',
-          link: '/apply/pay-fines',
+          title: 'Unknown Accident Report',
+          desc: 'This service allows users to report unknown accidents.',
+          link: '/apply/unknown-accident-report',
         },
         {
           icon: '/images/traffic2.png',
-          title: 'Traffic Violation Inquiry',
-          desc: 'Check and inquire about violations.',
+          title: 'Reporting Vehicle Obstruction',
+          desc: 'This service allows users to report vehicle obstructions.',
+          link: '/apply/vehicle-obstruction',
+        },
+        {
+          icon: '/images/traffic2.png',
+          title: 'Traffic Violations Copy',
+          desc: 'This service enables applicants to obtain information related to a traffic violation.',
           link: '/apply/violations',
+        },
+        {
+          icon: '/images/traffic2.png',
+          title: 'Change Vehicle Color',
+          desc: 'This service allows users to change the color of their vehicle in official records.',
+          link: '/apply/change-vehicle-color',
+        },
+        {
+          icon: '/images/traffic2.png',
+          title: 'Traffic Fines Installment',
+          desc: 'This service aims to enable vehicle owners (individuals - business sector).',
+          link: '/apply/traffic-fines-installment',
         },
       ],
     ],
@@ -102,6 +134,36 @@ function Home() {
           desc: 'Request photo/video shooting permits.',
           link: '/apply/photo-permit',
         },
+        {
+          icon: '/images/permit2.png',
+          title: 'Sailing Permit',
+          desc: 'Request sailing permits for water activities.',
+          link: '/apply/sailing-permit',
+        },
+        {
+          icon: '/images/permit2.png',
+          title: 'Road Closure Permit',
+          desc: 'Request road closure permits.',
+          link: '/apply/road-closure-permit',
+        },
+        {
+          icon: '/images/permit2.png',
+          title: 'Detainee Visit Request',
+          desc: 'Request detainee visit permits.',
+          link: '/apply/detainee-visit-request',
+        },
+        {
+          icon: '/images/permit2.png',
+          title: 'Police Museum Visit Permit',
+          desc: 'Request police museum visit permits.',
+          link: '/apply/police-museum-visit-permit',
+        },
+        {
+          icon: '/images/permit2.png',
+          title: 'Inmate Visit Permit',
+          desc: 'Request inmate visit permits.',
+          link: '/apply/inmate-visit-permit',
+        },
       ],
     ],
     [
@@ -111,15 +173,21 @@ function Home() {
       [
         {
           icon: '/images/permit1.png',
-          title: 'Event Permit',
-          desc: 'Apply for public event permits.',
-          link: '/apply/event-permit',
+          title: 'Traffic Status Certificate',
+          desc: 'This service enables applicants to obtain a certificate that shows the dri.',
+          link: '/apply/traffic-status-certificate',
         },
         {
           icon: '/images/permit2.png',
-          title: 'Photography Permit',
-          desc: 'Request photo/video shooting permits.',
-          link: '/apply/photo-permit',
+          title: 'Lost Item Certificate',
+          desc: 'This service enables applicants to obtain a certificate for lost items.',
+          link: '/apply/lost-item-certificate',
+        },
+        {
+          icon: '/images/permit2.png',
+          title: 'Gold Management Platform',
+          desc: 'This service enables applicants to obtain a certificate for gold management.',
+          link: '/apply/gold-management-platform',
         },
       ],
     ],
@@ -130,19 +198,49 @@ function Home() {
       [
         {
           icon: '/images/permit1.png',
-          title: 'Event Permit',
-          desc: 'Apply for public event permits.',
-          link: '/apply/event-permit',
+          title: 'Human Trafficking Victims',
+          desc: 'A service that allows the public to report human trafficking practices or .',
+          link: '/apply/human-trafficking-victims',
         },
         {
           icon: '/images/permit2.png',
-          title: 'Photography Permit',
-          desc: 'Request photo/video shooting permits.',
-          link: '/apply/photo-permit',
+          title: 'File a Labor Complaint',
+          desc: 'This service enables labor workers to submit individual or collective comp.',
+          link: '/apply/labor-complaint',
         },
+        {
+          icon: '/images/permit2.png',
+          title: 'Child and Women Protection',
+          desc: 'This service provides social support and legal protection for children an.',
+          link: '/apply/child-and-women-protection',
+        },
+        {
+          icon: '/images/permit2.png',
+          title: 'Home Security',
+          desc: 'A smart security service for villas in the Emirate of Dubai that provides .',
+          link: '/apply/home-security',
+        },
+        {
+          icon: '/images/permit2.png',
+          title: 'Suggestion',
+          desc: 'This service allows applicants to submit their suggestions with regards to.',
+          link: '/apply/suggestion',
+        },
+        {
+          icon: '/images/permit2.png',
+          title: 'Feedback',
+          desc: 'The service allows customers to provide their opinions and comments aimed at improving police services.',
+          link: '/apply/feedback',
+        },
+        
       ],
     ],
   ];
+
+  const handleApplyClick = (service) => {
+    // Navigate to report form with service type
+    navigate('/report-form', { state: { reportType: service.title } });
+  };
 
   return (
     <div>
@@ -190,9 +288,11 @@ function Home() {
           <source src="/images/police360-ve.mp4" type="video/mp4" />
         </video>
         <div className="hero-content">
-          <h1>Police</h1>
+          <h1>Police Service</h1>
           <p>A smart solution to enhance Police360 emergency response</p>
-          <input type="text" placeholder="Search for the service..." />
+          <button className="report-btn" onClick={() => navigate('/report-form')}>
+            Report an Incident
+          </button>
         </div>
       </section>
 
@@ -239,7 +339,7 @@ function Home() {
                   </div>
                   <button
                     className="apply-btn"
-                    onClick={() => navigate(sub.link)}
+                    onClick={() => handleApplyClick(sub)}
                   >
                     Apply
                   </button>
@@ -263,4 +363,4 @@ function Home() {
   );
 }
 
-export default Home;
+export default Home;

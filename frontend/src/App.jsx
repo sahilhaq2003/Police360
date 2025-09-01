@@ -5,8 +5,11 @@ import Home from './Components/Home/Home';
 import Login from './Components/UserManage/Login';
 import RegisterOfficer from './Components/admin/RegisterOfficer';
 import AdminDashboard from './Components/admin/AdminDashboard';
-import Officers from './Components/admin/Officers';
+import Officers from './Components/admin/officers';
 import OfficerProfile from './Components/admin/OfficerProfile';
+import ReportForm from './Components/Report/ReportForm';
+import ReportSuccess from './Components/Report/ReportSuccess';
+import OfficerDashboard from './Components/officer/officerDashboard';
 
 function App() {
   return (
@@ -18,6 +21,9 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/officers" element={<Officers />} />
         <Route path="/admin/officer/:id" element={<OfficerProfile />} />
+        <Route path="/report-form" element={<ReportForm />} />
+        <Route path="/report-success" element={<ReportSuccess />} />
+        <Route path="/officer/OfficerDashboard" element={<OfficerDashboard />} />
       </Routes>
     </Router>
   );
