@@ -1,4 +1,4 @@
-.report-form-container {
+/* .report-form-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
@@ -108,7 +108,7 @@
 }
 
 /* Witness and Suspect Items */
-.witness-item,
+/* .witness-item,
 .suspect-item,
 .evidence-item {
   display: flex;
@@ -161,7 +161,7 @@
 }
 
 /* Insurance Details */
-.insurance-details {
+/* .insurance-details {
   margin-top: 20px;
   padding: 20px;
   background: #fff;
@@ -170,7 +170,7 @@
 }
 
 /* Checkbox Styling */
-.form-group input[type="checkbox"] {
+/* .form-group input[type="checkbox"] {
   width: auto;
   margin-right: 10px;
   transform: scale(1.2);
@@ -180,10 +180,10 @@
   display: flex;
   align-items: center;
   cursor: pointer;
-}
+} */
 
 /* File Upload */
-.form-group input[type="file"] {
+/* .form-group input[type="file"] {
   padding: 10px;
   border: 2px dashed #3498db;
   background: #f8f9fa;
@@ -192,10 +192,10 @@
 
 .form-group input[type="file"]:hover {
   background: #e3f2fd;
-}
+}*/
 
 /* Form Actions */
-.form-actions {
+/* .form-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -239,10 +239,10 @@
 .submit-btn:disabled {
   background: #bdc3c7;
   cursor: not-allowed;
-}
+} */
 
 /* Responsive Design */
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
   .report-form-container {
     padding: 10px;
   }
@@ -283,16 +283,16 @@
   .form-section {
     padding: 15px;
   }
-}
+} */
 
 /* Loading State */
-.loading {
+/* .loading {
   opacity: 0.7;
   pointer-events: none;
-}
+} */
 
 /* Success/Error Messages */
-.message {
+/* .message {
   padding: 15px;
   border-radius: 6px;
   margin-bottom: 20px;
@@ -309,10 +309,10 @@
   background: #f8d7da;
   color: #721c24;
   border: 1px solid #f5c6cb;
-}
+} */
 
 /* Priority Badges */
-.priority-badge {
+/* .priority-badge {
   display: inline-block;
   padding: 4px 8px;
   border-radius: 4px;
@@ -339,10 +339,10 @@
 .priority-badge.urgent {
   background: #f1948a;
   color: #c0392b;
-}
+} */
 
 /* Animation */
-@keyframes fadeIn {
+/* @keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -355,4 +355,4 @@
 
 .report-form-container {
   animation: fadeIn 0.5s ease-out;
-} 
+}
