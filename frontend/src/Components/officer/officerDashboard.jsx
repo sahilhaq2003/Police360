@@ -4,6 +4,7 @@ import {
   FileText, ClipboardCheck, BookMarked, CalendarDays, ShieldCheck, LogOut
 } from 'lucide-react';
 import axiosInstance from '../../utils/axiosInstance';
+import PoliceHeader from '../PoliceHeader/PoliceHeader';
 
 const OfficerDashboard = () => {
   const navigate = useNavigate();
@@ -56,6 +57,7 @@ const OfficerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
+
       <div className="border-b border-[#E4E9F2] bg-white/80 backdrop-blur sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -77,6 +79,10 @@ const OfficerDashboard = () => {
           </button>
         </div>
       </div>
+
+      <PoliceHeader />
+      
+
 
       <div className="max-w-6xl mx-auto px-4 py-10">
         <h2 className="text-3xl font-extrabold tracking-tight mb-4">Welcome, Officer</h2>
