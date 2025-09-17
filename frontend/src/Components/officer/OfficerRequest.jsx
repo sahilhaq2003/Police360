@@ -30,6 +30,11 @@ const OfficerRequest = () => {
     loadMyRequests();
   }, []);
 
+  // Ensure page is scrolled to top on navigation to this page
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const submitRequest = async (e) => {
     e.preventDefault();
     if (!subject.trim() || !description.trim()) {
