@@ -92,7 +92,7 @@ export default function PoliceHeader() {
         <div className="flex items-center gap-3 justify-self-end">
           <div className="flex flex-col items-end">
             <span className="text-sm font-medium text-[#0B214A] text-[16px]">
-              Welcome, {localStorage.getItem('userName') || sessionStorage.getItem('userName') || 'Officer'}
+              Welcome Officer, {localStorage.getItem('userName') || sessionStorage.getItem('userName') || 'Officer Name'}
             </span>
             <div className="flex items-center gap-1 text-[13px] text-[#5A6B85]-100">
               <MapPin size={12} />

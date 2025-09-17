@@ -58,34 +58,20 @@ const OfficerDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
 
-      <div className="border-b border-[#E4E9F2] bg-white/80 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {me?.photo ? (
-              <img src={me.photo} alt={me.name} className="w-9 h-9 rounded-full object-cover border border-[#E4E9F2]" />
-            ) : (
-              <ShieldCheck className="w-6 h-6 text-[#00296B]" />
-            )}
-            <div>
-              <div className="text-sm text-[#5A6B85]">{me?.name || 'Police360'}</div>
-              <h1 className="text-xl font-semibold tracking-tight">Officer Panel</h1>
-            </div>
-          </div>
-          <button
-            onClick={logout}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0B214A] text-white hover:opacity-95"
-          >
-            <LogOut className="w-4 h-4" /> Logout
-          </button>
-        </div>
-      </div>
-
       <PoliceHeader />
       
 
 
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <h2 className="text-3xl font-extrabold tracking-tight mb-4">Welcome, Officer</h2>
+      <div className="flex items-center gap-3">
+            {me?.photo ? (
+              <img src={me.photo} alt={me.name} className="w-15 h-15 rounded-full object-cover border border-[#E4E9F2]" />
+            ) : (
+              <ShieldCheck className="w-6 h-6 text-[#00296B]" />
+            )}
+            <h2 className="text-3xl font-extrabold tracking-tight mb-4">Welcome, Officer</h2>           
+          </div>
+        
         <p className="text-sm text-[#5A6B85] mb-8">Here is your report summary and recent activity overview.</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">

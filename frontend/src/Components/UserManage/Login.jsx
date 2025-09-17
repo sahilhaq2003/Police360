@@ -27,12 +27,13 @@ const handleSubmit = async (e) => {
     storage.setItem('token', token);
     storage.setItem('role', officer.role);
     storage.setItem('userId', officer.id);
+    storage.setItem('userName', officer.name);
 
     // Only Admins go to /admin/dashboard, all others go to /officer/officerDashboard
     if (officer.role === 'Admin') {
       navigate('/admin/dashboard');
     } else {
-      navigate('/officer/officerDashboard');
+      navigate('/officer/OfficerDashboard');
     }
   } catch (err) {
     setError(err.response?.data?.message || 'Invalid credentials.');
