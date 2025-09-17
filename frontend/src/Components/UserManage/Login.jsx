@@ -29,9 +29,11 @@ const handleSubmit = async (e) => {
     storage.setItem('userId', officer.id);
     storage.setItem('userName', officer.name);
 
-    // Only Admins go to /admin/dashboard, all others go to /officer/officerDashboard
+    // Route based on role
     if (officer.role === 'Admin') {
       navigate('/admin/dashboard');
+    } else if (officer.role === 'IT Officer') {
+      navigate('/itOfficer/ItOfficerDashboard');
     } else {
       navigate('/officer/OfficerDashboard');
     }

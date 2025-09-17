@@ -197,7 +197,7 @@ const AdminDashboard = () => {
       <div className="max-w-6xl mx-auto px-4 py-10">
         {/* Greeting */}
         <div className="mb-8">
-          <h2 className="text-3xl font-extrabold tracking-tight">Welcome back, Admin</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight">Welcome back, Chief</h2>
           <p className="text-sm text-[#5A6B85] mt-1">Manage officers, review reports, and keep the system running smoothly.</p>
         </div>
 

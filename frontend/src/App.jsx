@@ -13,6 +13,9 @@ import OfficerDashboard from './Components/officer/officerDashboard';
 
 import OfficerRequest from './Components/officer/OfficerRequest';
 import ViewRequests from './Components/admin/ViewRequests';
+import ItOfficerDashboard from './Components/itOfficer/ItOfficerDashboard';
+import ItDutySchedules from './Components/itOfficer/ItDutySchedules';
+import OfficerCalendar from './Components/officer/OfficerCalendar';
 
 import Criminal from './Components/CriminalManage/Criminal';
 
@@ -32,11 +35,17 @@ function App() {
         <Route path="/report-success" element={<ReportSuccess />} />
         <Route path="/officer/OfficerDashboard" element={<OfficerDashboard />} />
 
+        <Route path="/officer/calendar" element={<OfficerCalendar />} />
+        <Route path="/officer/request" element={<OfficerRequest />} />
+        <Route path="/admin/requests" element={<ViewRequests />} />
+        <Route path="/itOfficer/ItOfficerDashboard" element={<ItOfficerDashboard />} />
+        <Route path="/itOfficer/schedules" element={<ItDutySchedules />} />
+
+
         <Route path="/officer/request" element={<OfficerRequest />} />
         <Route path="/admin/requests" element={<ViewRequests />} />
 
         <Route path="/CriminalManage/Criminal" element ={<Criminal/>}/>
-
       </Routes>
     </Router>
   );
