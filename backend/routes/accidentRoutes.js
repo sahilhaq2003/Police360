@@ -13,7 +13,6 @@ const {
 
 const { protect } = require('../middlewares/authMiddleware');
 
-// PUBLIC
 router.post('/report', reportAccident);
 router.get('/track/:trackingId', getByTrackingId);
 

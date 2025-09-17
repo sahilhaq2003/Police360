@@ -11,6 +11,7 @@ import ReportForm from './Components/Report/ReportForm';
 import ReportSuccess from './Components/Report/ReportSuccess';
 import OfficerDashboard from './Components/officer/officerDashboard';
 import Accidentform from './Components/accidents/accidentform';
+import AllAccidents from './Components/accidents/allAccidents';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           element={<OfficerDashboard />}
         />
         <Route path="/accident-form" element={<Accidentform />} />
+        <Route path="/accidents" element={<AllAccidents />} />
       </Routes>
     </Router>
   );

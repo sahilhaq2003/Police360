@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
-import { postJSON } from '../../utils/accidentapi';
-
-const ACCIDENT_TYPES = [
-  { value: 'ROAD_ACCIDENT', label: 'Road Accident' },
-  { value: 'FIRE', label: 'Fire' },
-  { value: 'STRUCTURAL_COLLAPSE', label: 'Structural Collapse' },
-  { value: 'OTHER', label: 'Other' },
-];
+import api from '../../utils/accidentapi';
+import AdditionalDetails from './additionalDetails';
+import BasicDetails from './basicDetails';
 
 export default function AccidentForm() {
   const [form, setForm] = useState({
@@ -78,7 +73,7 @@ export default function AccidentForm() {
     };
 
     try {
-      const res = await postJSON('/api/accidents/report', payload);
+      const res = await api.post('/api/accidents/report', payload);
       setBanner({
         type: 'success',
         message: `Reported successfully. Tracking ID: ${res.trackingId}${
@@ -138,213 +133,33 @@ export default function AccidentForm() {
           <label className="flex items-center gap-3">
             <input
               type="checkbox"
+              name="isEmergency"
               checked={form.isEmergency}
               onChange={(e) => updateField('isEmergency', e.target.checked)}
               className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
             />
             <span className="text-slate-700 font-medium">
-              This is an <b>Emergency</b> accident (quick form)
+              This is an <b>Emergency</b> accident
             </span>
           </label>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-6">
           {/* Common fields */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Accident Type
-            </label>
-            <select
-              value={form.accidentType}
-              onChange={(e) => updateField('accidentType', e.target.value)}
-              className="w-full rounded-xl border-slate-300 shadow-sm focus:ring-indigo-500"
-            >
-              {ACCIDENT_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              NIC (optional)
-            </label>
-            <input
-              type="text"
-              value={form.nic}
-              onChange={(e) => updateField('nic', e.target.value)}
-              className="w-full rounded-xl border-slate-300 shadow-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Location <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.locationText}
-              onChange={(e) => updateField('locationText', e.target.value)}
-              required
-              className="w-full rounded-xl border-slate-300 shadow-sm"
-            />
-          </div>
-
-          {/* Evidence */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Evidence (images/videos)
-            </label>
-            <input
-              type="file"
-              multiple
-              accept="image/*,video/*"
-              onChange={(e) => onFiles(e.target.files)}
-              className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-            />
-            {evidence.length > 0 && (
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                {evidence.map((ev, idx) => (
-                  <div key={idx} className="relative">
-                    {ev.url.startsWith('data:video') ? (
-                      <video
-                        src={ev.url}
-                        controls
-                        className="rounded-lg border border-slate-200"
-                      />
-                    ) : (
-                      <img
-                        src={ev.url}
-                        alt={ev.name}
-                        className="rounded-lg border border-slate-200"
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <BasicDetails
+            form={form}
+            updateField={updateField}
+            evidence={evidence}
+            onFiles={onFiles}
+          />
 
           {/* Non-emergency details */}
           {!form.isEmergency && (
-            <>
-              <div className="border-t pt-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">
-                  Victim Details
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    placeholder="Full Name"
-                    value={form.victim.fullName}
-                    onChange={(e) =>
-                      updateField('victim.fullName', e.target.value)
-                    }
-                    className="rounded-xl border-slate-300 shadow-sm"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Phone"
-                    value={form.victim.phone}
-                    onChange={(e) =>
-                      updateField('victim.phone', e.target.value)
-                    }
-                    className="rounded-xl border-slate-300 shadow-sm"
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    value={form.victim.email}
-                    onChange={(e) =>
-                      updateField('victim.email', e.target.value)
-                    }
-                    className="rounded-xl border-slate-300 shadow-sm"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Address"
-                    value={form.victim.address}
-                    onChange={(e) =>
-                      updateField('victim.address', e.target.value)
-                    }
-                    className="rounded-xl border-slate-300 shadow-sm"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Insurance Company"
-                    value={form.victim.insuranceCompany}
-                    onChange={(e) =>
-                      updateField('victim.insuranceCompany', e.target.value)
-                    }
-                    className="rounded-xl border-slate-300 shadow-sm"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Policy No."
-                    value={form.victim.insurancePolicyNo}
-                    onChange={(e) =>
-                      updateField('victim.insurancePolicyNo', e.target.value)
-                    }
-                    className="rounded-xl border-slate-300 shadow-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">
-                  Vehicle Details
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    placeholder="Plate No."
-                    value={form.vehicle.plateNo}
-                    onChange={(e) =>
-                      updateField('vehicle.plateNo', e.target.value)
-                    }
-                    className="rounded-xl border-slate-300 shadow-sm"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Make"
-                    value={form.vehicle.make}
-                    onChange={(e) =>
-                      updateField('vehicle.make', e.target.value)
-                    }
-                    className="rounded-xl border-slate-300 shadow-sm"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Model"
-                    value={form.vehicle.model}
-                    onChange={(e) =>
-                      updateField('vehicle.model', e.target.value)
-                    }
-                    className="rounded-xl border-slate-300 shadow-sm"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Color"
-                    value={form.vehicle.color}
-                    onChange={(e) =>
-                      updateField('vehicle.color', e.target.value)
-                    }
-                    className="rounded-xl border-slate-300 shadow-sm"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Owner NIC"
-                    value={form.vehicle.ownerNIC}
-                    onChange={(e) =>
-                      updateField('vehicle.ownerNIC', e.target.value)
-                    }
-                    className="rounded-xl border-slate-300 shadow-sm md:col-span-2"
-                  />
-                </div>
-              </div>
-            </>
+            <AdditionalDetails
+              victim={form.victim}
+              vehicle={form.vehicle}
+              updateField={updateField}
+            />
           )}
 
           <div className="pt-6">

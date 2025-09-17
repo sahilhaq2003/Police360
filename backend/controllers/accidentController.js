@@ -1,11 +1,10 @@
 const Accident = require('../models/AccidentModel');
 const { nanoid } = require('nanoid');
 
-// helper: INS reference only when insuranceCompany exists
 function maybeCreateInsuranceRef(victim) {
   if (!victim) return undefined;
   if (!victim.insuranceCompany) return undefined;
-  // INS-XXXXXX
+
   return `INS-${Math.random().toString().slice(2, 8)}`;
 }
 
@@ -46,7 +45,6 @@ exports.getByTrackingId = async (req, res) => {
     const doc = await Accident.findOne({ trackingId });
     if (!doc) return res.status(404).json({ message: 'Not found' });
 
-    // public view: limited fields
     return res.json({
       trackingId: doc.trackingId,
       status: doc.status,
@@ -61,13 +59,7 @@ exports.getByTrackingId = async (req, res) => {
 // GET /api/accidents  (officers only, list with filters)
 exports.listAccidents = async (req, res) => {
   try {
-    const {
-      page = 1,
-      limit = 20,
-      status,
-      type,
-      q, // search by NIC / locationText / trackingId
-    } = req.query;
+    const { page = 1, limit = 20, status, type, q } = req.query;
 
     const filter = {};
     if (status) filter.status = status;
