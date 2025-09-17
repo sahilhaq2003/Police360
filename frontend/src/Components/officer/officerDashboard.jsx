@@ -10,6 +10,7 @@ const OfficerDashboard = () => {
   const [reports, setReports] = useState([]);
   const [stats, setStats] = useState({ assigned: 0, inProgress: 0, completed: 0 });
   const [loading, setLoading] = useState(true);
+  const [me, setMe] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -33,6 +34,18 @@ const OfficerDashboard = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const loadMe = async () => {
+      try {
+        const id = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+        if (!id) return;
+        const res = await axiosInstance.get(`/officers/${id}`);
+        setMe(res.data || null);
+      } catch {}
+    };
+    loadMe();
+  }, []);
+
   const logout = () => {
     localStorage.clear();
     sessionStorage.clear();
@@ -46,9 +59,13 @@ const OfficerDashboard = () => {
       <div className="border-b border-[#E4E9F2] bg-white/80 backdrop-blur sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ShieldCheck className="w-6 h-6 text-[#00296B]" />
+            {me?.photo ? (
+              <img src={me.photo} alt={me.name} className="w-9 h-9 rounded-full object-cover border border-[#E4E9F2]" />
+            ) : (
+              <ShieldCheck className="w-6 h-6 text-[#00296B]" />
+            )}
             <div>
-              <div className="text-sm text-[#5A6B85]">Police360</div>
+              <div className="text-sm text-[#5A6B85]">{me?.name || 'Police360'}</div>
               <h1 className="text-xl font-semibold tracking-tight">Officer Panel</h1>
             </div>
           </div>
