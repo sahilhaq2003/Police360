@@ -84,6 +84,12 @@ const OfficerDashboard = () => {
             desc="Check upcoming shifts and duty allocations."
             onClick={() => navigate('/officer/calendar')}
           />
+          <ActionCard
+            icon={<FileText className="h-10 w-10" />}
+            title="Request Admin"
+            desc="Create requests and track their status."
+            onClick={() => navigate('/officer/request')}
+          />
         </div>
 
         <div className="mt-10">
