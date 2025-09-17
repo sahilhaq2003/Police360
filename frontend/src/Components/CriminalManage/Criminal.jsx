@@ -7,7 +7,6 @@ export default function CriminalRecord() {
     name: "",
     aliases: "",
     address: "",
-    recordIdBlocks: Array(7).fill(""),
     gender: "",
     citizen: "",
     height: "",
@@ -53,12 +52,6 @@ export default function CriminalRecord() {
 
   // Helpers
   const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
-  const updateRecordIdBlock = (idx, val) =>
-    setForm((f) => {
-      const blocks = [...f.recordIdBlocks];
-      blocks[idx] = val.toUpperCase().slice(0, 1);
-      return { ...f, recordIdBlocks: blocks };
-    });
 
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0];
@@ -96,7 +89,6 @@ export default function CriminalRecord() {
       ...form,
       fileNumber: fileNumber,
       recordId: recordId,
-      recordIdBlocks: form.recordIdBlocks.join(""),
       arrests: rows,
       photo: photoUrl,
       fingerprints: prints.map((p) => p.name).filter(Boolean),
