@@ -12,6 +12,7 @@ const ViewRequests = () => {
   const [replyText, setReplyText] = useState('');
   const [appointmentInputs, setAppointmentInputs] = useState({});
   const [typeFilter, setTypeFilter] = useState('Request Appointment');
+  const [search, setSearch] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -61,7 +62,17 @@ const ViewRequests = () => {
     }
   };
 
-  const filtered = requests.filter((r) => r.type === typeFilter);
+  const normalized = (s) => (s || '').toString().toLowerCase();
+  const filtered = requests.filter((r) => {
+    if (r.type !== typeFilter) return false;
+    const q = normalized(search);
+    if (!q) return true;
+    const officerName = normalized(r.officerId?.name);
+    const subject = normalized(r.subject);
+    const description = normalized(r.description);
+    const status = normalized(r.status);
+    return officerName.includes(q) || subject.includes(q) || description.includes(q) || status.includes(q);
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] via-[#f1f5f9] to-[#f8fafc] text-[#0B214A]">
@@ -99,6 +110,14 @@ const ViewRequests = () => {
           >
             Requests
           </button>
+          <div className="ml-auto">
+            <input
+              className="w-72 border border-[#E4E9F2] rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0B214A]"
+              placeholder="Search officer, subject, description, status"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
 
         {/* Error */}
