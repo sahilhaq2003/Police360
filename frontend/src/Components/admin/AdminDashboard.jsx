@@ -236,6 +236,12 @@ const AdminDashboard = () => {
             desc="Onboard new officers with secure credentials."
             onClick={() => navigate('/admin/register-officer')}
           />
+          <ActionCard
+            icon={<ListChecks className="h-10 w-10" />}
+            title="Officer Requests"
+            desc="Review and approve/deny officer requests."
+            onClick={() => navigate('/admin/requests')}
+          />
         </div>
 
         {/* REPORTS STATS */}

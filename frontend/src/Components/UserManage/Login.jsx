@@ -26,6 +26,7 @@ const handleSubmit = async (e) => {
     const storage = rememberMe ? localStorage : sessionStorage;
     storage.setItem('token', token);
     storage.setItem('role', officer.role);
+    storage.setItem('userId', officer.id);
 
     // Only Admins go to /admin/dashboard, all others go to /officer/officerDashboard
     if (officer.role === 'Admin') {
