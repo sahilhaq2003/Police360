@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
+import AdminHeader from '../AdminHeader/AdminHeader';
 import {
   FileText,
   UserCheck,
@@ -148,56 +149,11 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
-      {/* Top bar */}
-      <div className="border-b border-[#E4E9F2] bg-white/80 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="w-6 h-6 text-[#00296B]" />
-            <div>
-              <div className="text-sm text-[#5A6B85]">Police360</div>
-              <h1 className="text-xl font-semibold tracking-tight">Admin Panel</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Officer quick jump */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-[#6B7A99] absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                className="pl-9 pr-3 py-2 rounded-lg text-sm border border-[#D6DEEB] bg-white w-64 focus:outline-none focus:ring-2 focus:ring-[#00296B]"
-                placeholder="Jump officer: ID / Username / Email"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && quickJumpOfficer()}
-              />
-            </div>
-
-            {/* Report quick jump */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-[#6B7A99] absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                className="pl-9 pr-3 py-2 rounded-lg text-sm border border-[#D6DEEB] bg-white w-64 focus:outline-none focus:ring-2 focus:ring-[#00296B]"
-                placeholder="Jump report: number / email / location"
-                value={rq}
-                onChange={(e) => setRq(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && quickJumpReport()}
-              />
-            </div>
-
-            <button
-              onClick={logout}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0B214A] text-white hover:opacity-95"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
-
+      <AdminHeader />
       <div className="max-w-6xl mx-auto px-4 py-10">
         {/* Greeting */}
         <div className="mb-8">
-          <h2 className="text-3xl font-extrabold tracking-tight">Welcome back, Admin</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight">Welcome back, Chief</h2>
           <p className="text-sm text-[#5A6B85] mt-1">Manage officers, review reports, and keep the system running smoothly.</p>
         </div>
 

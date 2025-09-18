@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { MapPin, LogOut } from "lucide-react";
+import { MapPin, LogOut, Shield, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/PLogo.png";
 
-export default function PoliceHeader() {
+export default function AdminHeader() {
   const [currentLocation, setCurrentLocation] = useState("");
   const navigate = useNavigate();
   const now = new Date();
@@ -70,14 +70,14 @@ export default function PoliceHeader() {
     <div className="bg-white-600 p-2">
       <div className="mx-auto grid grid-cols-3 max-w-10xl items-center bg-white/80 py-2 shadow-md px-4 lg:px-20">
         {/* Left logo + title */}
-        <div className="flex items-center gap-3 ">
+        <div className="flex items-center gap-3">
           <img src={logo} alt="Police Badge" className="h-16 w-16 rounded-full bg-[#0B214A]" />
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-semibold text-[#0B214A] text-[16px]">
               Police360, Sri Lanka.
             </span>
             <span className="text-xs text-[#5A6B85]-100 text-[13px]">
-              Police Database Terminal
+              Chief Control Panel
             </span>
           </div>
         </div>
@@ -88,11 +88,15 @@ export default function PoliceHeader() {
           <div>{time}</div>
         </div>
 
-        {/* Right officer info + logout */}
+        {/* Right admin info + logout */}
         <div className="flex items-center gap-3 justify-self-end">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-[#0B214A]" />
+            <Settings className="w-4 h-4 text-[#5A6B85]" />
+          </div>
           <div className="flex flex-col items-end">
             <span className="text-sm font-medium text-[#0B214A] text-[16px]">
-              Welcome Officer, {localStorage.getItem('userName') || sessionStorage.getItem('userName') || 'Officer Name'}
+              Welcome Chief, {localStorage.getItem('userName') || sessionStorage.getItem('userName') || 'Admin Name'}
             </span>
             <div className="flex items-center gap-1 text-[13px] text-[#5A6B85]-100">
               <MapPin size={12} />
