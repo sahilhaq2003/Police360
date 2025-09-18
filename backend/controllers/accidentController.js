@@ -1,4 +1,5 @@
 const Accident = require('../models/AccidentModel');
+const Officer = require('../models/Officer');
 const { nanoid } = require('nanoid');
 
 function maybeCreateInsuranceRef(victim) {
@@ -79,6 +80,7 @@ exports.listAccidents = async (req, res) => {
 
     const [items, total] = await Promise.all([
       Accident.find(filter)
+        .populate('assignedOfficer', 'name officerId email station role')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit)),
@@ -99,7 +101,10 @@ exports.listAccidents = async (req, res) => {
 // GET /api/accidents/:id
 exports.getAccident = async (req, res) => {
   try {
-    const doc = await Accident.findById(req.params.id);
+    const doc = await Accident.findById(req.params.id).populate(
+      'assignedOfficer',
+      'name officerId email station role'
+    );
     if (!doc) return res.status(404).json({ message: 'Not found' });
     return res.json(doc);
   } catch (err) {
@@ -162,6 +167,28 @@ exports.addInvestigationNote = async (req, res) => {
     await doc.save();
 
     return res.status(201).json(doc);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
+// POST /api/accidents/:id/assign  (officers/admin)
+exports.assignOfficer = async (req, res) => {
+  try {
+    const { officerId } = req.body;
+    if (!officerId) return res.status(400).json({ message: 'officerId is required' });
+
+    const officer = await Officer.findById(officerId);
+    if (!officer) return res.status(404).json({ message: 'Officer not found' });
+
+    const doc = await Accident.findByIdAndUpdate(
+      req.params.id,
+      { assignedOfficer: officer._id, status: 'UNDER_INVESTIGATION', updatedAt: new Date() },
+      { new: true }
+    ).populate('assignedOfficer', 'name officerId email station role');
+
+    if (!doc) return res.status(404).json({ message: 'Not found' });
+    return res.json(doc);
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }

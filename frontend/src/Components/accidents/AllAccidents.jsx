@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { Eye, UserCheck } from 'lucide-react';
+import { assignAccidentOfficer } from '../../utils/accidentapi';
+import axiosInstance from '../../utils/axiosInstance';
+import PoliceHeader from '../PoliceHeader/PoliceHeader';
 
 const URL = 'http://localhost:8000/api/accidents';
 
@@ -22,63 +26,138 @@ const fetchHandler = async () => {
 
 function AllAccidents() {
   const [accidents, setAccidents] = useState([]);
+  const [officers, setOfficers] = useState([]);
+  const [assigningId, setAssigningId] = useState(null);
+  const [selectedOfficerId, setSelectedOfficerId] = useState('');
 
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchHandler().then((data) => setAccidents(data));
+    // load officers for dropdown (requires auth)
+    (async () => {
+      try {
+        const res = await axiosInstance.get('/officers', { params: { page: 1, pageSize: 100 } });
+        const list = res.data?.data?.docs || res.data?.data || res.data || [];
+        setOfficers(Array.isArray(list) ? list : []);
+      } catch (e) {
+        // ignore; dropdown will be empty on failure
+      }
+    })();
   }, []);
 
   const handleView = (accident) => {
     navigate(`/accidents/${accident._id}`);
   };
 
+  const startAssign = (accident) => {
+    setAssigningId(accident._id);
+    setSelectedOfficerId('');
+  };
+
+  const cancelAssign = () => {
+    setAssigningId(null);
+    setSelectedOfficerId('');
+  };
+
+  const confirmAssign = async (accident) => {
+    if (!selectedOfficerId) return alert('Please select an officer');
+    try {
+      const updated = await assignAccidentOfficer(accident._id, selectedOfficerId);
+      setAccidents((prev) => prev.map((a) => (a._id === accident._id ? updated : a)));
+      setAssigningId(null);
+      setSelectedOfficerId('');
+    } catch (e) {
+      alert(e?.response?.data?.message || e.message || 'Failed to assign');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-4">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
-          Accident Records
-        </h1>
+    <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
+      <PoliceHeader />
+      <div className="max-w-7xl mx-auto px-4 py-10">
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-extrabold tracking-tight">Accident Records</h1>
+          <p className="text-sm text-[#5A6B85] mt-1">Browse, assign and manage reported accidents</p>
+        </div>
 
         {accidents.length === 0 ? (
-          <p className="text-center text-gray-500">No accidents found.</p>
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl p-4 text-sm">No accidents found.</div>
         ) : (
-          <div className="overflow-x-auto shadow rounded-2xl">
-            <table className="min-w-full bg-white border border-gray-200 rounded-2xl">
-              <thead className="bg-gray-200 text-gray-700 uppercase text-sm">
+          <div className="bg-white border border-[#E4E9F2] rounded-2xl shadow overflow-hidden">
+            <table className="min-w-full text-sm">
+              <thead className="bg-[#F5F7FB] text-[#00296B] text-xs uppercase">
                 <tr>
-                  <th className="py-3 px-4 border-b">ID</th>
-                  <th className="py-3 px-4 border-b">Tracking ID</th>
-                  <th className="py-3 px-4 border-b">Type</th>
-                  <th className="py-3 px-4 border-b">Emergency</th>
-                  <th className="py-3 px-4 border-b">Location</th>
-                  <th className="py-3 px-4 border-b text-center">Actions</th>
+                  <th className="px-4 py-3 text-left">ID</th>
+                  <th className="px-4 py-3 text-left">Tracking ID</th>
+                  <th className="px-4 py-3 text-left">Type</th>
+                  <th className="px-4 py-3 text-left">Emergency</th>
+                  <th className="px-4 py-3 text-left">Location</th>
+                  <th className="px-4 py-3 text-left">Assigned Officer</th>
+                  <th className="px-4 py-3 text-left">Actions</th>
                 </tr>
               </thead>
-              <tbody className="text-gray-600 text-sm divide-y divide-gray-200">
+              <tbody>
                 {accidents.map((accident) => (
-                  <tr
-                    key={accident._id}
-                    className="hover:bg-gray-50 transition duration-200"
-                  >
-                    <td className="py-3 px-4">{accident._id}</td>
-                    <td className="py-3 px-4">{accident.trackingId}</td>
-                    <td className="py-3 px-4">{accident.accidentType}</td>
-                    <td className="py-3 px-4">
-                      {accident.isEmergency ? (
-                        <span className="text-red-600 font-semibold">Yes</span>
-                      ) : (
-                        <span className="text-green-600">No</span>
-                      )}
+                  <tr key={accident._id} className="border-t border-[#F0F2F7] hover:bg-[#FFFBEA]">
+                    <td className="px-4 py-3 align-middle truncate max-w-[160px]">{accident._id}</td>
+                    <td className="px-4 py-3 align-middle">{accident.trackingId}</td>
+                    <td className="px-4 py-3 align-middle">{accident.accidentType?.replaceAll('_',' ')}</td>
+                    <td className="px-4 py-3 align-middle">
+                      <span className={`px-2 py-1 text-xs rounded-full font-semibold ${accident.isEmergency ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                        {accident.isEmergency ? 'Emergency' : 'Normal'}
+                      </span>
                     </td>
-                    <td className="py-3 px-4">{accident.locationText}</td>
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => handleView(accident)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition"
-                      >
-                        View
-                      </button>
+                    <td className="px-4 py-3 align-middle truncate max-w-[220px]">{accident.locationText}</td>
+                    <td className="px-4 py-3 align-middle">
+                      {accident.assignedOfficer
+                        ? (accident.assignedOfficer.name || accident.assignedOfficer.officerId || String(accident.assignedOfficer))
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-3 align-middle">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleView(accident)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[#D6DEEB] text-xs hover:bg-[#F5F7FB]"
+                        >
+                          <Eye className="w-4 h-4" /> View
+                        </button>
+                        {assigningId === accident._id ? (
+                          <div className="flex items-center gap-2">
+                            <select
+                              className="px-2 py-1 rounded-lg border border-[#D6DEEB] bg-white text-xs"
+                              value={selectedOfficerId}
+                              onChange={(e) => setSelectedOfficerId(e.target.value)}
+                            >
+                              <option value="">Select officer…</option>
+                              {officers.map((o) => (
+                                <option key={o._id} value={o._id}>
+                                  {o.name || o.officerId || o.email}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={() => confirmAssign(accident)}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#0B214A] text-white text-xs hover:opacity-95"
+                            >
+                              <UserCheck className="w-4 h-4" /> Save
+                            </button>
+                            <button
+                              onClick={cancelAssign}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[#D6DEEB] text-xs hover:bg-[#F5F7FB]"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => startAssign(accident)}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#0B214A] text-white text-xs hover:opacity-95"
+                          >
+                            <UserCheck className="w-4 h-4" /> Assign
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
