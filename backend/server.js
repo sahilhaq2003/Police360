@@ -8,7 +8,12 @@ const connectDB = require('./config/db');
 const officerRoutes = require('./routes/officerRoutes');
 const authRoutes = require('./routes/authRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+
+const requestRoutes = require('./routes/requestRoutes');
+const scheduleRoutes = require('./routes/scheduleRoutes');
+
 const accidentRoutes = require('./routes/accidentRoutes');
+
 
 dotenv.config();
 connectDB();
@@ -41,6 +46,8 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/officers', officerRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/requests', requestRoutes);
+app.use('/api/schedules', scheduleRoutes);
 
 //Enuri Routes
 
