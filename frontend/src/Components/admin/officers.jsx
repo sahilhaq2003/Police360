@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
+import AdminHeader from '../AdminHeader/AdminHeader';
 import {
   Search, Filter, Eye, RefreshCcw, Download,
   Users, UserCheck, UserCog, ShieldCheck, ChevronUp, ChevronDown
 } from 'lucide-react';
+
 
 const Officers = () => {
   const navigate = useNavigate();
@@ -92,8 +94,9 @@ const Officers = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A] px-4 py-10">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
+      <AdminHeader />
+      <div className="max-w-7xl mx-auto px-4 py-10">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight">Officer Directory</h1>
           <p className="text-sm text-[#5A6B85] mt-1">Search, filter, and manage officers</p>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { CheckCircle, XCircle, Send, ArrowLeft } from "lucide-react";
+import AdminHeader from "../AdminHeader/AdminHeader";
 
 const ViewRequests = () => {
   const navigate = useNavigate();
@@ -88,6 +89,7 @@ const ViewRequests = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 text-slate-800">
+      <AdminHeader />
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
