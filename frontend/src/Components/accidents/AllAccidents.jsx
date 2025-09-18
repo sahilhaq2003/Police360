@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const URL = 'http://localhost:8000/api/accidents';
 
@@ -22,15 +23,14 @@ const fetchHandler = async () => {
 function AllAccidents() {
   const [accidents, setAccidents] = useState([]);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     fetchHandler().then((data) => setAccidents(data));
   }, []);
 
   const handleView = (accident) => {
-    alert(
-      `Viewing accident:\nID: ${accident._id}\nType: ${accident.accidentType}`
-    );
-    //navigate to details page or open a modal
+    navigate(`/accidents/${accident._id}`);
   };
 
   return (

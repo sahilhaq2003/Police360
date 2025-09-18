@@ -49,7 +49,9 @@ exports.getByTrackingId = async (req, res) => {
       trackingId: doc.trackingId,
       status: doc.status,
       lastUpdated: doc.updatedAt,
+      createdAt: doc.createdAt,
       notesCount: doc.investigationNotes?.length || 0,
+      investigationNotes: doc.investigationNotes || [],
     });
   } catch (err) {
     return res.status(400).json({ error: err.message });
@@ -94,7 +96,7 @@ exports.listAccidents = async (req, res) => {
   }
 };
 
-// GET /api/accidents/:id  (officers only - full details)
+// GET /api/accidents/:id
 exports.getAccident = async (req, res) => {
   try {
     const doc = await Accident.findById(req.params.id);
@@ -105,7 +107,7 @@ exports.getAccident = async (req, res) => {
   }
 };
 
-// PUT /api/accidents/:id  (officers only)
+// PUT /api/accidents/:id
 exports.updateAccident = async (req, res) => {
   try {
     const update = { ...req.body, updatedAt: new Date() };

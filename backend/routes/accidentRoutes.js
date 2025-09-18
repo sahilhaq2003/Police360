@@ -11,16 +11,14 @@ const {
   addInvestigationNote,
 } = require('../controllers/accidentController');
 
-const { protect } = require('../middlewares/authMiddleware');
-
 router.post('/report', reportAccident);
 router.get('/track/:trackingId', getByTrackingId);
 
 // OFFICERS (AUTH REQUIRED)
 router.get('/', listAccidents);
-router.get('/:id', protect, getAccident);
-router.put('/:id', protect, updateAccident);
-router.delete('/:id', protect, deleteAccident);
-router.post('/:id/notes', protect, addInvestigationNote);
+router.get('/:id', getAccident);
+router.put('/:id', updateAccident);
+router.delete('/:id', deleteAccident);
+router.post('/:id/notes', addInvestigationNote);
 
 module.exports = router;
