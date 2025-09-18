@@ -238,7 +238,11 @@ function Home() {
   ];
 
   const handleApplyClick = (service) => {
-    // Navigate to report form with service type
+    // Prefer direct link if provided; otherwise go to generic report form
+    if (service.link) {
+      navigate(service.link);
+      return;
+    }
     navigate('/report-form', { state: { reportType: service.title } });
   };
 

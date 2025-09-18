@@ -57,6 +57,7 @@ function App() {
           element={<OfficerDashboard />}
         />
         <Route path="/accident-form" element={<Accidentform />} />
+        <Route path="/apply/unknown-accident-report" element={<Accidentform />} />
         <Route path="/accidents" element={<AllAccidents />} />
         <Route path="/accidents/:id" element={<AccidentDetails />} />
         <Route path="/accidents/track" element={<TrackAccident />} />
