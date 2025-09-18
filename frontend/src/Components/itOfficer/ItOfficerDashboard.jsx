@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ServerCog, ShieldCheck, ClipboardList, Users2, LogOut } from 'lucide-react';
 import axiosInstance from '../../utils/axiosInstance';
+import PoliceHeader from '../PoliceHeader/PoliceHeader';
 
 const ItOfficerDashboard = () => {
   const navigate = useNavigate();
@@ -46,6 +47,7 @@ const ItOfficerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
+      <PoliceHeader />
       <div className="max-w-6xl mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
