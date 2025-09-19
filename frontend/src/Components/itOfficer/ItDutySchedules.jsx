@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
+import PoliceHeader from '../PoliceHeader/PoliceHeader';
 
 const ItDutySchedules = () => {
   const navigate = useNavigate();
@@ -54,6 +55,7 @@ const ItDutySchedules = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
+      <PoliceHeader />
       <div className="max-w-6xl mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl md:text-3xl font-bold">Manage Duty Schedules</h1>

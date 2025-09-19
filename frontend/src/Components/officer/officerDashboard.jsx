@@ -4,7 +4,7 @@ import {
   FileText, ClipboardCheck, BookMarked, CalendarDays, ShieldCheck, LogOut
 } from 'lucide-react';
 import axiosInstance from '../../utils/axiosInstance';
-import PoliceHeader from '../PoliceHeader/PoliceHeader';
+import PoliceHeader from '../../Components/PoliceHeader/PoliceHeader';
 
 const OfficerDashboard = () => {
   const navigate = useNavigate();
@@ -57,11 +57,7 @@ const OfficerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
-
       <PoliceHeader />
-      
-
-
       <div className="max-w-6xl mx-auto px-4 py-10">
       <div className="flex items-center gap-3">
             {me?.photo ? (
@@ -101,7 +97,7 @@ const OfficerDashboard = () => {
           />
           <ActionCard
             icon={<FileText className="h-10 w-10" />}
-            title="Request Admin"
+            title="Request Chief"
             desc="Create requests and track their status."
             onClick={() => navigate('/officer/request')}
           />

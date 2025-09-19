@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
+import PoliceHeader from '../PoliceHeader/PoliceHeader';
 
 const OfficerRequest = () => {
   const navigate = useNavigate();
@@ -59,6 +60,7 @@ const OfficerRequest = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
+      <PoliceHeader />
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Officer Requests</h1>
