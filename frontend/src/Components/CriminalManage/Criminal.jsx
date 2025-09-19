@@ -2,8 +2,96 @@ import React, { useRef, useState } from "react";
 import PoliceHeader from "../PoliceHeader/PoliceHeader";
 
 export default function CriminalRecord() {
+  // Offense code list
+  const OFFENSE_CODES = [
+    { code: "09A", desc: "Murder and Nonnegligent Manslaughter" },
+    { code: "09B", desc: "Negligent Manslaughter" },
+    { code: "09C", desc: "Justifiable Homicide" },
+    { code: "100", desc: "Kidnapping / Abduction" },
+    { code: "11A", desc: "Rape" },
+    { code: "11B", desc: "Sodomy" },
+    { code: "11C", desc: "Sexual Assault With Object" },
+    { code: "11D", desc: "Fondling" },
+    { code: "120", desc: "Robbery" },
+    { code: "13A", desc: "Aggravated Assault" },
+    { code: "13B", desc: "Simple Assault" },
+    { code: "13C", desc: "Intimidation" },
+    { code: "220", desc: "Burglary / Breaking and Entering" },
+    { code: "23A", desc: "Pocket-picking" },
+  ];
+  // Institution options (police stations)
+  const INSTITUTIONS = [
+    "Gampaha Police Station",
+    "Horana Police Station",
+    "Colombo Police Station",
+    "Ragama Police Station",
+    "Kaduwela Police Station",
+    "Athurugiriya Police Station",
+    "Kolonnawa Police Station",
+    "Boralla Police Station",
+    "Bandaragama Police Station",
+  ];
+
+  // Charge and description options
+  const CHARGE_OPTIONS = [
+    {
+      label: "Murder (Homicide)",
+      desc: "Unlawfully killing another person with intent or malice aforethought.",
+      exampleTerm: "25 years to life",
+    },
+    {
+      label: "Manslaughter (Voluntary)",
+      desc: "Killing another person without premeditation, often in the heat of passion.",
+      exampleTerm: "10 years",
+    },
+    {
+      label: "Manslaughter (Involuntary)",
+      desc: "Causing a death unintentionally through reckless or negligent acts.",
+      exampleTerm: "5 years",
+    },
+    {
+      label: "Assault (Aggravated)",
+      desc: "Intentionally causing serious bodily injury or using a deadly weapon.",
+      exampleTerm: "7 years",
+    },
+    {
+      label: "Assault (Simple)",
+      desc: "Intentionally causing or attempting to cause physical harm without a weapon.",
+      exampleTerm: "1 year",
+    },
+    { label: "Battery", desc: "Unlawful physical contact or force on another person.", exampleTerm: "6 months" },
+    {
+      label: "Robbery",
+      desc: "Taking property directly from a person by force, violence, or intimidation.",
+      exampleTerm: "8 years",
+    },
+    {
+      label: "Burglary",
+      desc: "Entering a building or structure unlawfully with intent to commit a crime (usually theft).",
+      exampleTerm: "5 years",
+    },
+    {
+      label: "Theft / Larceny",
+      desc: "Taking someone’s property without permission and with intent to permanently deprive them of it.",
+      exampleTerm: "2 years",
+    },
+    { label: "Shoplifting", desc: "Stealing merchandise from a retail store.", exampleTerm: "6 months probation" },
+    { label: "Motor Vehicle Theft", desc: "Stealing or attempting to steal a motor vehicle.", exampleTerm: "4 years" },
+    {
+      label: "Fraud",
+      desc: "Obtaining money, goods, or services by deception or false representation.",
+      exampleTerm: "3 years",
+    },
+    {
+      label: "Embezzlement",
+      desc: "Stealing money or property entrusted to you, often from an employer.",
+      exampleTerm: "5 years",
+    },
+  ];
   // --- Core form state ---
   const [form, setForm] = useState({
+    criminalId: "",
+    nic: "",
     name: "",
     aliases: "",
     address: "",
@@ -15,6 +103,10 @@ export default function CriminalRecord() {
     hairColor: "",
     maritalStatus: "",
     criminalStatus: "",
+    rewardPrice: "",
+    arrestDate: "",
+    prisonDays: "",
+    releaseDate: "",
     dob: { d: "", m: "", y: "" },
     otherInfo: "",
     crimeInfo: "",
@@ -46,9 +138,9 @@ export default function CriminalRecord() {
     { date: "", offenseCode: "", institution: "", charge: "", term: "" },
   ]);
 
-  // --- Fingerprints (8 slots) ---
-  const [prints, setPrints] = useState(Array(8).fill({ name: "", url: "" }));
-  const printInputRefs = useRef([...Array(8)].map(() => React.createRef()));
+  // --- Fingerprints (6 slots) ---
+  const [prints, setPrints] = useState(Array(6).fill({ name: "", url: "" }));
+  const printInputRefs = useRef([...Array(6)].map(() => React.createRef()));
 
   // Helpers
   const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
@@ -92,6 +184,11 @@ export default function CriminalRecord() {
       arrests: rows,
       photo: photoUrl,
       fingerprints: prints.map((p) => p.name).filter(Boolean),
+      // Conditional fields may be empty depending on status
+      rewardPrice: form.criminalStatus === 'wanted' ? form.rewardPrice : undefined,
+      arrestDate: form.criminalStatus === 'arrested' ? form.arrestDate : undefined,
+      prisonDays: form.criminalStatus === 'in prison' ? form.prisonDays : undefined,
+      releaseDate: form.criminalStatus === 'released' ? form.releaseDate : undefined,
     };
     console.log("CRIMINAL RECORD SUBMIT =>", payload);
     alert("Saved (check console for payload). Hook this to your API.");
@@ -154,6 +251,27 @@ export default function CriminalRecord() {
           
           {/* Left big column */}
           <div className="col-span-12 md:col-span-8">
+            {/* Criminal ID & NIC */}
+            <div className="grid grid-cols-2 gap-4 mb-3">
+              <div>
+                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Criminal ID</label>
+                <input
+                  value={form.criminalId}
+                  onChange={(e) => update("criminalId", e.target.value)}
+                  placeholder=""
+                  className="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">NIC Number</label>
+                <input
+                  value={form.nic}
+                  onChange={(e) => update("nic", e.target.value)}
+                  placeholder=""
+                  className="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
             {/* Name */}
             <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Full Name</label>
             <input
@@ -203,37 +321,91 @@ export default function CriminalRecord() {
               </div>
 
               <div>
-                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Height</label>
+                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Height (cm)</label>
                 <input
+                  type="number"
+                  min={50}
+                  max={250}
+                  step={1}
+                  placeholder="50 - 250"
                   value={form.height}
-                  onChange={(e) => update("height", e.target.value)}
+                  onChange={(e) => {
+                    const raw = Number(e.target.value);
+                    if (Number.isNaN(raw)) { update("height", ""); return; }
+                    const clamped = Math.max(50, Math.min(250, raw));
+                    update("height", String(clamped));
+                  }}
                   className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Weight</label>
+                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Weight (kg)</label>
                 <input
+                  type="number"
+                  min={20}
+                  max={250}
+                  step={1}
+                  placeholder="20 - 250"
                   value={form.weight}
-                  onChange={(e) => update("weight", e.target.value)}
+                  onChange={(e) => {
+                    const raw = Number(e.target.value);
+                    if (Number.isNaN(raw)) { update("weight", ""); return; }
+                    const clamped = Math.max(20, Math.min(250, raw));
+                    update("weight", String(clamped));
+                  }}
                   className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
 
               <div>
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Eye Color</label>
-                <input
+                <select
                   value={form.eyeColor}
                   onChange={(e) => update("eyeColor", e.target.value)}
-                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
-                />
+                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+                >
+                  <option value="">Select Eye Color</option>
+                  <option>Brown</option>
+                  <option>Dark Brown</option>
+                  <option>Light Brown</option>
+                  <option>Blue</option>
+                  <option>Light Blue</option>
+                  <option>Green</option>
+                  <option>Hazel</option>
+                  <option>Amber</option>
+                  <option>Gray</option>
+                  <option>Black</option>
+                  <option>Hazel Green</option>
+                  <option>Hazel Brown</option>
+                  <option>Violet</option>
+                  <option>Red</option>
+                  <option>Other</option>
+                </select>
               </div>
               <div>
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Hair Color</label>
-                <input
+                <select
                   value={form.hairColor}
                   onChange={(e) => update("hairColor", e.target.value)}
-                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
-                />
+                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+                >
+                  <option value="">Select Hair Color</option>
+                  <option>Black</option>
+                  <option>Dark Brown</option>
+                  <option>Brown</option>
+                  <option>Light Brown</option>
+                  <option>Blonde</option>
+                  <option>Dark Blonde</option>
+                  <option>Platinum Blonde</option>
+                  <option>Auburn</option>
+                  <option>Red</option>
+                  <option>Strawberry Blonde</option>
+                  <option>Ginger</option>
+                  <option>Chestnut</option>
+                  <option>Gray</option>
+                  <option>White</option>
+                  <option>Dyed/Other</option>
+                </select>
               </div>
             </div>
 
@@ -241,11 +413,19 @@ export default function CriminalRecord() {
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div>
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Marital Status</label>
-                <input
+                <select
                   value={form.maritalStatus}
                   onChange={(e) => update("maritalStatus", e.target.value)}
-                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
-                />
+                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+                >
+                  <option value="">Select Status</option>
+                  <option>Single</option>
+                  <option>Married</option>
+                  <option>Separated</option>
+                  <option>Divorced</option>
+                  <option>Engaged</option>
+                  <option>In a Relationship</option>
+                </select>
               </div>
               <div>
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Criminal Status</label>
@@ -262,6 +442,61 @@ export default function CriminalRecord() {
                 </select>
               </div>
             </div>
+
+            {/* Conditional fields by Criminal Status */}
+            {form.criminalStatus === 'wanted' && (
+              <div className="mt-3">
+                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Reward Price (LKR)</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  placeholder="Enter reward amount"
+                  value={form.rewardPrice}
+                  onChange={(e) => update("rewardPrice", e.target.value)}
+                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+            )}
+
+            {form.criminalStatus === 'arrested' && (
+              <div className="mt-3">
+                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Arrest Date</label>
+                <input
+                  type="date"
+                  value={form.arrestDate}
+                  onChange={(e) => update("arrestDate", e.target.value)}
+                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+            )}
+
+            {form.criminalStatus === 'in prison' && (
+              <div className="mt-3">
+                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Prison Time (days)</label>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  placeholder="Enter days"
+                  value={form.prisonDays}
+                  onChange={(e) => update("prisonDays", e.target.value)}
+                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+            )}
+
+            {form.criminalStatus === 'released' && (
+              <div className="mt-3">
+                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Release Date</label>
+                <input
+                  type="date"
+                  value={form.releaseDate}
+                  onChange={(e) => update("releaseDate", e.target.value)}
+                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+            )}
 
             {/* DOB */}
             <div className="mt-3">
@@ -339,10 +574,10 @@ export default function CriminalRecord() {
               Fingerprints
             </div>
 
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             {prints.map((p, i) => (
               <div key={i} className="rounded border border-gray-300 p-3 text-center">
-                <div className="mb-2 h-16 w-full overflow-hidden rounded bg-gray-50">
+                <div className="mb-2 h-30 w-full overflow-hidden rounded bg-gray-50">
                   {p.url ? (
                     <img src={p.url} alt={`fp-${i + 1}`} className="h-full w-full object-cover" />
                   ) : (
@@ -386,7 +621,7 @@ export default function CriminalRecord() {
           </div>
 
           <div className="overflow-x-auto">
-            <div className="grid grid-cols-[140px_140px_1fr_1fr_120px_40px] items-stretch border border-gray-300 bg-gray-50 text-[11px] uppercase text-gray-600">
+            <div className="grid grid-cols-[140px_200px_1fr_2fr_200px_40px] items-stretch border border-gray-300 bg-gray-50 text-[11px] uppercase text-gray-600">
               <div className="border-r border-gray-300 px-2 py-2">Date</div>
               <div className="border-r border-gray-300 px-2 py-2">Offense Code</div>
               <div className="border-r border-gray-300 px-2 py-2">Institution</div>
@@ -398,7 +633,7 @@ export default function CriminalRecord() {
             {rows.map((r, i) => (
               <div
                 key={i}
-                className="grid grid-cols-[140px_140px_1fr_1fr_120px_40px] items-center border-l border-r border-b border-gray-300"
+                className="grid grid-cols-[140px_200px_1fr_2fr_200px_40px] items-center border-l border-r border-b border-gray-300"
               >
                 <input
                   type="date"
@@ -406,21 +641,50 @@ export default function CriminalRecord() {
                   onChange={(e) => updateRow(i, "date", e.target.value)}
                   className="h-10 border-r border-gray-300 px-2 text-sm outline-none"
                 />
-                <input
+                <select
                   value={r.offenseCode}
                   onChange={(e) => updateRow(i, "offenseCode", e.target.value)}
-                  className="h-10 border-r border-gray-300 px-2 text-sm outline-none"
-                />
-                <input
+                  className="h-10 border-r border-gray-300 px-2 text-sm outline-none bg-white"
+                >
+                  <option value="">Select code</option>
+                  {OFFENSE_CODES.map((o) => (
+                    <option key={o.code} value={o.code} title={o.desc}>
+                      {o.code} — {o.desc}
+                    </option>
+                  ))}
+                </select>
+                <select
                   value={r.institution}
                   onChange={(e) => updateRow(i, "institution", e.target.value)}
-                  className="h-10 border-r border-gray-300 px-2 text-sm outline-none"
-                />
-                <input
+                  className="h-10 border-r border-gray-300 px-2 text-sm outline-none bg-white"
+                >
+                  <option value="">Select institution</option>
+                  {INSTITUTIONS.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+                <select
                   value={r.charge}
-                  onChange={(e) => updateRow(i, "charge", e.target.value)}
-                  className="h-10 border-r border-gray-300 px-2 text-sm outline-none"
-                />
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    updateRow(i, "charge", value);
+                    const match = CHARGE_OPTIONS.find((c) => c.label === value);
+                    if (match?.exampleTerm) {
+                      updateRow(i, "term", match.exampleTerm);
+                    }
+                  }}
+                  className="h-10 border-r border-gray-300 px-2 text-sm outline-none bg-white w-full text-left"
+                  title={r.charge ? CHARGE_OPTIONS.find((c) => c.label === r.charge)?.desc || "" : ""}
+                >
+                  <option value="">Select charge</option>
+                  {CHARGE_OPTIONS.map((c) => (
+                    <option key={c.label} value={c.label} title={c.desc}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
                 <input
                   value={r.term}
                   onChange={(e) => updateRow(i, "term", e.target.value)}

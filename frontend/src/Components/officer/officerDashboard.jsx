@@ -81,6 +81,12 @@ const OfficerDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ActionCard
+            icon={<ShieldCheck className="h-10 w-10" />}
+            title="Criminal Manage"
+            desc="Create and manage criminal records."
+            onClick={() => navigate('/CriminalManage/CriminalManage')}
+          />
           <ActionCard
             icon={<ClipboardCheck className="h-10 w-10" />}
             title="Assigned Reports"
@@ -99,6 +105,7 @@ const OfficerDashboard = () => {
             desc="Create requests and track their status."
             onClick={() => navigate('/officer/request')}
           />
+          
         </div>
 
         <div className="mt-10">

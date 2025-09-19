@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const requestRoutes = require('./routes/requestRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
+const criminalRoutes = require('./routes/criminalRoutes');
 
 dotenv.config();
 connectDB();
@@ -42,6 +43,7 @@ app.use('/api/officers', officerRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/schedules', scheduleRoutes);
+app.use('/api/criminals', criminalRoutes);
 
 app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
 
