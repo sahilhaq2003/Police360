@@ -30,15 +30,11 @@ const OfficerDashboard = () => {
         // load accidents assigned to me
         const myId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
         if (myId) {
-          const accRes = await axiosInstance.get('/accidents', { params: { page: 1, limit: 50 } });
-          const items = accRes.data?.items || accRes.data || [];
-          const mine = (Array.isArray(items) ? items : []).filter(a => {
-            const ao = a.assignedOfficer;
-            if (!ao) return false;
-            if (typeof ao === 'string') return ao === myId;
-            return ao._id === myId;
+          const accRes = await axiosInstance.get('/accidents', { 
+            params: { page: 1, limit: 50, assignedToMe: 'true' } 
           });
-          setMyAccidents(mine);
+          const items = accRes.data?.items || accRes.data || [];
+          setMyAccidents(items);
         }
       } catch (err) {
         console.error(err);
@@ -97,29 +93,38 @@ const OfficerDashboard = () => {
             desc="View all your assigned complaint and accident reports."
             onClick={() => navigate('/officer/reports')}
           />
-          <div className="bg-white border border-[#E4E9F2] rounded-2xl p-6 text-left shadow">
+          <button
+            onClick={() => navigate('/officer/assign-accidents')}
+            className="bg-white border border-[#E4E9F2] rounded-2xl p-6 text-left shadow hover:shadow-lg transition hover:-translate-y-0.5"
+          >
             <div className="mb-3 text-[#00296B]"><BookMarked className="h-10 w-10" /></div>
             <div className="text-lg font-semibold">Assigned Accidents</div>
-            <div className="text-sm text-[#5A6B85] mt-1">Accidents assigned to you</div>
+            <div className="text-sm text-[#5A6B85] mt-1">View and assign accidents to officers</div>
             <div className="mt-4 space-y-2">
               {loading ? (
                 <SkeletonRow />
               ) : myAccidents.length === 0 ? (
-                <div className="text-sm text-[#5A6B85]">No accidents assigned.</div>
+                <div className="text-sm text-[#5A6B85]">
+                  No accidents assigned to you. Click to view all accidents and assign them.
+                </div>
               ) : (
                 myAccidents.slice(0, 5).map((a) => (
-                  <button
+                  <div
                     key={a._id}
-                    onClick={() => navigate(`/accidents/${a._id}`)}
-                    className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition"
+                    className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] bg-[#F8FAFC]"
                   >
                     <div className="text-sm font-medium">{a.trackingId} • {a.accidentType?.replaceAll('_', ' ')}</div>
                     <div className="text-[11px] text-[#5A6B85]">{a.status} • {a.locationText}</div>
-                  </button>
+                    {a.assignedOfficer && (
+                      <div className="text-[10px] text-[#5A6B85] mt-1">
+                        Assigned to: {a.assignedOfficer.name}
+                      </div>
+                    )}
+                  </div>
                 ))
               )}
             </div>
-          </div>
+          </button>
           <ActionCard
             icon={<CalendarDays className="h-10 w-10" />}
             title="Duty Schedule"

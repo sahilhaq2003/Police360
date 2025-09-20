@@ -130,7 +130,7 @@ function AllAccidents() {
                               onChange={(e) => setSelectedOfficerId(e.target.value)}
                             >
                               <option value="">Select officer…</option>
-                              {officers.map((o) => (
+                              {officers.filter(o => o.role === 'Officer').map((o) => (
                                 <option key={o._id} value={o._id}>
                                   {o.name || o.officerId || o.email}
                                 </option>

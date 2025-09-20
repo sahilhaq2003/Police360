@@ -62,13 +62,5 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ message: 'Server error' });
 });
 
-app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
-
-app.use((err, _req, res, _next) => {
-  if (err.type === 'entity.too.large')
-    return res.status(413).json({ message: 'Payload too large' });
-  res.status(500).json({ message: 'Server error' });
-});
-
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

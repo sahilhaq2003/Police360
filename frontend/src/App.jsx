@@ -10,8 +10,9 @@ import OfficerProfile from './Components/admin/OfficerProfile';
 import ReportForm from './Components/Report/ReportForm';
 import ReportSuccess from './Components/Report/ReportSuccess';
 import OfficerDashboard from './Components/officer/officerDashboard';
+import AssignAccidents from './Components/officer/AssignAccidents';
 import Accidentform from './Components/accidents/accidentform';
-import AllAccidents from './Components/accidents/allAccidents';
+import AllAccidents from './Components/accidents/AllAccidents';
 import AccidentDetails from './Components/accidents/AccidentDetails';
 import TrackAccident from './Components/accidents/TrackAccident';
 
@@ -39,23 +40,14 @@ function App() {
         <Route path="/report-success" element={<ReportSuccess />} />
 
         <Route path="/officer/OfficerDashboard" element={<OfficerDashboard />} />
-
+        <Route path="/officer/dashboard" element={<OfficerDashboard />} />
+        <Route path="/officer/assign-accidents" element={<AssignAccidents />} />
         <Route path="/officer/calendar" element={<OfficerCalendar />} />
         <Route path="/officer/request" element={<OfficerRequest />} />
         <Route path="/admin/requests" element={<ViewRequests />} />
         <Route path="/itOfficer/ItOfficerDashboard" element={<ItOfficerDashboard />} />
         <Route path="/itOfficer/schedules" element={<ItDutySchedules />} />
-
-
-        <Route path="/officer/request" element={<OfficerRequest />} />
-        <Route path="/admin/requests" element={<ViewRequests />} />
-
-        <Route path="/CriminalManage/Criminal" element ={<Criminal/>}/>
-
-        <Route
-          path="/officer/OfficerDashboard"
-          element={<OfficerDashboard />}
-        />
+        <Route path="/CriminalManage/Criminal" element={<Criminal />} />
         <Route path="/accident-form" element={<Accidentform />} />
         <Route path="/apply/unknown-accident-report" element={<Accidentform />} />
         <Route path="/accidents" element={<AllAccidents />} />
