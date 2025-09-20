@@ -9,6 +9,8 @@ import Officers from './Components/admin/Officers';
 import OfficerProfile from './Components/admin/OfficerProfile';
 import ReportForm from './Components/Report/ReportForm';
 import ReportSuccess from './Components/Report/ReportSuccess';
+import ReportsDetails from './Components/ReportsDetails/reportsDetails';
+import Report from './Components/Report/Report';
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
         <Route path="/admin/officer/:id" element={<OfficerProfile />} />
         <Route path="/report-form" element={<ReportForm />} />
         <Route path="/report-success" element={<ReportSuccess />} />
+        <Route path="/report-details" element={<ReportsDetails />} />
+        <Route path="/report" element={<Report />} />
       </Routes>
     </Router>
   );
