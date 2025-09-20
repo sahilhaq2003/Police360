@@ -17,22 +17,32 @@ const Login = () => {
     if (error) setError('');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await axiosInstance.post('/auth/login', formData);
-      const { token, officer } = res.data;
-      const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem('token', token);
-      storage.setItem('role', officer.role);
-      navigate(officer.role === 'Admin' ? '/admin/dashboard' : '/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials.');
-    } finally {
-      setLoading(false);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  try {
+    const res = await axiosInstance.post('/auth/login', formData);
+    const { token, officer } = res.data;
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem('token', token);
+    storage.setItem('role', officer.role);
+    storage.setItem('userId', officer.id);
+    storage.setItem('userName', officer.name);
+
+    // Route based on role
+    if (officer.role === 'Admin') {
+      navigate('/admin/dashboard');
+    } else if (officer.role === 'IT Officer') {
+      navigate('/itOfficer/ItOfficerDashboard');
+    } else {
+      navigate('/officer/OfficerDashboard');
     }
-  };
+  } catch (err) {
+    setError(err.response?.data?.message || 'Invalid credentials.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const { username, password } = formData;
 

@@ -316,7 +316,7 @@ const OfficerProfile = () => {
               >
                 <option>Officer</option>
                 <option>IT Officer</option>
-                <option>Admin</option>
+                
               </select>
             </div>
 
