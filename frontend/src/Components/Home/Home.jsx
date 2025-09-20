@@ -13,8 +13,7 @@ function Home() {
     if (!window.googleTranslateElementInit) {
       window.googleTranslateElementInit = () => {
         new window.google.translate.TranslateElement(
-          { pageLanguage: 'en', includedLanguages: 'en,si,ta',
-           },
+          { pageLanguage: 'en', includedLanguages: 'en,si,ta' },
           'google_translate_element'
         );
       };
@@ -89,7 +88,7 @@ function Home() {
           icon: '/images/traffic1.png',
           title: 'Unknown Accident Report',
           desc: 'This service allows users to report unknown accidents.',
-          link: '/apply/unknown-accident-report',
+          link: '/accident-form',
         },
         {
           icon: '/images/traffic2.png',
@@ -232,7 +231,6 @@ function Home() {
           desc: 'The service allows customers to provide their opinions and comments aimed at improving police services.',
           link: '/apply/feedback',
         },
-        
       ],
     ],
   ];
@@ -250,7 +248,11 @@ function Home() {
     <div>
       <header className="main-header">
         <div className="left-header">
-          <img src="/images/PTLogo.png" alt="Police360 Logo" className="logom" />
+          <img
+            src="/images/PTLogo.png"
+            alt="Police360 Logo"
+            className="logom"
+          />
           <div className="logo">Police360</div>
         </div>
         <nav className="navbar">
@@ -267,7 +269,10 @@ function Home() {
           <input type="text" placeholder="Search..." className="top-search" />
 
           {/* Language selector */}
-          <select onChange={(e) => changeLanguage(e.target.value)} defaultValue="en">
+          <select
+            onChange={(e) => changeLanguage(e.target.value)}
+            defaultValue="en"
+          >
             <option value="en">English</option>
             <option value="si">සිංහල</option>
             <option value="ta">தமிழ்</option>
@@ -294,7 +299,10 @@ function Home() {
         <div className="hero-content">
           <h1>Police Service</h1>
           <p>A smart solution to enhance Police360 emergency response</p>
-          <button className="report-btn" onClick={() => navigate('/report-form')}>
+          <button
+            className="report-btn"
+            onClick={() => navigate('/report-form')}
+          >
             Report an Incident
           </button>
         </div>

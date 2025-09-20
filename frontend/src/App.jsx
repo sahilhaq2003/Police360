@@ -24,8 +24,6 @@ import OfficerCalendar from './Components/officer/OfficerCalendar';
 
 import Criminal from './Components/CriminalManage/Criminal';
 
-
-
 function App() {
   return (
     <Router>
@@ -39,21 +37,25 @@ function App() {
         <Route path="/report-form" element={<ReportForm />} />
         <Route path="/report-success" element={<ReportSuccess />} />
 
-        <Route path="/officer/OfficerDashboard" element={<OfficerDashboard />} />
+        <Route
+          path="/officer/OfficerDashboard"
+          element={<OfficerDashboard />}
+        />
         <Route path="/officer/dashboard" element={<OfficerDashboard />} />
         <Route path="/officer/assign-accidents" element={<AssignAccidents />} />
         <Route path="/officer/calendar" element={<OfficerCalendar />} />
         <Route path="/officer/request" element={<OfficerRequest />} />
         <Route path="/admin/requests" element={<ViewRequests />} />
-        <Route path="/itOfficer/ItOfficerDashboard" element={<ItOfficerDashboard />} />
+        <Route
+          path="/itOfficer/ItOfficerDashboard"
+          element={<ItOfficerDashboard />}
+        />
         <Route path="/itOfficer/schedules" element={<ItDutySchedules />} />
         <Route path="/CriminalManage/Criminal" element={<Criminal />} />
         <Route path="/accident-form" element={<Accidentform />} />
-        <Route path="/apply/unknown-accident-report" element={<Accidentform />} />
         <Route path="/accidents" element={<AllAccidents />} />
         <Route path="/accidents/:id" element={<AccidentDetails />} />
         <Route path="/accidents/track" element={<TrackAccident />} />
-
       </Routes>
     </Router>
   );
