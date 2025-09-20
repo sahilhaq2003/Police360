@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  AlertTriangle, 
-  MapPin, 
-  Calendar, 
-  User, 
-  Search, 
+import {
+  AlertTriangle,
+  MapPin,
+  Calendar,
+  User,
+  Search,
   Filter,
   CheckCircle,
   Clock,
   Users,
   MessageSquare,
-  CheckCircle2
+  CheckCircle2,
 } from 'lucide-react';
 import axiosInstance from '../../utils/axiosInstance';
+import PoliceHeader from '../PoliceHeader/PoliceHeader';
 
 const AssignAccidents = () => {
   const navigate = useNavigate();
@@ -27,7 +28,6 @@ const AssignAccidents = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-  const [showUnassignedOnly, setShowUnassignedOnly] = useState(true);
 
   useEffect(() => {
     fetchData();
@@ -37,8 +37,8 @@ const AssignAccidents = () => {
     setLoading(true);
     try {
       // Fetch accidents
-      const accidentsRes = await axiosInstance.get('/accidents', { 
-        params: { page: 1, limit: 100 } 
+      const accidentsRes = await axiosInstance.get('/accidents', {
+        params: { page: 1, limit: 100 },
       });
       const accidentsData = accidentsRes.data?.items || accidentsRes.data || [];
       setAccidents(accidentsData);
@@ -58,7 +58,9 @@ const AssignAccidents = () => {
   const handleAssignOfficer = async (accidentId, officerId) => {
     setAssigning(accidentId);
     try {
-      await axiosInstance.post(`/accidents/${accidentId}/assign`, { officerId });
+      await axiosInstance.post(`/accidents/${accidentId}/assign`, {
+        officerId,
+      });
       // Refresh the accidents list
       await fetchData();
       alert('Accident assigned successfully!');
@@ -79,8 +81,10 @@ const AssignAccidents = () => {
 
     setAddingComment(accidentId);
     try {
-      await axiosInstance.post(`/accidents/${accidentId}/notes`, { note: commentText });
-      setCommentTexts(prev => ({ ...prev, [accidentId]: '' }));
+      await axiosInstance.post(`/accidents/${accidentId}/notes`, {
+        note: commentText,
+      });
+      setCommentTexts((prev) => ({ ...prev, [accidentId]: '' }));
       await fetchData();
       alert('Comment added successfully!');
     } catch (error) {
@@ -92,11 +96,13 @@ const AssignAccidents = () => {
   };
 
   const handleCommentTextChange = (accidentId, text) => {
-    setCommentTexts(prev => ({ ...prev, [accidentId]: text }));
+    setCommentTexts((prev) => ({ ...prev, [accidentId]: text }));
   };
 
   const handleMarkAsDone = async (accidentId) => {
-    const confirmed = window.confirm('Are you sure you want to mark this accident as done? This action cannot be undone.');
+    const confirmed = window.confirm(
+      'Are you sure you want to mark this accident as done? This action cannot be undone.'
+    );
     if (!confirmed) return;
 
     setMarkingDone(accidentId);
@@ -114,34 +120,51 @@ const AssignAccidents = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'REPORTED': return 'bg-yellow-100 text-yellow-800';
-      case 'UNDER_INVESTIGATION': return 'bg-blue-100 text-blue-800';
-      case 'CLOSED': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'REPORTED':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'UNDER_INVESTIGATION':
+        return 'bg-blue-100 text-blue-800';
+      case 'CLOSED':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getTypeColor = (type) => {
     switch (type) {
-      case 'ROAD_ACCIDENT': return 'bg-red-100 text-red-800';
-      case 'FIRE': return 'bg-orange-100 text-orange-800';
-      case 'STRUCTURAL_COLLAPSE': return 'bg-purple-100 text-purple-800';
-      case 'OTHER': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ROAD_ACCIDENT':
+        return 'bg-red-100 text-red-800';
+      case 'FIRE':
+        return 'bg-orange-100 text-orange-800';
+      case 'STRUCTURAL_COLLAPSE':
+        return 'bg-purple-100 text-purple-800';
+      case 'OTHER':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const filteredAccidents = accidents.filter(accident => {
-    const matchesSearch = !searchTerm || 
+  const userId =
+    localStorage.getItem('userId') || sessionStorage.getItem('userId');
+
+  const filteredAccidents = accidents.filter((accident) => {
+    const matchesSearch =
+      !searchTerm ||
       accident.trackingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       accident.locationText.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (accident.nic && accident.nic.toLowerCase().includes(searchTerm.toLowerCase()));
+      (accident.nic &&
+        accident.nic.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesStatus = !statusFilter || accident.status === statusFilter;
     const matchesType = !typeFilter || accident.accidentType === typeFilter;
-    const matchesUnassigned = !showUnassignedOnly || !accident.assignedOfficer;
 
-    return matchesSearch && matchesStatus && matchesType && matchesUnassigned;
+    const matchesOfficer =
+      accident.assignedOfficer &&
+      String(accident.assignedOfficer._id) === String(userId);
+
+    return matchesSearch && matchesStatus && matchesType && matchesOfficer;
   });
 
   if (loading) {
@@ -151,7 +174,7 @@ const AssignAccidents = () => {
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
             <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map(i => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
               ))}
             </div>
@@ -163,11 +186,16 @@ const AssignAccidents = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
+      <PoliceHeader />
       <div className="max-w-6xl mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight mb-2">Assign Accidents</h1>
-            <p className="text-sm text-[#5A6B85]">Manage accident assignments and officer allocation</p>
+            <h1 className="text-3xl font-extrabold tracking-tight mb-2">
+              Assign Accidents
+            </h1>
+            <p className="text-sm text-[#5A6B85]">
+              Manage accident assignments and officer allocation
+            </p>
           </div>
           <button
             onClick={() => navigate('/officer/dashboard')}
@@ -190,7 +218,7 @@ const AssignAccidents = () => {
                 className="w-full pl-10 pr-4 py-2 border border-[#E4E9F2] rounded-lg focus:ring-2 focus:ring-[#00296B] focus:border-transparent"
               />
             </div>
-            
+
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -213,16 +241,6 @@ const AssignAccidents = () => {
               <option value="STRUCTURAL_COLLAPSE">Structural Collapse</option>
               <option value="OTHER">Other</option>
             </select>
-
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={showUnassignedOnly}
-                onChange={(e) => setShowUnassignedOnly(e.target.checked)}
-                className="rounded border-[#E4E9F2] text-[#00296B] focus:ring-[#00296B]"
-              />
-              <span className="text-sm text-[#5A6B85]">Unassigned only</span>
-            </label>
           </div>
         </div>
 
@@ -232,19 +250,34 @@ const AssignAccidents = () => {
             <div className="bg-white rounded-2xl border border-[#E4E9F2] shadow p-8 text-center">
               <AlertTriangle className="w-12 h-12 text-[#5A6B85] mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No accidents found</h3>
-              <p className="text-sm text-[#5A6B85]">Try adjusting your filters or check back later.</p>
+              <p className="text-sm text-[#5A6B85]">
+                Try adjusting your filters or check back later.
+              </p>
             </div>
           ) : (
             filteredAccidents.map((accident) => (
-              <div key={accident._id} className="bg-white rounded-2xl border border-[#E4E9F2] shadow p-6">
+              <div
+                key={accident._id}
+                className="bg-white rounded-2xl border border-[#E4E9F2] shadow p-6"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <h3 className="text-lg font-semibold">{accident.trackingId}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(accident.status)}`}>
+                      <h3 className="text-lg font-semibold">
+                        {accident.trackingId}
+                      </h3>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          accident.status
+                        )}`}
+                      >
                         {accident.status.replace('_', ' ')}
                       </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(accident.accidentType)}`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(
+                          accident.accidentType
+                        )}`}
+                      >
                         {accident.accidentType.replace('_', ' ')}
                       </span>
                       {accident.isEmergency && (
@@ -252,11 +285,15 @@ const AssignAccidents = () => {
                           Emergency
                         </span>
                       )}
-                      {accident.investigationNotes && accident.investigationNotes.length > 0 && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {accident.investigationNotes.length} note{accident.investigationNotes.length !== 1 ? 's' : ''}
-                        </span>
-                      )}
+                      {accident.investigationNotes &&
+                        accident.investigationNotes.length > 0 && (
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {accident.investigationNotes.length} note
+                            {accident.investigationNotes.length !== 1
+                              ? 's'
+                              : ''}
+                          </span>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -266,7 +303,9 @@ const AssignAccidents = () => {
                       </div>
                       <div className="flex items-center gap-2 text-sm text-[#5A6B85]">
                         <Calendar className="w-4 h-4" />
-                        <span>{new Date(accident.createdAt).toLocaleDateString()}</span>
+                        <span>
+                          {new Date(accident.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
                       {accident.nic && (
                         <div className="flex items-center gap-2 text-sm text-[#5A6B85]">
@@ -279,29 +318,43 @@ const AssignAccidents = () => {
                     {accident.assignedOfficer && (
                       <div className="flex items-center gap-2 text-sm text-[#5A6B85] mb-4">
                         <Users className="w-4 h-4" />
-                        <span>Assigned to: {accident.assignedOfficer.name} ({accident.assignedOfficer.officerId})</span>
+                        <span>
+                          Assigned to: {accident.assignedOfficer.name} (
+                          {accident.assignedOfficer.officerId})
+                        </span>
                       </div>
                     )}
 
                     {/* Show investigation notes if any */}
-                    {accident.investigationNotes && accident.investigationNotes.length > 0 && (
-                      <div className="mb-4">
-                        <div className="text-xs font-medium text-[#5A6B85] mb-2">Investigation Notes:</div>
-                        <div className="space-y-1 max-h-20 overflow-y-auto">
-                          {accident.investigationNotes.slice(-3).map((note, index) => (
-                            <div key={index} className="text-xs text-[#5A6B85] bg-[#F8FAFC] p-2 rounded border">
-                              <div className="font-medium">{note.addedBy}</div>
-                              <div>{note.note}</div>
-                            </div>
-                          ))}
-                          {accident.investigationNotes.length > 3 && (
-                            <div className="text-xs text-[#5A6B85] italic">
-                              +{accident.investigationNotes.length - 3} more notes
-                            </div>
-                          )}
+                    {accident.investigationNotes &&
+                      accident.investigationNotes.length > 0 && (
+                        <div className="mb-4">
+                          <div className="text-xs font-medium text-[#5A6B85] mb-2">
+                            Investigation Notes:
+                          </div>
+                          <div className="space-y-1 max-h-20 overflow-y-auto">
+                            {accident.investigationNotes
+                              .slice(-3)
+                              .map((note, index) => (
+                                <div
+                                  key={index}
+                                  className="text-xs text-[#5A6B85] bg-[#F8FAFC] p-2 rounded border"
+                                >
+                                  <div className="font-medium">
+                                    {note.addedBy}
+                                  </div>
+                                  <div>{note.note}</div>
+                                </div>
+                              ))}
+                            {accident.investigationNotes.length > 3 && (
+                              <div className="text-xs text-[#5A6B85] italic">
+                                +{accident.investigationNotes.length - 3} more
+                                notes
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
 
                   <div className="flex flex-col gap-2 ml-4">
@@ -311,7 +364,7 @@ const AssignAccidents = () => {
                     >
                       View Details
                     </button>
-                    
+
                     {!accident.assignedOfficer && (
                       <div className="relative">
                         <select
@@ -339,46 +392,55 @@ const AssignAccidents = () => {
                       </div>
                     )}
 
-                    {accident.assignedOfficer && accident.status !== 'CLOSED' && (
-                      <div className="space-y-2">
-                        {/* Add Comment Section */}
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="Add investigation note..."
-                            value={commentTexts[accident._id] || ''}
-                            onChange={(e) => handleCommentTextChange(accident._id, e.target.value)}
-                            className="flex-1 px-3 py-2 border border-[#E4E9F2] rounded-lg focus:ring-2 focus:ring-[#00296B] focus:border-transparent text-sm"
-                          />
+                    {accident.assignedOfficer &&
+                      accident.status !== 'CLOSED' && (
+                        <div className="space-y-2">
+                          {/* Add Comment Section */}
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Add investigation note..."
+                              value={commentTexts[accident._id] || ''}
+                              onChange={(e) =>
+                                handleCommentTextChange(
+                                  accident._id,
+                                  e.target.value
+                                )
+                              }
+                              className="flex-1 px-3 py-2 border border-[#E4E9F2] rounded-lg focus:ring-2 focus:ring-[#00296B] focus:border-transparent text-sm"
+                            />
+                            <button
+                              onClick={() => handleAddComment(accident._id)}
+                              disabled={
+                                addingComment === accident._id ||
+                                !(commentTexts[accident._id] || '').trim()
+                              }
+                              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                            >
+                              {addingComment === accident._id ? (
+                                <Clock className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <MessageSquare className="w-4 h-4" />
+                              )}
+                              Add
+                            </button>
+                          </div>
+
+                          {/* Mark as Done Button */}
                           <button
-                            onClick={() => handleAddComment(accident._id)}
-                            disabled={addingComment === accident._id || !(commentTexts[accident._id] || '').trim()}
-                            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                            onClick={() => handleMarkAsDone(accident._id)}
+                            disabled={markingDone === accident._id}
+                            className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
                           >
-                            {addingComment === accident._id ? (
+                            {markingDone === accident._id ? (
                               <Clock className="w-4 h-4 animate-spin" />
                             ) : (
-                              <MessageSquare className="w-4 h-4" />
+                              <CheckCircle2 className="w-4 h-4" />
                             )}
-                            Add
+                            Mark as Done
                           </button>
                         </div>
-
-                        {/* Mark as Done Button */}
-                        <button
-                          onClick={() => handleMarkAsDone(accident._id)}
-                          disabled={markingDone === accident._id}
-                          className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
-                        >
-                          {markingDone === accident._id ? (
-                            <Clock className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="w-4 h-4" />
-                          )}
-                          Mark as Done
-                        </button>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </div>
               </div>
