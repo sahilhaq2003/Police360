@@ -9,6 +9,7 @@ import Officers from './Components/admin/officers';
 import OfficerProfile from './Components/admin/OfficerProfile';
 import ReportForm from './Components/Report/ReportForm';
 import ReportSuccess from './Components/Report/ReportSuccess';
+
 import OfficerDashboard from './Components/officer/officerDashboard';
 import Accidentform from './Components/accidents/accidentform';
 import AllAccidents from './Components/accidents/allAccidents';
@@ -25,6 +26,10 @@ import Criminal from './Components/CriminalManage/Criminal';
 
 
 
+import ReportsDetails from './Components/ReportsDetails/reportsDetails';
+import Report from './Components/Report/Report';
+
+
 function App() {
   return (
     <Router>
@@ -37,6 +42,7 @@ function App() {
         <Route path="/admin/officer/:id" element={<OfficerProfile />} />
         <Route path="/report-form" element={<ReportForm />} />
         <Route path="/report-success" element={<ReportSuccess />} />
+
 
         <Route path="/officer/OfficerDashboard" element={<OfficerDashboard />} />
 
@@ -60,6 +66,10 @@ function App() {
         <Route path="/accidents" element={<AllAccidents />} />
         <Route path="/accidents/:id" element={<AccidentDetails />} />
         <Route path="/accidents/track" element={<TrackAccident />} />
+
+
+        <Route path="/report-details" element={<ReportsDetails />} />
+        <Route path="/report" element={<Report />} />
 
       </Routes>
     </Router>
