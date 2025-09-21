@@ -23,6 +23,7 @@
     "mongoose": "^8.16.5",
     "mongoose-paginate-v2": "^1.9.1",
     "multer": "^2.0.2",
+    "nanoid": "^5.1.5",
     "react-router-dom": "^7.7.1"
   },
   "devDependencies": {
