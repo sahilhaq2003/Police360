@@ -64,6 +64,7 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ message: 'Server error' });
 });
 
+
 app.use('/api/reporting', reportingRoutes);
 
 
@@ -74,6 +75,7 @@ app.use((err, _req, res, _next) => {
     return res.status(413).json({ message: 'Payload too large' });
   res.status(500).json({ message: 'Server error' });
 });
+
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

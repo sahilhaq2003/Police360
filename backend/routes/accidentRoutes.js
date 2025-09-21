@@ -9,6 +9,7 @@ const {
   updateAccident,
   deleteAccident,
   addInvestigationNote,
+  assignOfficer,
 } = require('../controllers/accidentController');
 
 router.post('/report', reportAccident);
@@ -20,5 +21,6 @@ router.get('/:id', getAccident);
 router.put('/:id', updateAccident);
 router.delete('/:id', deleteAccident);
 router.post('/:id/notes', addInvestigationNote);
+router.post('/:id/assign', assignOfficer);
 
 module.exports = router;
