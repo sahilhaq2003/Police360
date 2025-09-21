@@ -60,6 +60,10 @@ const handleSubmit = async (e) => {
 
       {/* Login Card */}
       <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md p-8 z-10 border border-gray-200">
+        {/* Back to Home */}
+        <div className="absolute left-4 top-4">
+          <button onClick={() => navigate('/')} className="text-sm text-[#0B214A] bg-white border border-[#E4E9F2] px-3 py-1 rounded-md hover:bg-[#F5F7FB]">Back to Home</button>
+        </div>
         {/* Logo Section */}
         <div className="text-center mb-6">
           <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-[#0B214A] flex items-center justify-center shadow">
