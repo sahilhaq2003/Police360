@@ -11,8 +11,9 @@ import ReportForm from './Components/Report/ReportForm';
 import ReportSuccess from './Components/Report/ReportSuccess';
 
 import OfficerDashboard from './Components/officer/officerDashboard';
+import AssignAccidents from './Components/officer/AssignAccidents';
 import Accidentform from './Components/accidents/accidentform';
-import AllAccidents from './Components/accidents/allAccidents';
+import AllAccidents from './Components/accidents/AllAccidents';
 import AccidentDetails from './Components/accidents/AccidentDetails';
 import TrackAccident from './Components/accidents/TrackAccident';
 
@@ -21,13 +22,24 @@ import ViewRequests from './Components/admin/ViewRequests';
 import ItOfficerDashboard from './Components/itOfficer/ItOfficerDashboard';
 import ItDutySchedules from './Components/itOfficer/ItDutySchedules';
 import OfficerCalendar from './Components/officer/OfficerCalendar';
+import CaseDetails from './Components/cases/CaseDetails';
 
 import Criminal from './Components/CriminalManage/Criminal';
+
+import FileComplaint from './Components/cases/FileComplaint';
+import ItCasesPanel from './Components/cases/ItCasesPanel';
+import OfficerCases from './Components/cases/OfficerCases';
+
+import CriminalProfile from './Components/CriminalManage/CriminalProfile';
+import CriminalManage from './Components/CriminalManage/CriminalManage';
+
+
 
 
 
 import ReportsDetails from './Components/ReportsDetails/reportsDetails';
 import Report from './Components/Report/Report';
+
 
 
 function App() {
@@ -44,32 +56,48 @@ function App() {
         <Route path="/report-success" element={<ReportSuccess />} />
 
 
-        <Route path="/officer/OfficerDashboard" element={<OfficerDashboard />} />
-
-        <Route path="/officer/calendar" element={<OfficerCalendar />} />
-        <Route path="/officer/request" element={<OfficerRequest />} />
-        <Route path="/admin/requests" element={<ViewRequests />} />
-        <Route path="/itOfficer/ItOfficerDashboard" element={<ItOfficerDashboard />} />
-        <Route path="/itOfficer/schedules" element={<ItDutySchedules />} />
-
-
-        <Route path="/officer/request" element={<OfficerRequest />} />
-        <Route path="/admin/requests" element={<ViewRequests />} />
-
-        <Route path="/CriminalManage/Criminal" element ={<Criminal/>}/>
-
         <Route
           path="/officer/OfficerDashboard"
           element={<OfficerDashboard />}
         />
+        <Route path="/officer/dashboard" element={<OfficerDashboard />} />
+        <Route path="/officer/assign-accidents" element={<AssignAccidents />} />
+
+
+        <Route path="/officer/OfficerDashboard" element={<OfficerDashboard />} />
+
+
+        <Route path="/officer/calendar" element={<OfficerCalendar />} />
+        <Route path="/officer/request" element={<OfficerRequest />} />
+        <Route path="/admin/requests" element={<ViewRequests />} />
+        <Route
+          path="/itOfficer/ItOfficerDashboard"
+          element={<ItOfficerDashboard />}
+        />
+        <Route path="/itOfficer/schedules" element={<ItDutySchedules />} />
+        <Route path="/CriminalManage/Criminal" element={<Criminal />} />
+        <Route path="/apply/file-complaint" element={<FileComplaint />} />
+        <Route path="/it/cases" element={<ItCasesPanel />} />
+        <Route path="/officer/cases" element={<OfficerCases />} />
+        <Route path="/cases/:id" element={<CaseDetails />} />
         <Route path="/accident-form" element={<Accidentform />} />
         <Route path="/accidents" element={<AllAccidents />} />
         <Route path="/accidents/:id" element={<AccidentDetails />} />
         <Route path="/accidents/track" element={<TrackAccident />} />
 
 
+
+
         <Route path="/report-details" element={<ReportsDetails />} />
         <Route path="/report" element={<Report />} />
+
+
+        {/* Criminal Management Routes */}
+        <Route path="/CriminalManage/CriminalManage" element={<CriminalManage />} />
+        <Route path="/CriminalManage/Criminal" element={<Criminal/>}/>
+        <Route path="/CriminalManage/CriminalProfile" element={<CriminalProfile />} />
+        <Route path="/CriminalManage/CriminalProfile/:id" element={<CriminalProfile />} />
+
 
       </Routes>
     </Router>

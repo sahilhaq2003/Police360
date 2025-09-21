@@ -12,8 +12,11 @@ const reportingRoutes = require('./routes/reportingRoutes');
 
 const requestRoutes = require('./routes/requestRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
+const criminalRoutes = require('./routes/criminalRoutes');
+
 
 const accidentRoutes = require('./routes/accidentRoutes');
+const caseRoutes = require('./routes/caseRoutes');
 
 
 dotenv.config();
@@ -22,9 +25,18 @@ connectDB();
 const app = express();
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+// Allow default vite host (5173) and alternative 5174 used by some dev setups
+const CORS_WHITELIST = [CLIENT_URL, 'http://localhost:5174'];
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin: (origin, callback) => {
+      // allow requests with no origin (e.g., server-to-server, curl)
+      if (!origin) return callback(null, true);
+      if (CORS_WHITELIST.indexOf(origin) !== -1) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
@@ -50,10 +62,13 @@ app.use('/api/reports', reportRoutes);
 
 app.use('/api/requests', requestRoutes);
 app.use('/api/schedules', scheduleRoutes);
+app.use('/api/criminals', criminalRoutes);
+
 
 //Enuri Routes
 
 app.use('/api/accidents', accidentRoutes);
+app.use('/api/cases', caseRoutes);
 app.get('/', (_req, res) => res.send('Police360 API running'));
 
 app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
@@ -63,6 +78,7 @@ app.use((err, _req, res, _next) => {
     return res.status(413).json({ message: 'Payload too large' });
   res.status(500).json({ message: 'Server error' });
 });
+
 
 app.use('/api/reporting', reportingRoutes);
 
@@ -74,6 +90,7 @@ app.use((err, _req, res, _next) => {
     return res.status(413).json({ message: 'Payload too large' });
   res.status(500).json({ message: 'Server error' });
 });
+
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

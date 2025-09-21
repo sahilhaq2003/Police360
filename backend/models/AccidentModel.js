@@ -37,6 +37,9 @@ const AccidentSchema = new mongoose.Schema(
 
     investigationNotes: [InvestigationNoteSchema],
 
+    // assignment
+    assignedOfficer: { type: mongoose.Schema.Types.ObjectId, ref: 'Officer' },
+
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
   },

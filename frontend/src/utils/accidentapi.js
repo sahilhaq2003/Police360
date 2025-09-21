@@ -60,6 +60,11 @@ export const addInvestigationNote = async (id, note) => {
   return res.data; // return updated accident OR the inserted note (your choice)
 };
 
+export const assignAccidentOfficer = async (id, officerId) => {
+  const res = await api.post(`/api/accidents/${id}/assign`, { officerId });
+  return res.data;
+};
+
 /**
  * Delete an accident by id.
  * @param {string} id
