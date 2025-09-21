@@ -22,8 +22,14 @@ import ViewRequests from './Components/admin/ViewRequests';
 import ItOfficerDashboard from './Components/itOfficer/ItOfficerDashboard';
 import ItDutySchedules from './Components/itOfficer/ItDutySchedules';
 import OfficerCalendar from './Components/officer/OfficerCalendar';
+import CaseDetails from './Components/cases/CaseDetails';
 
 import Criminal from './Components/CriminalManage/Criminal';
+
+import FileComplaint from './Components/cases/FileComplaint';
+import ItCasesPanel from './Components/cases/ItCasesPanel';
+import OfficerCases from './Components/cases/OfficerCases';
+
 import CriminalProfile from './Components/CriminalManage/CriminalProfile';
 import CriminalManage from './Components/CriminalManage/CriminalManage';
 
@@ -33,6 +39,7 @@ import CriminalManage from './Components/CriminalManage/CriminalManage';
 
 import ReportsDetails from './Components/ReportsDetails/reportsDetails';
 import Report from './Components/Report/Report';
+
 
 
 function App() {
@@ -69,6 +76,10 @@ function App() {
         />
         <Route path="/itOfficer/schedules" element={<ItDutySchedules />} />
         <Route path="/CriminalManage/Criminal" element={<Criminal />} />
+        <Route path="/apply/file-complaint" element={<FileComplaint />} />
+        <Route path="/it/cases" element={<ItCasesPanel />} />
+        <Route path="/officer/cases" element={<OfficerCases />} />
+        <Route path="/cases/:id" element={<CaseDetails />} />
         <Route path="/accident-form" element={<Accidentform />} />
         <Route path="/accidents" element={<AllAccidents />} />
         <Route path="/accidents/:id" element={<AccidentDetails />} />

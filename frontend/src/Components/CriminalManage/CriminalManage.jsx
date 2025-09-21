@@ -310,14 +310,19 @@ export default function CriminalManage() {
                             {criminal.photo ? (
                               <img
                                 className="h-10 w-10 rounded-full object-cover"
-                                src={criminal.photo}
+                                src={criminal.photo.startsWith('http') ? criminal.photo : `${axiosInstance.defaults.baseURL}${criminal.photo}`}
                                 alt={criminal.name}
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'flex';
+                                }}
                               />
-                            ) : (
-                              <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                <UserX className="h-5 w-5 text-gray-400" />
-                              </div>
-                            )}
+                            ) : null}
+                            <div 
+                              className={`h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center ${criminal.photo ? 'hidden' : ''}`}
+                            >
+                              <UserX className="h-5 w-5 text-gray-400" />
+                            </div>
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
