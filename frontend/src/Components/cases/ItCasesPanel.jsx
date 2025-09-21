@@ -10,12 +10,25 @@ const ItCasesPanel = () => {
   const [assigningId, setAssigningId] = useState(null);
   const [selectedOfficerId, setSelectedOfficerId] = useState('');
   const [onlyUnassigned, setOnlyUnassigned] = useState(false);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 450);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    // re-fetch when search term changes
+    fetchData();
+  }, [debouncedSearch, onlyUnassigned]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -26,6 +39,7 @@ const ItCasesPanel = () => {
           params.unassigned = true;
           params.status = 'NEW';
         }
+        if (debouncedSearch) params.q = debouncedSearch;
         const casesRes = await axiosInstance.get('/cases', { params });
       const casesList = casesRes.data?.data || casesRes.data || [];
 
@@ -82,7 +96,10 @@ const ItCasesPanel = () => {
         </div>
 
         <div className="flex items-center justify-between mb-4">
-          <div />
+          <div className="flex items-center gap-3">
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search complainant, type, location..." className="border p-2 rounded-md text-sm w-72" />
+            {search && <button onClick={() => { setSearch(''); setDebouncedSearch(''); }} className="text-sm text-slate-500">Clear</button>}
+          </div>
           <div className="flex items-center gap-2 text-sm">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={onlyUnassigned} onChange={(e) => { setOnlyUnassigned(e.target.checked); fetchData(); }} />

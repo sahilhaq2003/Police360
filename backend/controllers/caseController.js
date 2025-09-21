@@ -1,5 +1,6 @@
 const Case = require('../models/Case');
 const Officer = require('../models/Officer');
+const mongoose = require('mongoose');
 
 // POST /api/cases - submit a new criminal complaint
 exports.createCase = async (req, res) => {
@@ -26,15 +27,37 @@ exports.createCase = async (req, res) => {
 // GET /api/cases - list (supports query param assignedOfficer, status, unassigned)
 exports.listCases = async (req, res) => {
   try {
-    const { assignedOfficer, status, unassigned } = req.query;
+    const { assignedOfficer, status, unassigned, q } = req.query;
     const filter = {};
     if (assignedOfficer) filter.assignedOfficer = assignedOfficer;
     if (status) filter.status = status;
     if (unassigned === 'true') filter.assignedOfficer = null;
 
+    // search query across common text fields
+    if (q && typeof q === 'string' && q.trim().length > 0) {
+      const term = q.trim();
+      const re = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const ors = [
+        { 'complainant.name': re },
+        { 'complaintDetails.typeOfComplaint': re },
+        { 'complaintDetails.location': re },
+        { 'complaintDetails.description': re },
+      ];
+      // if term is a valid ObjectId, allow search by exact _id
+      if (mongoose.isValidObjectId(term)) {
+        try {
+          ors.unshift({ _id: mongoose.Types.ObjectId(term) });
+        } catch (e) {
+          // ignore
+        }
+      }
+      filter.$or = ors;
+    }
+
     const list = await Case.find(filter).populate('assignedOfficer', 'name officerId email role').sort({ createdAt: -1 });
     res.json({ success: true, data: list });
   } catch (err) {
+    console.error('listCases error', err);
     res.status(500).json({ message: 'Failed to list cases' });
   }
 };
