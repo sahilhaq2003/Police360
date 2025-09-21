@@ -9,6 +9,7 @@ import Officers from './Components/admin/officers';
 import OfficerProfile from './Components/admin/OfficerProfile';
 import ReportForm from './Components/Report/ReportForm';
 import ReportSuccess from './Components/Report/ReportSuccess';
+
 import OfficerDashboard from './Components/officer/officerDashboard';
 import AssignAccidents from './Components/officer/AssignAccidents';
 import Accidentform from './Components/accidents/accidentform';
@@ -24,6 +25,14 @@ import OfficerCalendar from './Components/officer/OfficerCalendar';
 
 import Criminal from './Components/CriminalManage/Criminal';
 
+
+
+
+
+import ReportsDetails from './Components/ReportsDetails/reportsDetails';
+import Report from './Components/Report/Report';
+
+
 function App() {
   return (
     <Router>
@@ -37,12 +46,18 @@ function App() {
         <Route path="/report-form" element={<ReportForm />} />
         <Route path="/report-success" element={<ReportSuccess />} />
 
+
         <Route
           path="/officer/OfficerDashboard"
           element={<OfficerDashboard />}
         />
         <Route path="/officer/dashboard" element={<OfficerDashboard />} />
         <Route path="/officer/assign-accidents" element={<AssignAccidents />} />
+
+
+        <Route path="/officer/OfficerDashboard" element={<OfficerDashboard />} />
+
+
         <Route path="/officer/calendar" element={<OfficerCalendar />} />
         <Route path="/officer/request" element={<OfficerRequest />} />
         <Route path="/admin/requests" element={<ViewRequests />} />
@@ -56,6 +71,13 @@ function App() {
         <Route path="/accidents" element={<AllAccidents />} />
         <Route path="/accidents/:id" element={<AccidentDetails />} />
         <Route path="/accidents/track" element={<TrackAccident />} />
+
+
+
+        <Route path="/report-details" element={<ReportsDetails />} />
+        <Route path="/report" element={<Report />} />
+
+
       </Routes>
     </Router>
   );
