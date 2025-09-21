@@ -24,6 +24,8 @@ import ItDutySchedules from './Components/itOfficer/ItDutySchedules';
 import OfficerCalendar from './Components/officer/OfficerCalendar';
 
 import Criminal from './Components/CriminalManage/Criminal';
+import CriminalProfile from './Components/CriminalManage/CriminalProfile';
+import CriminalManage from './Components/CriminalManage/CriminalManage';
 
 
 
@@ -74,8 +76,16 @@ function App() {
 
 
 
+
         <Route path="/report-details" element={<ReportsDetails />} />
         <Route path="/report" element={<Report />} />
+
+
+        {/* Criminal Management Routes */}
+        <Route path="/CriminalManage/CriminalManage" element={<CriminalManage />} />
+        <Route path="/CriminalManage/Criminal" element={<Criminal/>}/>
+        <Route path="/CriminalManage/CriminalProfile" element={<CriminalProfile />} />
+        <Route path="/CriminalManage/CriminalProfile/:id" element={<CriminalProfile />} />
 
 
       </Routes>

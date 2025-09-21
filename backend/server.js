@@ -12,6 +12,8 @@ const reportingRoutes = require('./routes/reportingRoutes');
 
 const requestRoutes = require('./routes/requestRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
+const criminalRoutes = require('./routes/criminalRoutes');
+
 
 const accidentRoutes = require('./routes/accidentRoutes');
 
@@ -50,6 +52,8 @@ app.use('/api/reports', reportRoutes);
 
 app.use('/api/requests', requestRoutes);
 app.use('/api/schedules', scheduleRoutes);
+app.use('/api/criminals', criminalRoutes);
+
 
 //Enuri Routes
 
