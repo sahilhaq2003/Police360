@@ -232,11 +232,38 @@ export default function CriminalRecord() {
   // Helpers
   const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
-  const handlePhotoChange = (e) => {
+  const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    // Show preview immediately
     const url = URL.createObjectURL(file);
     setPhotoUrl(url);
+    
+    // Upload to server
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+      
+      const response = await axiosInstance.post('/criminals/upload-photo', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      if (response.data.success) {
+        // Update photoUrl with server URL
+        setPhotoUrl(response.data.photoUrl);
+      } else {
+        console.error('Photo upload failed:', response.data.message);
+        alert('Failed to upload photo. Please try again.');
+        setPhotoUrl(''); // Clear the preview
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      alert('Failed to upload photo. Please try again.');
+      setPhotoUrl(''); // Clear the preview
+    }
   };
 
   const addRow = () =>

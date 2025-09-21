@@ -129,15 +129,20 @@ export default function CriminalProfile() {
               <div className="w-32 h-40 border-2 border-gray-300 rounded-lg overflow-hidden bg-gray-100">
                 {criminal.photo ? (
                   <img 
-                    src={criminal.photo} 
+                    src={criminal.photo.startsWith('http') ? criminal.photo : `${axiosInstance.defaults.baseURL}${criminal.photo}`}
                     alt="Criminal Photo" 
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
                   />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <span className="text-sm">NO PHOTO</span>
-                  </div>
-                )}
+                ) : null}
+                <div 
+                  className={`w-full h-full flex items-center justify-center text-gray-400 ${criminal.photo ? 'hidden' : ''}`}
+                >
+                  <span className="text-sm">NO PHOTO</span>
+                </div>
               </div>
               
               {/* Basic Info */}
