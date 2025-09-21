@@ -1,7 +1,15 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import PoliceHeader from "../PoliceHeader/PoliceHeader";
+import axiosInstance from "../../utils/axiosInstance";
 
 export default function CriminalRecord() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
   // Offense code list
   const OFFENSE_CODES = [
     { code: "09A", desc: "Murder and Nonnegligent Manslaughter" },
@@ -116,18 +124,97 @@ export default function CriminalRecord() {
   const [fileNumber, setFileNumber] = useState("");
   const [recordId, setRecordId] = useState("");
 
-  // Generate unique IDs on component mount
-  React.useEffect(() => {
-    // Generate File Number (format: CR-YYYY-MM-DD-XXXX)
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-    const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    setFileNumber(`CR-${dateStr}-${randomNum}`);
+  // Load criminal data for editing or generate new IDs
+  useEffect(() => {
+    if (editId) {
+      loadCriminalForEdit(editId);
+    } else {
+      // Generate unique IDs for new criminal
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      setFileNumber(`CR-${dateStr}-${randomNum}`);
 
-    // Generate Record ID (format: RID-YYYYMMDD-XXXXX)
-    const randomId = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
-    setRecordId(`RID-${dateStr}-${randomId}`);
-  }, []);
+      const randomId = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+      setRecordId(`RID-${dateStr}-${randomId}`);
+    }
+  }, [editId]);
+
+  const loadCriminalForEdit = async (id) => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get(`/criminals/${id}`);
+      const criminal = response.data;
+      
+      console.log('Loading criminal for edit:', criminal);
+      
+      // Set form data
+      setForm({
+        criminalId: criminal.criminalId || "",
+        nic: criminal.nic || "",
+        name: criminal.name || "",
+        aliases: criminal.aliases || "",
+        address: criminal.address || "",
+        gender: criminal.gender || "",
+        citizen: criminal.citizen || "",
+        height: criminal.height ? String(criminal.height) : "",
+        weight: criminal.weight ? String(criminal.weight) : "",
+        eyeColor: criminal.eyeColor || "",
+        hairColor: criminal.hairColor || "",
+        maritalStatus: criminal.maritalStatus || "",
+        criminalStatus: criminal.criminalStatus || "",
+        rewardPrice: criminal.rewardPrice ? String(criminal.rewardPrice) : "",
+        arrestDate: criminal.arrestDate ? new Date(criminal.arrestDate).toISOString().split('T')[0] : "",
+        prisonDays: criminal.prisonDays ? String(criminal.prisonDays) : "",
+        releaseDate: criminal.releaseDate ? new Date(criminal.releaseDate).toISOString().split('T')[0] : "",
+        dob: criminal.dob ? {
+          d: criminal.dob.day ? String(criminal.dob.day) : "",
+          m: criminal.dob.month ? String(criminal.dob.month) : "",
+          y: criminal.dob.year ? String(criminal.dob.year) : ""
+        } : { d: "", m: "", y: "" },
+        otherInfo: criminal.otherInfo || "",
+        crimeInfo: criminal.crimeInfo || "",
+      });
+
+      // Set other data
+      setFileNumber(criminal.fileNumber || "");
+      setRecordId(criminal.recordId || "");
+      setPhotoUrl(criminal.photo || "");
+      
+      // Set arrests data
+      if (criminal.arrests && criminal.arrests.length > 0) {
+        const formattedArrests = criminal.arrests.map(arrest => ({
+          date: arrest.date ? new Date(arrest.date).toISOString().split('T')[0] : "",
+          offenseCode: arrest.offenseCode || "",
+          institution: arrest.institution || "",
+          charge: arrest.charge || "",
+          term: arrest.term || ""
+        }));
+        setRows(formattedArrests);
+      }
+
+      // Set fingerprints data
+      if (criminal.fingerprints && criminal.fingerprints.length > 0) {
+        const formattedPrints = criminal.fingerprints.map(print => ({
+          name: print.name || "",
+          url: print.url || ""
+        }));
+        // Pad to 6 slots
+        while (formattedPrints.length < 6) {
+          formattedPrints.push({ name: "", url: "" });
+        }
+        setPrints(formattedPrints);
+      }
+
+      setIsEditing(true);
+    } catch (error) {
+      console.error('Error loading criminal for edit:', error);
+      alert('Failed to load criminal data for editing');
+      navigate('/CriminalManage/CriminalManage');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // --- Photo ---
   const [photoUrl, setPhotoUrl] = useState("");
@@ -175,30 +262,130 @@ export default function CriminalRecord() {
     alert("Uploading all fingerprints (stub)...");
   };
 
-  const onSave = (e) => {
+  const onSave = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!form.criminalId || !form.nic || !form.name || !form.address || !form.gender || !form.citizen || !form.criminalStatus) {
+      alert('Please fill in all required fields: Criminal ID, NIC, Name, Address, Gender, Citizen, and Criminal Status');
+      return;
+    }
+
+    // Prepare DOB structure to match model
+    const dobData = {};
+    if (form.dob.d && form.dob.m && form.dob.y) {
+      dobData.day = parseInt(form.dob.d);
+      dobData.month = parseInt(form.dob.m);
+      dobData.year = parseInt(form.dob.y);
+    }
+
+    // Prepare arrests data with proper date conversion
+    const arrestsData = rows.map(row => ({
+      ...row,
+      date: row.date ? new Date(row.date) : null
+    }));
+
+    // Prepare fingerprints data to match model structure
+    const fingerprintsData = prints
+      .filter(p => p.name && p.url)
+      .map(p => ({
+        name: p.name,
+        url: p.url
+      }));
+
     const payload = {
-      ...form,
+      // Auto-generated IDs
       fileNumber: fileNumber,
       recordId: recordId,
-      arrests: rows,
-      photo: photoUrl,
-      fingerprints: prints.map((p) => p.name).filter(Boolean),
-      // Conditional fields may be empty depending on status
-      rewardPrice: form.criminalStatus === 'wanted' ? form.rewardPrice : undefined,
-      arrestDate: form.criminalStatus === 'arrested' ? form.arrestDate : undefined,
-      prisonDays: form.criminalStatus === 'in prison' ? form.prisonDays : undefined,
-      releaseDate: form.criminalStatus === 'released' ? form.releaseDate : undefined,
+      
+      // Required fields
+      criminalId: form.criminalId,
+      nic: form.nic,
+      name: form.name,
+      address: form.address,
+      gender: form.gender,
+      citizen: form.citizen,
+      criminalStatus: form.criminalStatus,
+      
+      // Optional fields
+      aliases: form.aliases || undefined,
+      height: form.height ? parseInt(form.height) : undefined,
+      weight: form.weight ? parseInt(form.weight) : undefined,
+      eyeColor: form.eyeColor || undefined,
+      hairColor: form.hairColor || undefined,
+      maritalStatus: form.maritalStatus || undefined,
+      
+      // DOB
+      dob: Object.keys(dobData).length > 0 ? dobData : undefined,
+      
+      // Additional info
+      otherInfo: form.otherInfo || undefined,
+      crimeInfo: form.crimeInfo || undefined,
+      
+      // Status-specific fields
+      rewardPrice: form.criminalStatus === 'wanted' && form.rewardPrice ? parseInt(form.rewardPrice) : undefined,
+      arrestDate: form.criminalStatus === 'arrested' && form.arrestDate ? new Date(form.arrestDate) : undefined,
+      prisonDays: form.criminalStatus === 'in prison' && form.prisonDays ? parseInt(form.prisonDays) : undefined,
+      releaseDate: form.criminalStatus === 'released' && form.releaseDate ? new Date(form.releaseDate) : undefined,
+      
+      // Arrays
+      arrests: arrestsData,
+      photo: photoUrl || undefined,
+      fingerprints: fingerprintsData,
     };
-    console.log("CRIMINAL RECORD SUBMIT =>", payload);
-    alert("Saved (check console for payload). Hook this to your API.");
+
+    try {
+      let response;
+      if (isEditing && editId) {
+        // Update existing criminal
+        response = await axiosInstance.put(`/criminals/${editId}`, payload);
+        alert('Criminal record updated successfully!');
+      } else {
+        // Create new criminal
+        response = await axiosInstance.post('/criminals', payload);
+        alert('Criminal record saved successfully!');
+      }
+      
+      console.log('Saved criminal:', response.data);
+      
+      // Navigate to CriminalManage page after successful save
+      navigate('/CriminalManage/CriminalManage');
+    } catch (error) {
+      console.error('Error saving criminal:', error);
+      
+      if (error.response) {
+        // Server responded with error status
+        const errorMessage = error.response.data?.message || error.response.data?.error || 'Failed to save criminal record';
+        alert(`Error: ${errorMessage}`);
+      } else if (error.request) {
+        // Network error
+        alert('Network error. Please check if the server is running and try again.');
+      } else {
+        // Other error
+        alert('An unexpected error occurred. Please try again.');
+      }
+    }
   };
 
   const onCancel = () => {
     if (confirm("Discard changes?")) {
-      window.history.back();
+      navigate('/CriminalManage/CriminalManage');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC]">
+        <PoliceHeader />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0B214A] mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading criminal data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
@@ -206,7 +393,9 @@ export default function CriminalRecord() {
       <br/>
       <br/>
 
-      <h1 className="text-4xl font-extrabold tracking-tight text-center mb-10">Add Criminal Record</h1>
+      <h1 className="text-4xl font-extrabold tracking-tight text-center mb-10">
+        {isEditing ? 'Edit Criminal Record' : 'Add Criminal Record'}
+      </h1>
       
       <div className="mx-auto max-w-7xl border border-gray-300 rounded-4xl p-6 md:p-6 bg-white shadow p-6">
 
@@ -255,12 +444,24 @@ export default function CriminalRecord() {
             <div className="grid grid-cols-2 gap-4 mb-3">
               <div>
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Criminal ID</label>
-                <input
-                  value={form.criminalId}
-                  onChange={(e) => update("criminalId", e.target.value)}
-                  placeholder=""
-                  className="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
-                />
+                <div className="flex items-center">
+                  <span className="bg-gray-100 border border-gray-300 border-r-0 rounded-l px-3 py-2 text-sm text-gray-600">#</span>
+                  <input
+                    value={form.criminalId}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                      if (value.length <= 6) {
+                        update("criminalId", value);
+                      }
+                    }}
+                    placeholder="123456"
+                    maxLength={6}
+                    className="block w-full rounded-r border border-gray-300 bg-white px-3 py-2 text-sm"
+                  />
+                </div>
+                {form.criminalId && form.criminalId.length !== 6 && (
+                  <p className="text-xs text-red-500 mt-1">Criminal ID must be exactly 6 digits</p>
+                )}
               </div>
               <div>
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">NIC Number</label>
@@ -312,12 +513,35 @@ export default function CriminalRecord() {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Citizen</label>
-                <input
+                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Citizen (Optional)</label>
+                <select
                   value={form.citizen}
                   onChange={(e) => update("citizen", e.target.value)}
-                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
-                />
+                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+                >
+                  <option value="">Select Country</option>
+                  <option value="Sri Lanka">Sri Lanka</option>
+                  <option value="India">India</option>
+                  <option value="Pakistan">Pakistan</option>
+                  <option value="Bangladesh">Bangladesh</option>
+                  <option value="Nepal">Nepal</option>
+                  <option value="Maldives">Maldives</option>
+                  <option value="Afghanistan">Afghanistan</option>
+                  <option value="China">China</option>
+                  <option value="Japan">Japan</option>
+                  <option value="South Korea">South Korea</option>
+                  <option value="Honduras">Honduras</option>
+                  <option value="El Salvador">El Salvador</option>
+                  <option value="Nicaragua">Nicaragua</option>
+                  <option value="Costa Rica">Costa Rica</option>
+                  <option value="Panama">Panama</option>
+                  <option value="Cuba">Cuba</option>
+                  <option value="Jamaica">Jamaica</option>
+                  <option value="Haiti">Haiti</option>
+                  <option value="Dominican Republic">Dominican Republic</option>
+                  <option value="Puerto Rico">Puerto Rico</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
 
               <div>
@@ -332,7 +556,7 @@ export default function CriminalRecord() {
                   onChange={(e) => {
                     const raw = Number(e.target.value);
                     if (Number.isNaN(raw)) { update("height", ""); return; }
-                    const clamped = Math.max(50, Math.min(250, raw));
+                    const clamped = Math.max(Math.min(250, raw));
                     update("height", String(clamped));
                   }}
                   className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
@@ -350,7 +574,7 @@ export default function CriminalRecord() {
                   onChange={(e) => {
                     const raw = Number(e.target.value);
                     if (Number.isNaN(raw)) { update("weight", ""); return; }
-                    const clamped = Math.max(20, Math.min(250, raw));
+                    const clamped = Math.max(Math.min(250, raw));
                     update("weight", String(clamped));
                   }}
                   className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
@@ -731,7 +955,7 @@ export default function CriminalRecord() {
             onClick={onSave}
             className="rounded bg-[#0B214A] px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
           >
-            Save
+            {isEditing ? 'Update' : 'Save'}
           </button>
           <button
             onClick={onCancel}
