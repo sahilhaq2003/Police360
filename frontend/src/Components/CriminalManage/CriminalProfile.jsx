@@ -129,20 +129,15 @@ export default function CriminalProfile() {
               <div className="w-32 h-40 border-2 border-gray-300 rounded-lg overflow-hidden bg-gray-100">
                 {criminal.photo ? (
                   <img 
-                    src={criminal.photo.startsWith('http') ? criminal.photo : `${axiosInstance.defaults.baseURL}${criminal.photo}`}
+                    src={criminal.photo} 
                     alt="Criminal Photo" 
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
                   />
-                ) : null}
-                <div 
-                  className={`w-full h-full flex items-center justify-center text-gray-400 ${criminal.photo ? 'hidden' : ''}`}
-                >
-                  <span className="text-sm">NO PHOTO</span>
-                </div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <span className="text-sm">NO PHOTO</span>
+                  </div>
+                )}
               </div>
               
               {/* Basic Info */}
@@ -369,10 +364,14 @@ export default function CriminalProfile() {
                 <div className="grid grid-cols-2 gap-3">
                   {criminal.fingerprints.map((print, index) => (
                     <div key={index} className="border border-gray-300 rounded p-2 text-center">
-                      <div className="h-20 bg-gray-100 rounded mb-2 flex items-center justify-center">
-                        <span className="text-xs text-gray-500">Print #{index + 1}</span>
+                      <div className="h-20 bg-gray-100 rounded mb-2 flex items-center justify-center overflow-hidden">
+                        {print?.url ? (
+                          <img src={print.url} alt={`fp-${index + 1}`} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs text-gray-500">Print #{index + 1}</span>
+                        )}
                       </div>
-                      <p className="text-xs text-gray-600 truncate">{print}</p>
+                      <p className="text-xs text-gray-600 truncate">{print?.name || print?.url || `#${index + 1}`}</p>
                     </div>
                   ))}
                 </div>

@@ -10,7 +10,7 @@ export default function CriminalRecord() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  // Offense code list
+  // Offense code list ..
   const OFFENSE_CODES = [
     { code: "09A", desc: "Murder and Nonnegligent Manslaughter" },
     { code: "09B", desc: "Negligent Manslaughter" },
@@ -27,7 +27,7 @@ export default function CriminalRecord() {
     { code: "220", desc: "Burglary / Breaking and Entering" },
     { code: "23A", desc: "Pocket-picking" },
   ];
-  // Institution options (police stations)
+  // Institution options (police stations) 
   const INSTITUTIONS = [
     "Gampaha Police Station",
     "Horana Police Station",
@@ -196,14 +196,13 @@ export default function CriminalRecord() {
       // Set fingerprints data
       if (criminal.fingerprints && criminal.fingerprints.length > 0) {
         const formattedPrints = criminal.fingerprints.map(print => ({
-          name: print.name || "",
-          url: print.url || ""
+          name: print?.name || "",
+          url: print?.url || "",
+          _id: print?._id
         }));
-        // Pad to 6 slots
-        while (formattedPrints.length < 6) {
-          formattedPrints.push({ name: "", url: "" });
-        }
-        setPrints(formattedPrints);
+        // Ensure exactly 6 distinct slots
+        const padded = Array.from({ length: 6 }, (_, i) => formattedPrints[i] ? { ...formattedPrints[i] } : { name: "", url: "" });
+        setPrints(padded);
       }
 
       setIsEditing(true);
@@ -226,44 +225,18 @@ export default function CriminalRecord() {
   ]);
 
   // --- Fingerprints (6 slots) ---
-  const [prints, setPrints] = useState(Array(6).fill({ name: "", url: "" }));
-  const printInputRefs = useRef([...Array(6)].map(() => React.createRef()));
+  // Create 6 unique empty objects to avoid shared reference mutation issues
+  const [prints, setPrints] = useState(() => Array.from({ length: 6 }, () => ({ name: "", url: "" })));
+  const printInputRefs = useRef(Array.from({ length: 6 }, () => React.createRef()));
 
   // Helpers
   const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
-  const handlePhotoChange = async (e) => {
+  const handlePhotoChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    // Show preview immediately
     const url = URL.createObjectURL(file);
     setPhotoUrl(url);
-    
-    // Upload to server
-    try {
-      const formData = new FormData();
-      formData.append('photo', file);
-      
-      const response = await axiosInstance.post('/criminals/upload-photo', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
-      if (response.data.success) {
-        // Update photoUrl with server URL
-        setPhotoUrl(response.data.photoUrl);
-      } else {
-        console.error('Photo upload failed:', response.data.message);
-        alert('Failed to upload photo. Please try again.');
-        setPhotoUrl(''); // Clear the preview
-      }
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      alert('Failed to upload photo. Please try again.');
-      setPhotoUrl(''); // Clear the preview
-    }
   };
 
   const addRow = () =>

@@ -110,40 +110,10 @@ const deleteCriminal = async (req, res) => {
     }
 };
 
-// Upload criminal photo
-const uploadPhoto = async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                message: 'No photo file uploaded'
-            });
-        }
-
-        // Return the file path that can be used to access the photo
-        const photoUrl = `/uploads/criminals/${req.file.filename}`;
-        
-        res.status(200).json({
-            success: true,
-            message: 'Photo uploaded successfully',
-            photoUrl: photoUrl,
-            filename: req.file.filename
-        });
-    } catch (error) {
-        console.error('Error uploading photo:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error uploading photo',
-            error: error.message
-        });
-    }
-};
-
 module.exports = {
     getAllCriminals,
     addCriminal,
     getCriminalById,
     updateCriminal,
-    deleteCriminal,
-    uploadPhoto
+    deleteCriminal
 };
