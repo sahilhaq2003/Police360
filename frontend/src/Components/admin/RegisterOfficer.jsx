@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, Home, Server, Key, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import loginBg from '../../assets/loginbg.jpg';
+import AdminHeader from '../AdminHeader/AdminHeader';
 
 const shake = {
   x: [0, -5, 5, -5, 5, 0],
@@ -87,6 +88,7 @@ export default function RegisterOfficer() {
   ];
 
   return (
+    
     <div
       className="relative min-h-screen flex items-center justify-center bg-white"
       style={{
@@ -96,6 +98,7 @@ export default function RegisterOfficer() {
       }}
     >
       <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" />
+      
 
       <motion.div
         className="relative w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row border border-gray-200 z-10"
