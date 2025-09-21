@@ -20,4 +20,14 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-module.exports = { protect, adminOnly };
+const officerOnly = (req, res, next) => {
+  if (req.user?.role !== 'Officer') return res.status(403).json({ message: 'Access denied: Officers only' });
+  next();
+};
+
+const itOnly = (req, res, next) => {
+  if (req.user?.role !== 'IT Officer') return res.status(403).json({ message: 'Access denied: IT Officers only' });
+  next();
+};
+
+module.exports = { protect, adminOnly, officerOnly, itOnly };
