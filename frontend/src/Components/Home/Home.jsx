@@ -238,6 +238,11 @@ function Home() {
   const handleApplyClick = (service) => {
     // Prefer direct link if provided; otherwise go to generic report form
     if (service.link) {
+      if (service.link === '/apply/file-complaint') {
+        // indicate form was opened from Home so it can avoid navigation on submit
+        navigate(service.link, { state: { fromHome: true } });
+        return;
+      }
       navigate(service.link);
       return;
     }
