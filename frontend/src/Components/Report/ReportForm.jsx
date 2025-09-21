@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "../../utils/axiosInstance";
+//import axios from "axios";
 
 // ---- helpers
 const fmtBytes = (b) => `${(b / (1024 * 1024)).toFixed(2)} MB`;
@@ -41,6 +42,19 @@ export default function ReportFormWizard() {
     isConfidential: false,
     priority: "Medium",
   });
+
+  const handleChange = (e) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   console.log(formData);
+  //   sendRequest().then(() => history('/report-success'));
+  // };
 
   const [witnesses, setWitnesses] = useState([]);
   const [suspects, setSuspects] = useState([]);
@@ -155,60 +169,79 @@ export default function ReportFormWizard() {
   };
 
   // ---------- final submit (STEP 1 → POST)
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const submitData = new FormData();
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-      // form data
-      Object.keys(formData).forEach((key) => {
-        if (key === "insuranceDetails") {
-          submitData.append(key, JSON.stringify(formData[key]));
-        } else if (key === "incidentDate") {
-          const d = new Date(formData[key]);
-          submitData.append(key, d.toISOString());
-        } else {
-          submitData.append(key, formData[key]);
-        }
-      });
+  try {
+    const submitData = new FormData();
 
-      submitData.append("witnesses", JSON.stringify(witnesses));
-      submitData.append("suspects", JSON.stringify(suspects));
+    // ===== Reporter fields =====
+    submitData.append("reportType", String(formData.reportType));
+    submitData.append("reporterName", String(formData.reporterName));
+    submitData.append("reporterEmail", String(formData.reporterEmail));
+    submitData.append("reporterPhone", String(formData.reporterPhone));
+    submitData.append("reporterAddress", String(formData.reporterAddress));
+    submitData.append("reporterIdNumber", String(formData.reporterIdNumber));
+    submitData.append("reporterIdType", String(formData.reporterIdType));
 
-      evidence.forEach((item, index) => {
-        submitData.append("files", item.file);
-        submitData.append(`evidence[${index}][type]`, item.type);
-        submitData.append(`evidence[${index}][description]`, item.description);
-      });
-
-      const res = await axios.post("/api/reports", submitData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        timeout: 30000,
-      });
-
-      if (res.data?.success) {
-        navigate("/report-success", {
-          state: {
-            reportNumber: res.data.data?.reportNumber,
-            reportType: formData.reportType,
-          },
-          replace: true,
-        });
-      } else {
-        throw new Error(res.data?.message || "Failed to submit report");
-      }
-    } catch (error) {
-      console.error("Error submitting report:", error);
-      let msg = "Error submitting report. Please try again.";
-      if (error.response) msg = error.response.data?.message || msg;
-      else if (error.request) msg = "Network error. Please check your connection and try again.";
-      else msg = error.message || msg;
-      alert(msg);
-    } finally {
-      setLoading(false);
+    // ===== Incident fields =====
+    if (formData.incidentDate) {
+      submitData.append("incidentDate", new Date(formData.incidentDate).toISOString());
     }
-  };
+    submitData.append("incidentLocation", String(formData.incidentLocation));
+    submitData.append("incidentDescription", String(formData.incidentDescription));
+    submitData.append("estimatedLoss", String(formData.estimatedLoss || 0));
+    submitData.append("priority", String(formData.priority || "Medium"));
+
+    // ===== Insurance =====
+    submitData.append("insuranceInvolved", String(formData.insuranceInvolved));
+    submitData.append("insuranceDetails", JSON.stringify(formData.insuranceDetails || {}));
+
+    // ===== Confidential flag =====
+    submitData.append("isConfidential", String(formData.isConfidential));
+
+    // ===== Witnesses & Suspects =====
+    submitData.append("witnesses", JSON.stringify(witnesses || []));
+    submitData.append("suspects", JSON.stringify(suspects || []));
+
+    // ===== Evidence (files) =====
+    evidence.forEach((item, index) => {
+      submitData.append("files", item.file);
+      submitData.append(`evidence[${index}][type]`, String(item.type || "Other"));
+      submitData.append(`evidence[${index}][description]`, String(item.description || ""));
+    });
+
+    // ===== API Call =====
+    const res = await axios.post("/api/reporting", submitData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 30000,
+    });
+
+    // ===== Handle success =====
+    if (res.data?.success) {
+      navigate("/report-success", {
+        state: {
+          reportNumber: res.data.data?.reportNumber,
+          reportType: formData.reportType,
+        },
+        replace: true,
+      });
+    } else {
+      throw new Error(res.data?.message || "Failed to submit report");
+    }
+  } catch (error) {
+    console.error("Error submitting report:", error);
+    let msg = "Error submitting report. Please try again.";
+    if (error.response) msg = error.response.data?.message || msg;
+    else if (error.request) msg = "Network error. Please check your connection and try again.";
+    else msg = error.message || msg;
+    alert(msg);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // ---------- UI
   return (
