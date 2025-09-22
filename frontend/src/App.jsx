@@ -5,10 +5,15 @@ import Home from './Components/Home/Home';
 import Login from './Components/UserManage/Login';
 import RegisterOfficer from './Components/admin/RegisterOfficer';
 import AdminDashboard from './Components/admin/AdminDashboard';
-import Officers from './Components/admin/officers';
-import OfficerProfile from './Components/admin/OfficerProfile';
+
 import ReportForm from './Components/Report/ReportForm';
 import ReportSuccess from './Components/Report/ReportSuccess';
+
+import Reports from './Components/Report/Reports';
+import UpdateReport from './Components/Report/UpdateReport';
+
+import Officers from './Components/admin/officers';
+import OfficerProfile from './Components/admin/OfficerProfile';
 
 import OfficerDashboard from './Components/officer/officerDashboard';
 import AssignAccidents from './Components/officer/AssignAccidents';
@@ -52,8 +57,11 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/officers" element={<Officers />} />
         <Route path="/admin/officer/:id" element={<OfficerProfile />} />
+
         <Route path="/report-form" element={<ReportForm />} />
         <Route path="/report-success" element={<ReportSuccess />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/reports/:id" element={<UpdateReport />} />
 
 
         <Route
