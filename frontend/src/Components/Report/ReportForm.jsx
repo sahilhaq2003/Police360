@@ -61,21 +61,13 @@ function ReportForm() {
     };
 
     await axios.post("http://localhost:8000/api/reports", payload);
+
     navigate("/report-success");
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* 🔹 Animated gradient background */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-50 via-slate-100 to-indigo-100 animate-gradient" />
-
-      {/* 🔹 Floating blobs */}
-      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-300/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
-      <div className="absolute top-40 right-10 w-72 h-72 bg-indigo-300/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
-      <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-cyan-300/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
-
-      {/* 🔹 Form container */}
-      <div className="relative mx-auto max-w-5xl bg-white/90 backdrop-blur-md shadow-xl rounded-2xl p-8 mt-10">
+    <div className="min-h-screen bg-slate-50 py-10 px-4">
+      <div className="mx-auto max-w-5xl">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
@@ -86,7 +78,10 @@ function ReportForm() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid gap-8 md:grid-cols-2">
+        <form
+          onSubmit={handleSubmit}
+          className="grid gap-8 md:grid-cols-2"
+        >
           {/* Left side */}
           <div className="space-y-6">
             <Section title="Report Metadata">
@@ -113,13 +108,47 @@ function ReportForm() {
             </Section>
 
             <Section title="Reporter Information">
-              <Input icon={<User />} label="Full Name" name="reporterName" value={inputs.reporterName} onChange={handleChange} />
-              <Input icon={<Mail />} label="Email" type="email" name="reporterEmail" value={inputs.reporterEmail} onChange={handleChange} />
-              <Input icon={<Phone />} label="Phone" name="reporterPhone" value={inputs.reporterPhone} onChange={handleChange} />
-              <Input label="ID Number" name="reporterIdNumber" value={inputs.reporterIdNumber} onChange={handleChange} />
-              <Select label="ID Type" name="reporterIdType" value={inputs.reporterIdType} onChange={handleChange}
-                options={["National ID", "Passport", "Driving License", "Other"]} />
-              <Textarea label="Address" name="reporterAddress" value={inputs.reporterAddress} onChange={handleChange} />
+              <Input
+                icon={<User />}
+                label="Full Name"
+                name="reporterName"
+                value={inputs.reporterName}
+                onChange={handleChange}
+              />
+              <Input
+                icon={<Mail />}
+                label="Email"
+                type="email"
+                name="reporterEmail"
+                value={inputs.reporterEmail}
+                onChange={handleChange}
+              />
+              <Input
+                icon={<Phone />}
+                label="Phone"
+                name="reporterPhone"
+                value={inputs.reporterPhone}
+                onChange={handleChange}
+              />
+              <Input
+                label="ID Number"
+                name="reporterIdNumber"
+                value={inputs.reporterIdNumber}
+                onChange={handleChange}
+              />
+              <Select
+                label="ID Type"
+                name="reporterIdType"
+                value={inputs.reporterIdType}
+                onChange={handleChange}
+                options={["National ID", "Passport", "Driving License", "Other"]}
+              />
+              <Textarea
+                label="Address"
+                name="reporterAddress"
+                value={inputs.reporterAddress}
+                onChange={handleChange}
+              />
             </Section>
           </div>
 
@@ -132,32 +161,76 @@ function ReportForm() {
                 name="incidentDate"
                 value={inputs.incidentDate}
                 onChange={handleChange}
-                max={new Date().toISOString().split("T")[0]} // Block future dates
               />
-              <Input icon={<MapPin />} label="Location" name="incidentLocation" value={inputs.incidentLocation} onChange={handleChange} />
-              <Textarea label="Description" name="incidentDescription" value={inputs.incidentDescription} onChange={handleChange} />
-              <Input label="Estimated Loss" type="number" name="estimatedLoss" value={inputs.estimatedLoss} onChange={handleChange} />
+              <Input
+                icon={<MapPin />}
+                label="Location"
+                name="incidentLocation"
+                value={inputs.incidentLocation}
+                onChange={handleChange}
+              />
+              <Textarea
+                label="Description"
+                name="incidentDescription"
+                value={inputs.incidentDescription}
+                onChange={handleChange}
+              />
+              <Input
+                label="Estimated Loss"
+                type="number"
+                name="estimatedLoss"
+                value={inputs.estimatedLoss}
+                onChange={handleChange}
+              />
             </Section>
 
             <Section title="Additional Information">
-              <Input label="Witnesses (comma separated)" name="witnesses" value={inputs.witnesses} onChange={handleChange} />
-              <Input label="Suspects (comma separated)" name="suspects" value={inputs.suspects} onChange={handleChange} />
-              <Input label="Evidence (comma separated)" name="evidence" value={inputs.evidence} onChange={handleChange} />
+              <Input
+                label="Witnesses (comma separated)"
+                name="witnesses"
+                value={inputs.witnesses}
+                onChange={handleChange}
+              />
+              <Input
+                label="Suspects (comma separated)"
+                name="suspects"
+                value={inputs.suspects}
+                onChange={handleChange}
+              />
+              <Input
+                label="Evidence (comma separated)"
+                name="evidence"
+                value={inputs.evidence}
+                onChange={handleChange}
+              />
             </Section>
 
             <Section title="Insurance">
               <label className="flex items-center gap-2">
-                <input type="checkbox" name="insuranceInvolved" checked={inputs.insuranceInvolved} onChange={handleChange}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600" />
+                <input
+                  type="checkbox"
+                  name="insuranceInvolved"
+                  checked={inputs.insuranceInvolved}
+                  onChange={handleChange}
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                />
                 Insurance involved
               </label>
               {inputs.insuranceInvolved && (
-                <Textarea label="Insurance Details" name="insuranceDetails" value={inputs.insuranceDetails} onChange={handleChange} />
+                <Textarea
+                  label="Insurance Details"
+                  name="insuranceDetails"
+                  value={inputs.insuranceDetails}
+                  onChange={handleChange}
+                />
               )}
             </Section>
 
             <div className="flex justify-end">
-              <button type="submit" className="rounded-lg bg-blue-700 px-6 py-3 font-medium text-white shadow hover:bg-blue-800 flex items-center gap-2">
+              <button
+                type="submit"
+                className="rounded-lg bg-blue-700 px-6 py-3 font-medium text-white shadow hover:bg-blue-800 flex items-center gap-2"
+              >
                 <ShieldCheck size={18} /> Submit Report
               </button>
             </div>
@@ -171,7 +244,7 @@ function ReportForm() {
 /* --- Shared UI components --- */
 function Section({ title, children }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur">
+    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <h3 className="mb-4 text-base font-semibold text-slate-800">{title}</h3>
       <div className="space-y-4">{children}</div>
     </section>
@@ -181,10 +254,15 @@ function Section({ title, children }) {
 function Input({ label, icon, ...props }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
+      <label className="mb-1 block text-sm font-medium text-slate-700">
+        {label}
+      </label>
       <div className="flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2.5 shadow-sm focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/20">
         {icon && <span className="mr-2 text-slate-400">{icon}</span>}
-        <input className="w-full outline-none text-slate-800 bg-transparent" {...props} />
+        <input
+          className="w-full outline-none text-slate-800"
+          {...props}
+        />
       </div>
     </div>
   );
@@ -193,10 +271,12 @@ function Input({ label, icon, ...props }) {
 function Textarea({ label, ...props }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
+      <label className="mb-1 block text-sm font-medium text-slate-700">
+        {label}
+      </label>
       <textarea
         rows={3}
-        className="w-full rounded-lg border border-slate-300 px-3 py-2.5 shadow-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 bg-transparent"
+        className="w-full rounded-lg border border-slate-300 px-3 py-2.5 shadow-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
         {...props}
       />
     </div>
@@ -206,7 +286,9 @@ function Textarea({ label, ...props }) {
 function Select({ label, options, ...props }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
+      <label className="mb-1 block text-sm font-medium text-slate-700">
+        {label}
+      </label>
       <select
         className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 shadow-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
         {...props}
