@@ -3,6 +3,8 @@ import axiosInstance from "../../utils/axiosInstance";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const complaintTypes = ["Theft", "Assault", "Fraud", "Harassment", "Other"];
+const idTypes = ["National ID", "Passport", "Driver's License", "Voter ID", "Other"];
+const priorityOptions = ["LOW", "MEDIUM", "HIGH"];
 
 export default function FileComplaint() {
   const navigate = useNavigate();
@@ -18,6 +20,14 @@ export default function FileComplaint() {
       description: "",
     },
     attachments: [],
+    idInfo: { idType: "", idValue: "" },
+    priority: "MEDIUM",
+    estimatedLoss: "",
+    additionalInfo: {
+      witnesses: [], // array of { name, phone, id }
+      suspects: [], // array of { name, appearance, photos: [] }
+      evidence: [] // array of base64 files
+    }
   });
 
   const [banner, setBanner] = useState(null);
@@ -56,13 +66,41 @@ export default function FileComplaint() {
       .catch(() => {});
   }
 
+  // helper for additional file uploads (evidence or suspect photos)
+  function handleAdditionalFiles(path, e) {
+    const files = Array.from(e.target.files || []);
+    Promise.all(
+      files.map(
+        (f) =>
+          new Promise((res, rej) => {
+            const reader = new FileReader();
+            reader.onload = () => res(reader.result);
+            reader.onerror = rej;
+            reader.readAsDataURL(f);
+          })
+      )
+    )
+      .then((data) => {
+        const keys = path.split('.');
+        setForm(prev => {
+          const copy = JSON.parse(JSON.stringify(prev));
+          let cur = copy;
+          for (let i = 0; i < keys.length - 1; i++) cur = cur[keys[i]];
+          const last = keys[keys.length - 1];
+          cur[last] = cur[last] ? cur[last].concat(data) : data;
+          return copy;
+        })
+      })
+      .catch(() => {});
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setBanner(null);
 
     try {
-      const res = await axiosInstance.post("/cases", form);
+  const res = await axiosInstance.post("/cases", form);
       if (res?.data?.success) {
         setBanner({
           type: "success",
@@ -121,7 +159,7 @@ export default function FileComplaint() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+  <form onSubmit={handleSubmit} className="space-y-6">
           {/* Instructions */}
           <p className="text-sm text-slate-600">
             Please provide as many details as possible. Your submission will be
@@ -207,6 +245,106 @@ export default function FileComplaint() {
                 onChange={handleFile}
                 className="text-sm"
               />
+            </div>
+          </div>
+
+          {/* ID / ID Type, Priority, Estimated Loss */}
+          <div>
+            <h3 className="font-medium text-slate-700 mb-2">Identification & Priority</h3>
+            <div className="grid grid-cols-1 gap-3">
+              <select
+                value={form.idInfo.idType}
+                onChange={(e) => onChange('idInfo.idType', e.target.value)}
+                className="border p-3 rounded-lg text-sm focus:ring focus:ring-indigo-200"
+              >
+                <option value="">Select ID type (optional)</option>
+                {idTypes.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <input
+                value={form.idInfo.idValue}
+                onChange={(e) => onChange('idInfo.idValue', e.target.value)}
+                placeholder="ID Number (optional)"
+                className="border p-3 rounded-lg text-sm focus:ring focus:ring-indigo-200"
+              />
+              <select
+                value={form.priority}
+                onChange={(e) => onChange('priority', e.target.value)}
+                className="border p-3 rounded-lg text-sm focus:ring focus:ring-indigo-200"
+              >
+                {priorityOptions.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+              <input
+                value={form.estimatedLoss}
+                onChange={(e) => onChange('estimatedLoss', e.target.value)}
+                placeholder="Estimated loss (optional)"
+                className="border p-3 rounded-lg text-sm focus:ring focus:ring-indigo-200"
+              />
+            </div>
+          </div>
+
+          {/* Additional Information (optional) */}
+          <div>
+            <h3 className="font-medium text-slate-700 mb-2">Additional Information (optional)</h3>
+
+            {/* Witnesses */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium">Witnesses</h4>
+                <button type="button" onClick={() => {
+                  setForm(prev => ({
+                    ...prev,
+                    additionalInfo: { ...prev.additionalInfo, witnesses: [...(prev.additionalInfo.witnesses||[]), { name: '', phone: '', id: '' }] }
+                  }))
+                }} className="text-sm text-indigo-600">Add</button>
+              </div>
+              {(form.additionalInfo.witnesses || []).map((w, idx) => (
+                <div key={idx} className="grid grid-cols-1 gap-2 border rounded p-3 mb-2">
+                  <input value={w.name} onChange={e => {
+                    const val = e.target.value; setForm(prev=>{ const copy=JSON.parse(JSON.stringify(prev)); copy.additionalInfo.witnesses[idx].name = val; return copy; })
+                  }} placeholder="Name" className="border p-2 rounded text-sm" />
+                  <input value={w.phone} onChange={e => {
+                    const val = e.target.value; setForm(prev=>{ const copy=JSON.parse(JSON.stringify(prev)); copy.additionalInfo.witnesses[idx].phone = val; return copy; })
+                  }} placeholder="Phone" className="border p-2 rounded text-sm" />
+                  <input value={w.id} onChange={e => {
+                    const val = e.target.value; setForm(prev=>{ const copy=JSON.parse(JSON.stringify(prev)); copy.additionalInfo.witnesses[idx].id = val; return copy; })
+                  }} placeholder="ID (optional)" className="border p-2 rounded text-sm" />
+                  <div className="text-right">
+                    <button type="button" onClick={() => setForm(prev=>{ const copy=JSON.parse(JSON.stringify(prev)); copy.additionalInfo.witnesses.splice(idx,1); return copy; })} className="text-sm text-rose-600">Remove</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Suspects */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium">Suspects</h4>
+                <button type="button" onClick={() => {
+                  setForm(prev => ({
+                    ...prev,
+                    additionalInfo: { ...prev.additionalInfo, suspects: [...(prev.additionalInfo.suspects||[]), { name: '', appearance: '', photos: [] }] }
+                  }))
+                }} className="text-sm text-indigo-600">Add</button>
+              </div>
+              {(form.additionalInfo.suspects || []).map((s, idx) => (
+                <div key={idx} className="grid grid-cols-1 gap-2 border rounded p-3 mb-2">
+                  <input value={s.name} onChange={e => { const val = e.target.value; setForm(prev=>{ const copy=JSON.parse(JSON.stringify(prev)); copy.additionalInfo.suspects[idx].name = val; return copy; }) }} placeholder="Name" className="border p-2 rounded text-sm" />
+                  <textarea value={s.appearance} onChange={e => { const val = e.target.value; setForm(prev=>{ const copy=JSON.parse(JSON.stringify(prev)); copy.additionalInfo.suspects[idx].appearance = val; return copy; }) }} placeholder="Appearance (optional)" className="border p-2 rounded text-sm h-20" />
+                  <input type="file" multiple onChange={e => handleAdditionalFiles(`additionalInfo.suspects.${idx}.photos`, e)} className="text-sm" />
+                  <div className="text-right">
+                    <button type="button" onClick={() => setForm(prev=>{ const copy=JSON.parse(JSON.stringify(prev)); copy.additionalInfo.suspects.splice(idx,1); return copy; })} className="text-sm text-rose-600">Remove</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Evidence */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium">Evidence (images / videos)</h4>
+              </div>
+              <input type="file" multiple onChange={e => handleAdditionalFiles('additionalInfo.evidence', e)} className="text-sm" />
+              <div className="mt-2 text-sm text-slate-500">You may upload images or short videos. All additional info is optional.</div>
             </div>
           </div>
 
