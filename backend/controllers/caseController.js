@@ -5,7 +5,16 @@ const mongoose = require('mongoose');
 // POST /api/cases - submit a new criminal complaint
 exports.createCase = async (req, res) => {
   try {
-    const { complainant, complaintDetails, attachments } = req.body;
+    const {
+      complainant,
+      complaintDetails,
+      attachments,
+      idInfo,
+      priority,
+      estimatedLoss,
+      additionalInfo,
+    } = req.body;
+
     if (!complainant?.name || !complaintDetails?.typeOfComplaint) {
       return res.status(400).json({ message: 'Complainant name and type of complaint are required' });
     }
@@ -14,6 +23,10 @@ exports.createCase = async (req, res) => {
       complainant,
       complaintDetails,
       attachments: attachments || [],
+      idInfo: idInfo || {},
+      priority: priority || 'MEDIUM',
+      estimatedLoss: estimatedLoss || '',
+      additionalInfo: additionalInfo || {},
       createdBy: req.user?.id || null,
     });
 

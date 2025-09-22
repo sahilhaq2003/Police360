@@ -143,6 +143,10 @@ export default function CaseDetails() {
             <LabelRow label="Assigned Officer">{c.assignedOfficer ? (c.assignedOfficer.name || c.assignedOfficer.officerId) : '—'}</LabelRow>
             <LabelRow label="Reported at">{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</LabelRow>
             <LabelRow label="Last updated">{c.updatedAt ? new Date(c.updatedAt).toLocaleString() : '—'}</LabelRow>
+            <LabelRow label="ID Type">{c.idInfo?.idType || '—'}</LabelRow>
+            <LabelRow label="ID Value">{c.idInfo?.idValue || '—'}</LabelRow>
+            <LabelRow label="Priority">{c.priority || '—'}</LabelRow>
+            <LabelRow label="Estimated Loss">{c.estimatedLoss || '—'}</LabelRow>
           </div>
 
           <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
@@ -162,6 +166,79 @@ export default function CaseDetails() {
             ) : (
               <p className="text-sm text-slate-600">No attachments uploaded.</p>
             )}
+          </div>
+
+          {/* Additional Information display */}
+          <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
+            <h3 className="mb-4 text-lg font-semibold">Additional Information</h3>
+
+            {/* Witnesses */}
+            <div className="mb-4">
+              <h4 className="font-medium mb-2">Witnesses</h4>
+              {(c.additionalInfo?.witnesses || []).length > 0 ? (
+                <ul className="space-y-2">
+                  {c.additionalInfo.witnesses.map((w, i) => (
+                    <li key={i} className="border rounded p-3">
+                      <div className="text-sm font-medium">{w.name || '—'}</div>
+                      <div className="text-xs text-slate-600">Phone: {w.phone || '—'}</div>
+                      <div className="text-xs text-slate-600">ID: {w.id || '—'}</div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-sm text-slate-600">No witnesses provided.</div>
+              )}
+            </div>
+
+            {/* Suspects */}
+            <div className="mb-4">
+              <h4 className="font-medium mb-2">Suspects</h4>
+              {(c.additionalInfo?.suspects || []).length > 0 ? (
+                <div className="space-y-3">
+                  {c.additionalInfo.suspects.map((s, i) => (
+                    <div key={i} className="border rounded p-3">
+                      <div className="text-sm font-medium">{s.name || '—'}</div>
+                      <div className="text-xs text-slate-600 mb-2">Appearance: {s.appearance || '—'}</div>
+                      {Array.isArray(s.photos) && s.photos.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                          {s.photos.map((p, j) => (
+                            <div key={j} className="overflow-hidden rounded border">
+                              {typeof p === 'string' && p.startsWith('data:video') ? (
+                                <video src={p} controls className="h-24 w-full object-cover" />
+                              ) : (
+                                <img src={p} alt={`suspect-${i}-${j}`} className="h-24 w-full object-cover" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-slate-600">No suspects provided.</div>
+              )}
+            </div>
+
+            {/* Evidence */}
+            <div>
+              <h4 className="font-medium mb-2">Evidence</h4>
+              {(c.additionalInfo?.evidence || []).length > 0 ? (
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                  {c.additionalInfo.evidence.map((evi, idx) => (
+                    <div key={idx} className="overflow-hidden rounded-xl border border-slate-200">
+                      {typeof evi === 'string' && evi.startsWith('data:video') ? (
+                        <video src={evi} controls className="h-40 w-full object-cover" />
+                      ) : (
+                        <img src={evi} alt={`evi-${idx}`} className="h-40 w-full object-cover" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-slate-600">No evidence uploaded.</div>
+              )}
+            </div>
           </div>
 
           {Array.isArray(c.investigationNotes) && c.investigationNotes.length > 0 && (
