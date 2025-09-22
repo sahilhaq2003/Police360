@@ -7,7 +7,7 @@ const connectDB = require('./config/db');
 
 const officerRoutes = require('./routes/officerRoutes');
 const authRoutes = require('./routes/authRoutes');
-const reportRoutes = require('./routes/reportRoutes');
+const router = require('./routes/reportRoutes');
 
 const requestRoutes = require('./routes/requestRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
@@ -45,9 +45,12 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/officers', officerRoutes);
-app.use('/api/reports', reportRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/schedules', scheduleRoutes);
+
+//tharusha Routes
+
+app.use('/api/reports', router);
 
 //Enuri Routes
 
@@ -61,6 +64,9 @@ app.use((err, _req, res, _next) => {
     return res.status(413).json({ message: 'Payload too large' });
   res.status(500).json({ message: 'Server error' });
 });
+
+
+
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
