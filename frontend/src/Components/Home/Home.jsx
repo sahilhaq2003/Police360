@@ -69,7 +69,7 @@ function Home() {
           icon: '/images/893881.png',
           title: 'File Complaint',
           desc: 'This service allows users to file a criminal complaint.',
-          link: '/report-form/apply/file-complaint',
+          link: '/apply/file-complaint',
         },
         {
           icon: '/images/893881.png',
