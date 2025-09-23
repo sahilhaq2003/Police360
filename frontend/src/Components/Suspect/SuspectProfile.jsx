@@ -70,7 +70,16 @@ export default function SuspectProfile() {
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-6">
               <div className="w-32 h-40 border-2 border-gray-300 rounded-lg overflow-hidden bg-gray-100">
-                {suspect.photo ? (<img src={getMediaUrl(suspect.photo)} alt="photo" className="w-full h-full object-cover" />) : (<div className="w-full h-full flex items-center justify-center text-gray-400"><span className="text-sm">NO PHOTO</span></div>)}
+                {suspect.photo ? (
+                  <img
+                    src={getMediaUrl(suspect.photo)}
+                    alt="photo"
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/placeholder.png'; }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400"><span className="text-sm">NO PHOTO</span></div>
+                )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center space-x-4 mb-2"><h1 className="text-3xl font-bold text-[#0B214A]">{suspect.name||'Unknown'}</h1>{getStatusBadge(suspect.suspectStatus)}</div>
@@ -83,7 +92,7 @@ export default function SuspectProfile() {
               </div>
             </div>
             <div className="flex flex-col space-y-2">
-              <button onClick={()=>navigate(`/SuspectManage/Suspect/${suspect._id}`)} className="px-4 py-2 bg-[#0B214A] text-white rounded hover:bg-blue-700 text-sm">Edit Record</button>
+              <button onClick={()=>navigate(`/SuspectManage/SuspectUpdate/${suspect._id}`)} className="px-4 py-2 bg-[#0B214A] text-white rounded hover:bg-blue-700 text-sm">Edit Record</button>
               <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">Print Record</button>
               <button onClick={()=>navigate('/SuspectManage/SuspectManage')} className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">Back to List</button>
             </div>
@@ -105,7 +114,33 @@ export default function SuspectProfile() {
 
           <div className="space-y-6">
             {suspect.fingerprints && suspect.fingerprints.length>0 && (
-              <div className="bg-white rounded-lg shadow-lg p-6"><h2 className="text-xl font-bold text-[#0B214A] mb-4 border-b border-gray-200 pb-2">Fingerprints</h2><div className="grid grid-cols-2 gap-3">{suspect.fingerprints.map((p,i)=> (<div key={i} className="border border-gray-300 rounded p-2 text-center"><div className="h-20 bg-gray-100 rounded mb-2 flex items-center justify-center overflow-hidden">{p?.url ? (<img src={getMediaUrl(p.url)} alt={`fp-${i+1}`} className="w-full h-full object-cover"/>) : (<span className="text-xs text-gray-500">Print #{i+1}</span>)}</div><p className="text-xs text-gray-600 truncate">{p?.name||p?.url||`#${i+1}`}</p></div>))}</div><div className="mt-4 space-y-2"><button className="w-full px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm">Update Status</button><button className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Add New Note</button><button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">View Full History</button></div></div>
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-xl font-bold text-[#0B214A] mb-4 border-b border-gray-200 pb-2">Fingerprints</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {suspect.fingerprints.map((p, i) => (
+                    <div key={i} className="border border-gray-300 rounded p-2 text-center">
+                      <div className="h-20 bg-gray-100 rounded mb-2 flex items-center justify-center overflow-hidden">
+                        {p?.url ? (
+                          <img
+                            src={getMediaUrl(p.url)}
+                            alt={`fp-${i+1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/placeholder.png'; }}
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-500">Print #{i+1}</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600 truncate">{p?.name || p?.url || `#${i+1}`}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 space-y-2">
+                  <button className="w-full px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm">Update Status</button>
+                  <button className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Add New Note</button>
+                  <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">View Full History</button>
+                </div>
+              </div>
             )}
 
             <div className="bg-white rounded-lg shadow-lg p-6"><h2 className="text-xl font-bold text-[#0B214A] mb-4 border-b border-gray-200 pb-2">Record Information</h2><div className="space-y-3 text-sm"><div><span className="font-semibold text-gray-600">Created By:</span><p className="text-gray-800">{suspect.createdBy||'System'}</p></div><div><span className="font-semibold text-gray-600">Last Updated:</span><p className="text-gray-800">{suspect.updatedAt ? new Date(suspect.updatedAt).toLocaleDateString() : 'N/A'}</p></div></div></div>

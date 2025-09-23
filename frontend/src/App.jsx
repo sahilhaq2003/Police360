@@ -34,9 +34,10 @@ import Criminal from './Components/CriminalManage/Criminal';
 import CriminalProfile from './Components/CriminalManage/CriminalProfile';
 import CriminalManage from './Components/CriminalManage/CriminalManage';
 
-import Suspect from './Components/SuspectManage/Suspect';
-import SuspectProfile from './Components/SuspectManage/SuspectProfile';
-import SuspectManage from './Components/SuspectManage/SuspectManage';
+import Suspect from './Components/Suspect/Suspect';
+import SuspectProfile from './Components/Suspect/SuspectProfile';
+import SuspectManage from './Components/Suspect/SuspectManage';
+import SuspectUpdate from './Components/Suspect/SuspectUpdate';
 
 
 
@@ -104,11 +105,11 @@ function App() {
 
         {/* Suspect Management Routes */}
         <Route path="/SuspectManage/Suspect" element={<Suspect/>}/>
-  <Route path="/SuspectManage/SuspectProfile" element={<SuspectProfile/>}/>
-  <Route path="/SuspectManage/SuspectProfile/:id" element={<SuspectProfile/>}/>
+        <Route path="/SuspectManage/SuspectProfile" element={<SuspectProfile/>}/>
+        <Route path="/SuspectManage/SuspectProfile/:id" element={<SuspectProfile/>}/>
         <Route path="/SuspectManage/SuspectManage" element={<SuspectManage/>}/>
-  <Route path="/SuspectManage/Suspect/:id" element={<Suspect/>}/>
-  {/* If you later create a dedicated SuspectUpdate component, add it here as /SuspectManage/SuspectUpdate/:id */}
+        <Route path="/SuspectManage/Suspect/:id" element={<Suspect/>}/>
+        <Route path="/SuspectManage/SuspectUpdate/:id" element={<SuspectUpdate/>}/>
         
 
 

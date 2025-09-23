@@ -78,6 +78,8 @@ export default function CriminalManage() {
     }
   };
 
+
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       'wanted': { 
@@ -413,6 +415,7 @@ export default function CriminalManage() {
                           >
                             <Edit className="h-4 w-4" />
                           </button>
+                          
                           <button
                             onClick={() => handleDeleteCriminal(criminal._id, criminal.name)}
                             className="text-red-600 hover:text-red-900 p-1 rounded"

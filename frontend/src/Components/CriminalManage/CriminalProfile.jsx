@@ -45,6 +45,60 @@ export default function CriminalProfile() {
     }
   };
 
+  const buildPrintableHtml = (criminal) => {
+    return `
+      <html>
+        <head>
+          <title>Criminal Record - ${criminal.name || ''}</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #0B214A; padding: 20px }
+            .header { display:flex; gap:16px; align-items:center }
+            .photo { width:140px; height:180px; object-fit:cover; border:1px solid #E6E9EF }
+            .meta h1 { margin:0; font-size:22px }
+            .section { margin-top:14px }
+            .kv { display:flex; gap:8px }
+            .k { width:160px; font-weight:600 }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div><img src="${getMediaUrl(criminal.photo) || '/images/placeholder.png'}" class="photo"/></div>
+            <div>
+              <h1>${criminal.name || 'Unknown'}</h1>
+              <div>Criminal ID: ${criminal.criminalId || 'N/A'}</div>
+              <div>NIC: ${criminal.nic || 'N/A'}</div>
+            </div>
+          </div>
+          <div class="section">
+            <h3>Status</h3>
+            <div>${criminal.criminalStatus || 'N/A'}</div>
+            <div>${criminal.arrestDate ? 'Arrested: '+ new Date(criminal.arrestDate).toLocaleDateString() : ''}</div>
+          </div>
+          <div class="section">
+            <h3>Details</h3>
+            <div class="kv"><div class="k">Address:</div><div>${criminal.address || 'N/A'}</div></div>
+            <div class="kv"><div class="k">Aliases:</div><div>${criminal.aliases || 'N/A'}</div></div>
+            <div class="kv"><div class="k">Created:</div><div>${criminal.createdAt ? new Date(criminal.createdAt).toLocaleString() : 'N/A'}</div></div>
+          </div>
+          <script>window.onload=function(){ setTimeout(()=>{ window.print(); window.close(); },200); };</script>
+        </body>
+      </html>
+    `;
+  };
+
+  const handlePrintRecord = (ev) => {
+    ev.preventDefault();
+    if (!criminal) return alert('No record to print');
+    const html = buildPrintableHtml(criminal);
+    const w = window.open('', '_blank', 'width=900,height=1000');
+    w.document.open(); w.document.write(html); w.document.close();
+  };
+
+  const handleExportPdf = (ev) => {
+    // Use same flow — browser print dialog supports Save as PDF
+    handlePrintRecord(ev);
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -177,10 +231,10 @@ export default function CriminalProfile() {
               >
                 Edit Record
               </button>
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">
+              <button onClick={handlePrintRecord} className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">
                 Print Record
               </button>
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">
+              <button onClick={handleExportPdf} className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">
                 Export PDF
               </button>
               <button 
