@@ -15,6 +15,8 @@ export default function SuspectUpdate() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const [loadedSuspect, setLoadedSuspect] = useState(null);
+
   const [form, setForm] = useState({
     suspectId: '',
     nic: '',
@@ -44,6 +46,7 @@ export default function SuspectUpdate() {
         setLoading(true);
         const res = await axiosInstance.get(`/suspects/${suspectIdParam}`);
         const s = res.data;
+        setLoadedSuspect(s);
         setForm({
           suspectId: s.suspectId || '',
           nic: s.nic || '',
@@ -139,6 +142,23 @@ export default function SuspectUpdate() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const formatDate = (d) => { if (!d) return 'N/A'; return new Date(d).toLocaleDateString(); };
+  const formatDOB = (dob) => {
+    if (!dob) return 'N/A';
+    if (dob.day && dob.month && dob.year) return `${dob.day}/${dob.month}/${dob.year}`;
+    if (dob.d && dob.m && dob.y) return `${dob.d}/${dob.m}/${dob.y}`;
+    return 'N/A';
+  };
+  const getStatusBadge = (status) => {
+    const map = {
+      wanted: 'bg-red-100 text-red-800 border-red-200',
+      arrested: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'in prison': 'bg-orange-100 text-orange-800 border-orange-200',
+      released: 'bg-green-100 text-green-800 border-green-200'
+    };
+    return (<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${map[status]||'bg-gray-100 text-gray-800 border-gray-200'}`}>{status?.toUpperCase()||'UNKNOWN'}</span>);
   };
 
   if (loading) {
@@ -309,6 +329,36 @@ export default function SuspectUpdate() {
               <button type="button" onClick={()=>photoRef.current?.click()} className="mt-2 w-40 rounded border border-gray-400 bg-white px-3 py-1.5 text-sm hover:bg-gray-50">Upload Photo</button>
               <input type="file" accept="image/*" ref={photoRef} onChange={handlePhoto} className="hidden" />
             </div>
+
+            {loadedSuspect && (
+              <div className="mt-6 bg-white rounded-md border border-gray-200 p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Current Details</h3>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <div className="flex justify-between"><span className="text-gray-500">Status</span><span>{getStatusBadge(loadedSuspect.suspectStatus)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Suspect ID</span><span className="font-mono">#{loadedSuspect.suspectId || 'N/A'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">NIC</span><span>{loadedSuspect.nic || 'N/A'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">File Number</span><span className="font-mono text-xs">{loadedSuspect.fileNumber || 'N/A'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Record ID</span><span className="font-mono text-xs">{loadedSuspect.recordId || 'N/A'}</span></div>
+                  {loadedSuspect.suspectStatus === 'wanted' && loadedSuspect.rewardPrice ? (
+                    <div className="flex justify-between"><span className="text-gray-500">Reward</span><span className="text-red-600 font-semibold">LKR {loadedSuspect.rewardPrice.toLocaleString()}</span></div>
+                  ) : null}
+                  {loadedSuspect.arrestDate ? (
+                    <div className="flex justify-between"><span className="text-gray-500">Arrest Date</span><span>{formatDate(loadedSuspect.arrestDate)}</span></div>
+                  ) : null}
+                  {loadedSuspect.prisonDays ? (
+                    <div className="flex justify-between"><span className="text-gray-500">Prison Days</span><span>{loadedSuspect.prisonDays}</span></div>
+                  ) : null}
+                  {loadedSuspect.releaseDate ? (
+                    <div className="flex justify-between"><span className="text-gray-500">Release Date</span><span>{formatDate(loadedSuspect.releaseDate)}</span></div>
+                  ) : null}
+                  <div className="flex justify-between"><span className="text-gray-500">DOB</span><span>{formatDOB(loadedSuspect.dob)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Gender</span><span className="capitalize">{loadedSuspect.gender || 'N/A'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Citizen</span><span>{loadedSuspect.citizen || 'N/A'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Address</span><span className="max-w-[12rem] truncate" title={loadedSuspect.address || 'N/A'}>{loadedSuspect.address || 'N/A'}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Last Updated</span><span>{loadedSuspect.updatedAt ? formatDate(loadedSuspect.updatedAt) : 'N/A'}</span></div>
+                </div>
+              </div>
+            )}
           </div>
         </form>
 
