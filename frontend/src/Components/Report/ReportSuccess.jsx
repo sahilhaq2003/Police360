@@ -94,7 +94,7 @@ export default function ReportSuccess() {
                 Go to Home
               </button>
               <button
-                onClick={() => navigate("/report-form")}
+                onClick={() => navigate("/apply/file-complaint")}
                 className="w-full sm:w-auto rounded-xl bg-emerald-600 px-5 py-2.5 font-medium text-white shadow-sm hover:bg-emerald-700 transition"
               >
                 Submit Another
