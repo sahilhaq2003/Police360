@@ -13,14 +13,13 @@ export default function Suspect() {
     recordId: '',
     nic: '',
     name: '',
-    aliases: '',
     address: '',
     gender: '',
     citizen: '',
     dob: { d: '', m: '', y: '' },
-    otherInfo: '',
     crimeInfo: '',
     suspectStatus: '',
+    rewardPrice: '',
     arrestDate: '',
     prisonDays: '',
     releaseDate: '',
@@ -155,14 +154,6 @@ export default function Suspect() {
               className="mb-3 block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
             />
 
-            {/* Aliases */}
-            <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Aliases</label>
-            <input
-              value={form.aliases}
-              onChange={(e) => update('aliases', e.target.value)}
-              className="mb-3 block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
-            />
-
             {/* Address */}
             <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Address</label>
             <input
@@ -188,11 +179,34 @@ export default function Suspect() {
               </div>
               <div>
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Citizen (Optional)</label>
-                <input
+                <select
                   value={form.citizen}
                   onChange={(e) => update('citizen', e.target.value)}
                   className="block w-full rounded border border-gray-300 px-3 py-2 text-sm bg-white"
-                />
+                >
+                  <option value="">Select Country</option>
+                  <option value="Sri Lanka">Sri Lanka</option>
+                  <option value="India">India</option>
+                  <option value="Pakistan">Pakistan</option>
+                  <option value="Bangladesh">Bangladesh</option>
+                  <option value="Nepal">Nepal</option>
+                  <option value="Maldives">Maldives</option>
+                  <option value="Afghanistan">Afghanistan</option>
+                  <option value="China">China</option>
+                  <option value="Japan">Japan</option>
+                  <option value="South Korea">South Korea</option>
+                  <option value="Honduras">Honduras</option>
+                  <option value="El Salvador">El Salvador</option>
+                  <option value="Nicaragua">Nicaragua</option>
+                  <option value="Costa Rica">Costa Rica</option>
+                  <option value="Panama">Panama</option>
+                  <option value="Cuba">Cuba</option>
+                  <option value="Jamaica">Jamaica</option>
+                  <option value="Haiti">Haiti</option>
+                  <option value="Dominican Republic">Dominican Republic</option>
+                  <option value="Puerto Rico">Puerto Rico</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
 
               {/* Status */}
@@ -318,19 +332,6 @@ export default function Suspect() {
                 className="hidden"
               />
             </div>
-          </div>
-
-          {/* Other Info */}
-          <div className="col-span-12 lg:col-span-12">
-            <div className="mb-2 border-b border-gray-300 pb-2 text-[12px] font-semibold uppercase tracking-wide text-gray-700">
-              Other Info
-            </div>
-            <textarea
-              rows={8}
-              value={form.otherInfo}
-              onChange={(e) => update('otherInfo', e.target.value)}
-              className="h-48 w-full rounded border border-gray-300 p-3 text-sm"
-            />
           </div>
         </form>
 
