@@ -104,9 +104,11 @@ function App() {
 
         {/* Suspect Management Routes */}
         <Route path="/SuspectManage/Suspect" element={<Suspect/>}/>
-        <Route path="/SuspectManage/SuspectProfile" element={<SuspectProfile/>}/>
+  <Route path="/SuspectManage/SuspectProfile" element={<SuspectProfile/>}/>
+  <Route path="/SuspectManage/SuspectProfile/:id" element={<SuspectProfile/>}/>
         <Route path="/SuspectManage/SuspectManage" element={<SuspectManage/>}/>
-        <Route path="/SuspectManage/Suspect/:id" element={<Suspect/>}/>
+  <Route path="/SuspectManage/Suspect/:id" element={<Suspect/>}/>
+  {/* If you later create a dedicated SuspectUpdate component, add it here as /SuspectManage/SuspectUpdate/:id */}
         
 
 

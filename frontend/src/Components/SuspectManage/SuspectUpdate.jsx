@@ -135,7 +135,7 @@ export default function SuspectUpdate() {
 
       await axiosInstance.put(`/suspects/${suspectIdParam}`, payload);
       alert('Suspect updated successfully');
-      navigate(`/SuspectManage/SuspectProfile?id=${suspectIdParam}`);
+  navigate(`/SuspectManage/SuspectProfile/${suspectIdParam}`);
     } catch (err) {
       console.error(err);
       alert(err?.response?.data?.message || 'Failed to update suspect');

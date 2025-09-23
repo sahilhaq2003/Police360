@@ -82,7 +82,11 @@ export default function SuspectProfile() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col space-y-2"><button onClick={()=>navigate(`/SuspectManage/Suspect?edit=${suspect._id}`)} className="px-4 py-2 bg-[#0B214A] text-white rounded hover:bg-blue-700 text-sm">Edit Record</button><button className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">Print Record</button><button onClick={()=>navigate('/SuspectManage/SuspectManage')} className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">Back to List</button></div>
+            <div className="flex flex-col space-y-2">
+              <button onClick={()=>navigate(`/SuspectManage/Suspect/${suspect._id}`)} className="px-4 py-2 bg-[#0B214A] text-white rounded hover:bg-blue-700 text-sm">Edit Record</button>
+              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">Print Record</button>
+              <button onClick={()=>navigate('/SuspectManage/SuspectManage')} className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">Back to List</button>
+            </div>
           </div>
         </div>
 
