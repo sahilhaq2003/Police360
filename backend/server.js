@@ -13,6 +13,8 @@ const reportingRoutes = require('./routes/reportingRoutes');
 const requestRoutes = require('./routes/requestRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
 const criminalRoutes = require('./routes/criminalRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const suspectRoutes = require('./routes/suspectRoutes');
 
 
 const accidentRoutes = require('./routes/accidentRoutes');
@@ -63,6 +65,8 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/criminals', criminalRoutes);
+app.use('/api/uploads', uploadRoutes);
+app.use('/api/suspects', suspectRoutes);
 
 
 //Enuri Routes

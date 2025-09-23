@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PoliceHeader from "../PoliceHeader/PoliceHeader";
 import axiosInstance from "../../utils/axiosInstance";
+import { getMediaUrl } from '../../utils/mediaUrl';
 import { 
   ShieldCheck, 
   UserX, 
@@ -105,6 +106,39 @@ export default function CriminalManage() {
         {status?.toUpperCase() || 'UNKNOWN'}
       </span>
     );
+  };
+
+  const formatStatusDate = (criminal) => {
+    try {
+      if (!criminal || !criminal.criminalStatus) return null;
+      if (criminal.criminalStatus === 'arrested' && criminal.arrestDate) {
+        const d = new Date(criminal.arrestDate);
+        return `Arrested: ${d.toLocaleDateString()}`;
+      }
+      if (criminal.criminalStatus === 'in prison') {
+        // Prefer explicit prisonDays display when available
+        if (typeof criminal.prisonDays === 'number' && !Number.isNaN(criminal.prisonDays)) {
+          return `In Prison: ${criminal.prisonDays} days`;
+        }
+        // If there's a releaseDate stored, show 'Release:' otherwise show 'In Prison since' using arrestDate if available
+        if (criminal.releaseDate) {
+          const d = new Date(criminal.releaseDate);
+          return `Release: ${d.toLocaleDateString()}`;
+        }
+        if (criminal.arrestDate) {
+          const d = new Date(criminal.arrestDate);
+          return `In Prison since ${d.toLocaleDateString()}`;
+        }
+        return null;
+      }
+      if (criminal.criminalStatus === 'released' && criminal.releaseDate) {
+        const d = new Date(criminal.releaseDate);
+        return `Released: ${d.toLocaleDateString()}`;
+      }
+      return null;
+    } catch {
+      return null;
+    }
   };
 
   const filteredCriminals = criminals.filter(criminal => {
@@ -310,7 +344,7 @@ export default function CriminalManage() {
                             {criminal.photo ? (
                               <img
                                 className="h-10 w-10 rounded-full object-cover"
-                                src={criminal.photo}
+                                src={getMediaUrl(criminal.photo)}
                                 alt={criminal.name}
                               />
                             ) : (
@@ -335,13 +369,21 @@ export default function CriminalManage() {
                           <div className="text-gray-500">{criminal.nic || "N/A"}</div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(criminal.criminalStatus)}
-                        {criminal.rewardPrice && criminal.criminalStatus === 'wanted' && (
-                          <div className="text-xs text-red-600 mt-1">
-                            Reward: LKR {criminal.rewardPrice.toLocaleString()}
-                          </div>
-                        )}
+                      <td className="px-6 py-4 whitespace-nowrap align-top">
+                        <div>
+                          {getStatusBadge(criminal.criminalStatus)}
+                          {criminal.rewardPrice && criminal.criminalStatus === 'wanted' && (
+                            <div className="text-xs text-red-600 mt-1">
+                              Reward: LKR {criminal.rewardPrice.toLocaleString()}
+                            </div>
+                          )}
+                          {(() => {
+                            const statusLine = formatStatusDate(criminal);
+                            return statusLine ? (
+                              <div className="text-xs text-gray-500 mt-1">{statusLine}</div>
+                            ) : null;
+                          })()}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-500">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import PoliceHeader from "../PoliceHeader/PoliceHeader";
+import { getMediaUrl } from '../../utils/mediaUrl';
 import axiosInstance from "../../utils/axiosInstance";
 
 export default function CriminalProfile() {
@@ -129,7 +130,7 @@ export default function CriminalProfile() {
               <div className="w-32 h-40 border-2 border-gray-300 rounded-lg overflow-hidden bg-gray-100">
                 {criminal.photo ? (
                   <img 
-                    src={criminal.photo} 
+                    src={getMediaUrl(criminal.photo)} 
                     alt="Criminal Photo" 
                     className="w-full h-full object-cover"
                   />
@@ -362,11 +363,11 @@ export default function CriminalProfile() {
                 </h2>
                 
                 <div className="grid grid-cols-2 gap-3">
-                  {criminal.fingerprints.map((print, index) => (
+                        {criminal.fingerprints.map((print, index) => (
                     <div key={index} className="border border-gray-300 rounded p-2 text-center">
                       <div className="h-20 bg-gray-100 rounded mb-2 flex items-center justify-center overflow-hidden">
                         {print?.url ? (
-                          <img src={print.url} alt={`fp-${index + 1}`} className="w-full h-full object-cover" />
+                          <img src={getMediaUrl(print.url)} alt={`fp-${index + 1}`} className="w-full h-full object-cover" />
                         ) : (
                           <span className="text-xs text-gray-500">Print #{index + 1}</span>
                         )}
@@ -375,30 +376,14 @@ export default function CriminalProfile() {
                     </div>
                   ))}
                 </div>
+
+                <div className="mt-4 space-y-2">
+                  <button className="w-full px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm">Update Status</button>
+                  <button className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Add New Arrest</button>
+                  <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">View Full History</button>
+                </div>
               </div>
             )}
-
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-bold text-[#0B214A] mb-4 border-b border-gray-200 pb-2">
-                Quick Actions
-              </h2>
-              
-              <div className="space-y-3">
-                <button className="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm">
-                  Mark as Wanted
-                </button>
-                <button className="w-full px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm">
-                  Update Status
-                </button>
-                <button className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
-                  Add New Arrest
-                </button>
-                <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">
-                  View Full History
-                </button>
-              </div>
-            </div>
 
             {/* Record Information */}
             <div className="bg-white rounded-lg shadow-lg p-6">
