@@ -229,7 +229,7 @@ export default function SuspectManage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
                           <button onClick={()=>navigate(`/SuspectManage/SuspectProfile?id=${s._id}`)} className="text-blue-600 hover:text-blue-900 p-1 rounded" title="View Profile"><Eye className="h-4 w-4" /></button>
-                          <button onClick={()=>navigate(`/SuspectManage/Suspect?edit=${s._id}`)} className="text-green-600 hover:text-green-900 p-1 rounded" title="Edit"><Edit className="h-4 w-4" /></button>
+                          <button onClick={()=>navigate(`/SuspectManage/SuspectUpdate?id=${s._id}`)} className="text-green-600 hover:text-green-900 p-1 rounded" title="Edit"><Edit className="h-4 w-4" /></button>
                           <button onClick={()=>handleDelete(s._id, s.name)} className="text-red-600 hover:text-red-900 p-1 rounded" title="Delete"><Trash2 className="h-4 w-4" /></button>
                         </div>
                       </td>
