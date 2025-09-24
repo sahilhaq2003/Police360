@@ -181,14 +181,19 @@ exports.addInvestigationNote = async (req, res) => {
 exports.assignOfficer = async (req, res) => {
   try {
     const { officerId } = req.body;
-    if (!officerId) return res.status(400).json({ message: 'officerId is required' });
+    if (!officerId)
+      return res.status(400).json({ message: 'officerId is required' });
 
     const officer = await Officer.findById(officerId);
     if (!officer) return res.status(404).json({ message: 'Officer not found' });
 
     const doc = await Accident.findByIdAndUpdate(
       req.params.id,
-      { assignedOfficer: officer._id, status: 'UNDER_INVESTIGATION', updatedAt: new Date() },
+      {
+        assignedOfficer: officer._id,
+        status: 'UNDER_INVESTIGATION',
+        updatedAt: new Date(),
+      },
       { new: true }
     ).populate('assignedOfficer', 'name officerId email station role');
 
@@ -196,5 +201,33 @@ exports.assignOfficer = async (req, res) => {
     return res.json(doc);
   } catch (err) {
     return res.status(400).json({ error: err.message });
+  }
+};
+
+exports.getByInsuranceRef = async (req, res) => {
+  try {
+    let { company, ref } = req.query || {};
+    if (typeof company !== 'string' || typeof ref !== 'string') {
+      return res.status(400).json({ message: 'company and ref are required' });
+    }
+
+    company = company.trim();
+    ref = String(ref).trim();
+
+    if (!company || !ref) {
+      return res.status(400).json({ message: 'company and ref are required' });
+    }
+
+    // Prefer exact match using collation (case-insensitive)
+
+    const doc = await Accident.findOne({
+      'victim.insuranceCompany': company,
+      'victim.insuranceRefNo': ref,
+    }).collation({ locale: 'en', strength: 2 }); // strength 2 => case-insensitive
+
+    if (!doc) return res.status(404).json({ message: 'Not found' });
+    return res.json(doc);
+  } catch (err) {
+    return res.status(400).json({ message: err.message });
   }
 };

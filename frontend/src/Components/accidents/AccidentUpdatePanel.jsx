@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { updateAccident, addInvestigationNote } from '../../utils/accidentapi';
+import axiosInstance from '../../utils/axiosInstance';
 
 export default function AccidentUpdatePanel({ accident, onUpdated }) {
   const [editMode, setEditMode] = useState(false);
@@ -115,7 +115,7 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
       if (!victimLocked) payload.victim = draft.victim;
       if (!vehicleLocked) payload.vehicle = draft.vehicle;
 
-      const updated = await updateAccident(accident._id, payload);
+      const { data: updated } = await axiosInstance.put(`/accidents/${accident._id}`, payload);
       setEditMode(false);
       setBanner({ type: 'success', message: 'Changes saved.' });
       onUpdated?.(updated);
@@ -135,7 +135,7 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
     try {
       setNoteSaving(true);
       setBanner(null);
-      const updated = await addInvestigationNote(accident._id, text);
+      const { data: updated } = await axiosInstance.post(`/accidents/${accident._id}/notes`, { note: text });
       setNoteText('');
       setBanner({ type: 'success', message: 'Note added.' });
       onUpdated?.(updated);

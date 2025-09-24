@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import api from '../../utils/accidentapi';
+import axiosInstance from '../../utils/axiosInstance';
 import AdditionalDetails from './additionalDetails';
 import BasicDetails from './basicDetails';
 
@@ -73,11 +73,11 @@ export default function AccidentForm() {
     };
 
     try {
-      const res = await api.post('/api/accidents/report', payload);
+      const { data } = await axiosInstance.post('/accidents/report', payload);
       setBanner({
         type: 'success',
-        message: `Reported successfully. Tracking ID: ${res.trackingId}${
-          res.insuranceRefNo ? `, Insurance Ref: ${res.insuranceRefNo}` : ''
+        message: `Reported successfully. Tracking ID: ${data.trackingId}${
+          data.insuranceRefNo ? `, Insurance Ref: ${data.insuranceRefNo}` : ''
         }`,
       });
       setEvidence([]);

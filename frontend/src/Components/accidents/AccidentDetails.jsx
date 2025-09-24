@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getAccidentById } from '../../utils/accidentapi';
+import axiosInstance from '../../utils/axiosInstance';
 import AccidentUpdatePanel from './AccidentUpdatePanel';
 import DeleteAccident from './DeleteAccident';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
@@ -51,7 +51,7 @@ export default function AccidentDetails() {
       try {
         setLoading(true);
         setErr('');
-        const data = await getAccidentById(id);
+        const { data } = await axiosInstance.get(`/accidents/${id}`);
         if (mounted) setAccident(data);
       } catch (e) {
         if (mounted) {

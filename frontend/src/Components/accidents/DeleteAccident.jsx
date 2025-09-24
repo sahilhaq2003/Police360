@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { deleteAccident } from '../../utils/accidentapi';
+import axiosInstance from '../../utils/axiosInstance';
 
 /**
  * DeleteAccidentButton
@@ -21,7 +21,7 @@ export default function DeleteAccident({ accidentId, onDeleted }) {
     try {
       setDeleting(true);
       setError('');
-      await deleteAccident(accidentId);
+      await axiosInstance.delete(`/accidents/${accidentId}`);
       // optional callback for parent
       onDeleted?.();
       // navigate back to list page

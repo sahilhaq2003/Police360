@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Eye, UserCheck } from 'lucide-react';
-import { assignAccidentOfficer } from '../../utils/accidentapi';
 import axiosInstance from '../../utils/axiosInstance';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
 
@@ -37,7 +36,9 @@ function AllAccidents() {
     // load officers for dropdown (requires auth)
     (async () => {
       try {
-        const res = await axiosInstance.get('/officers', { params: { page: 1, pageSize: 100 } });
+        const res = await axiosInstance.get('/officers', {
+          params: { page: 1, pageSize: 100 },
+        });
         const list = res.data?.data?.docs || res.data?.data || res.data || [];
         setOfficers(Array.isArray(list) ? list : []);
       } catch (e) {
@@ -62,9 +63,20 @@ function AllAccidents() {
 
   const confirmAssign = async (accident) => {
     if (!selectedOfficerId) return alert('Please select an officer');
+
     try {
-      const updated = await assignAccidentOfficer(accident._id, selectedOfficerId);
-      setAccidents((prev) => prev.map((a) => (a._id === accident._id ? updated : a)));
+      // Use axiosInstance to call your backend directly
+      const res = await axiosInstance.put(
+        `/accidents/${accident._id}/assign-officer`,
+        { officerId: selectedOfficerId }
+      );
+
+      const updated = res.data;
+
+      setAccidents((prev) =>
+        prev.map((a) => (a._id === accident._id ? updated : a))
+      );
+
       setAssigningId(null);
       setSelectedOfficerId('');
     } catch (e) {
@@ -77,12 +89,18 @@ function AllAccidents() {
       <PoliceHeader />
       <div className="max-w-7xl mx-auto px-4 py-10">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight">Accident Records</h1>
-          <p className="text-sm text-[#5A6B85] mt-1">Browse, assign and manage reported accidents</p>
+          <h1 className="text-4xl font-extrabold tracking-tight">
+            Accident Records
+          </h1>
+          <p className="text-sm text-[#5A6B85] mt-1">
+            Browse, assign and manage reported accidents
+          </p>
         </div>
 
         {accidents.length === 0 ? (
-          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl p-4 text-sm">No accidents found.</div>
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl p-4 text-sm">
+            No accidents found.
+          </div>
         ) : (
           <div className="bg-white border border-[#E4E9F2] rounded-2xl shadow overflow-hidden">
             <table className="min-w-full text-sm">
@@ -99,19 +117,38 @@ function AllAccidents() {
               </thead>
               <tbody>
                 {accidents.map((accident) => (
-                  <tr key={accident._id} className="border-t border-[#F0F2F7] hover:bg-[#FFFBEA]">
-                    <td className="px-4 py-3 align-middle truncate max-w-[160px]">{accident._id}</td>
-                    <td className="px-4 py-3 align-middle">{accident.trackingId}</td>
-                    <td className="px-4 py-3 align-middle">{accident.accidentType?.replaceAll('_',' ')}</td>
+                  <tr
+                    key={accident._id}
+                    className="border-t border-[#F0F2F7] hover:bg-[#FFFBEA]"
+                  >
+                    <td className="px-4 py-3 align-middle truncate max-w-[160px]">
+                      {accident._id}
+                    </td>
                     <td className="px-4 py-3 align-middle">
-                      <span className={`px-2 py-1 text-xs rounded-full font-semibold ${accident.isEmergency ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                      {accident.trackingId}
+                    </td>
+                    <td className="px-4 py-3 align-middle">
+                      {accident.accidentType?.replaceAll('_', ' ')}
+                    </td>
+                    <td className="px-4 py-3 align-middle">
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full font-semibold ${
+                          accident.isEmergency
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-green-100 text-green-700'
+                        }`}
+                      >
                         {accident.isEmergency ? 'Emergency' : 'Normal'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 align-middle truncate max-w-[220px]">{accident.locationText}</td>
+                    <td className="px-4 py-3 align-middle truncate max-w-[220px]">
+                      {accident.locationText}
+                    </td>
                     <td className="px-4 py-3 align-middle">
                       {accident.assignedOfficer
-                        ? (accident.assignedOfficer.name || accident.assignedOfficer.officerId || String(accident.assignedOfficer))
+                        ? accident.assignedOfficer.name ||
+                          accident.assignedOfficer.officerId ||
+                          String(accident.assignedOfficer)
                         : '—'}
                     </td>
                     <td className="px-4 py-3 align-middle">
@@ -127,14 +164,18 @@ function AllAccidents() {
                             <select
                               className="px-2 py-1 rounded-lg border border-[#D6DEEB] bg-white text-xs"
                               value={selectedOfficerId}
-                              onChange={(e) => setSelectedOfficerId(e.target.value)}
+                              onChange={(e) =>
+                                setSelectedOfficerId(e.target.value)
+                              }
                             >
                               <option value="">Select officer…</option>
-                              {officers.filter(o => o.role === 'Officer').map((o) => (
-                                <option key={o._id} value={o._id}>
-                                  {o.name || o.officerId || o.email}
-                                </option>
-                              ))}
+                              {officers
+                                .filter((o) => o.role === 'Officer')
+                                .map((o) => (
+                                  <option key={o._id} value={o._id}>
+                                    {o.name || o.officerId || o.email}
+                                  </option>
+                                ))}
                             </select>
                             <button
                               onClick={() => confirmAssign(accident)}

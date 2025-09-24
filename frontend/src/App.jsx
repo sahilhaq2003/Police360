@@ -16,6 +16,7 @@ import Accidentform from './Components/accidents/accidentform';
 import AllAccidents from './Components/accidents/AllAccidents';
 import AccidentDetails from './Components/accidents/AccidentDetails';
 import TrackAccident from './Components/accidents/TrackAccident';
+import InsuranceLookup from './Components/accidents/InsuranceLookup';
 
 import OfficerRequest from './Components/officer/OfficerRequest';
 import ViewRequests from './Components/admin/ViewRequests';
@@ -33,14 +34,8 @@ import OfficerCases from './Components/cases/OfficerCases';
 import CriminalProfile from './Components/CriminalManage/CriminalProfile';
 import CriminalManage from './Components/CriminalManage/CriminalManage';
 
-
-
-
-
 import ReportsDetails from './Components/ReportsDetails/reportsDetails';
 import Report from './Components/Report/Report';
-
-
 
 function App() {
   return (
@@ -55,7 +50,6 @@ function App() {
         <Route path="/report-form" element={<ReportForm />} />
         <Route path="/report-success" element={<ReportSuccess />} />
 
-
         <Route
           path="/officer/OfficerDashboard"
           element={<OfficerDashboard />}
@@ -63,9 +57,10 @@ function App() {
         <Route path="/officer/dashboard" element={<OfficerDashboard />} />
         <Route path="/officer/assign-accidents" element={<AssignAccidents />} />
 
-
-        <Route path="/officer/OfficerDashboard" element={<OfficerDashboard />} />
-
+        <Route
+          path="/officer/OfficerDashboard"
+          element={<OfficerDashboard />}
+        />
 
         <Route path="/officer/calendar" element={<OfficerCalendar />} />
         <Route path="/officer/request" element={<OfficerRequest />} />
@@ -84,21 +79,28 @@ function App() {
         <Route path="/accidents" element={<AllAccidents />} />
         <Route path="/accidents/:id" element={<AccidentDetails />} />
         <Route path="/accidents/track" element={<TrackAccident />} />
-
-
-
+        <Route
+          path="/accidents/insurance-lookup"
+          element={<InsuranceLookup />}
+        />
 
         <Route path="/report-details" element={<ReportsDetails />} />
         <Route path="/report" element={<Report />} />
 
-
         {/* Criminal Management Routes */}
-        <Route path="/CriminalManage/CriminalManage" element={<CriminalManage />} />
-        <Route path="/CriminalManage/Criminal" element={<Criminal/>}/>
-        <Route path="/CriminalManage/CriminalProfile" element={<CriminalProfile />} />
-        <Route path="/CriminalManage/CriminalProfile/:id" element={<CriminalProfile />} />
-
-
+        <Route
+          path="/CriminalManage/CriminalManage"
+          element={<CriminalManage />}
+        />
+        <Route path="/CriminalManage/Criminal" element={<Criminal />} />
+        <Route
+          path="/CriminalManage/CriminalProfile"
+          element={<CriminalProfile />}
+        />
+        <Route
+          path="/CriminalManage/CriminalProfile/:id"
+          element={<CriminalProfile />}
+        />
       </Routes>
     </Router>
   );

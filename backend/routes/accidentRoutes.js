@@ -10,12 +10,13 @@ const {
   deleteAccident,
   addInvestigationNote,
   assignOfficer,
+  getByInsuranceRef,
 } = require('../controllers/accidentController');
 
 router.post('/report', reportAccident);
 router.get('/track/:trackingId', getByTrackingId);
+router.get('/insurance', getByInsuranceRef);
 
-// OFFICERS (AUTH REQUIRED)
 router.get('/', listAccidents);
 router.get('/:id', getAccident);
 router.put('/:id', updateAccident);
