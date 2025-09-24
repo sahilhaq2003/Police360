@@ -43,10 +43,10 @@ const AssignAccidents = () => {
       const accidentsData = accidentsRes.data?.items || accidentsRes.data || [];
       setAccidents(accidentsData);
 
-      // Fetch officers for assignment dropdown
-      const officersRes = await axiosInstance.get('/officers');
-      const officersData = officersRes.data?.items || officersRes.data || [];
-      setOfficers(officersData);
+  // Fetch officers for assignment dropdown from server with role filter
+  const officersRes = await axiosInstance.get('/officers', { params: { role: 'Officer', pageSize: 100 } });
+  const officersData = officersRes.data?.data || officersRes.data || officersRes.data?.items || [];
+  setOfficers(officersData);
     } catch (error) {
       console.error('Error fetching data:', error);
       alert('Failed to load data. Please refresh the page.');
@@ -378,7 +378,7 @@ const AssignAccidents = () => {
                           className="px-3 py-2 border border-[#E4E9F2] rounded-lg focus:ring-2 focus:ring-[#00296B] focus:border-transparent text-sm min-w-[150px]"
                         >
                           <option value="">Assign Officer</option>
-                          {officers.map((officer) => (
+                          {officers.filter(o => (o.role || '').toLowerCase() === 'officer').map((officer) => (
                             <option key={officer._id} value={officer._id}>
                               {officer.name} ({officer.officerId})
                             </option>
