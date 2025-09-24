@@ -304,15 +304,19 @@ function Home() {
         <div className="hero-content">
           <h1>Police Service</h1>
           <p>A smart solution to enhance Police360 emergency response</p>
+          
+          {/* Report an Incident button (default style) */}
           <button
             className="report-btn"
             onClick={() => navigate('/report-form')}
           >
             Report an Incident
           </button>
+
+          {/* Complaint Progress button (green style with spacing) */}
           <button
-            className="report-btn"
-            onClick={() => navigate('/report-form')}
+            className="report-btn complaint-progress-btn"
+            onClick={() => navigate('/track/case')}
           >
             Complaint Progress
           </button>

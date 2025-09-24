@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
+import PoliceHeader from '../PoliceHeader/PoliceHeader';
 
 export default function UpdateComplaint() {
   const { id } = useParams(); // case id from URL
@@ -68,27 +69,33 @@ export default function UpdateComplaint() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setBanner(null);
-    // re-check token just before submit (helpful for debugging race conditions)
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    console.log('DEBUG: submit token present?', !!token, token ? token.slice(0,10) + '...' : null);
-    if (!token) {
+    // re-check auth token just before submit
+    const authToken = localStorage.getItem('token') || sessionStorage.getItem('token');
+    console.log('DEBUG: submit token present?', !!authToken, authToken ? authToken.slice(0,10) + '...' : null);
+
+    // If there's no auth token and no one-time edit token, block the request
+    if (!authToken && !canEditWithoutAuth) {
       setBanner({ type: 'error', message: 'You must be signed in to update this complaint.' });
       return;
     }
+
     try {
       console.log('DEBUG: axios baseURL', axiosInstance.defaults.baseURL);
       console.log('DEBUG: PUT URL', `${axiosInstance.defaults.baseURL.replace(/\/+$/, '')}/cases/${id}`);
-      // If user not authenticated, but we were given an editToken via navigation state, include it in the header
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
       const headers = {};
-      if (!token) {
-        const passedToken = location.state?.editToken || location.state?.report?.editToken || form.editToken || null;
+      // If unauthenticated but we have a one-time edit token, include it
+      if (!authToken && canEditWithoutAuth) {
+        const passedToken = passedEditToken || form.editToken || null;
         if (passedToken) headers['X-Edit-Token'] = passedToken;
       }
+
       const res = await axiosInstance.put(`/cases/${id}`, form, { headers });
       const updated = res?.data?.data || res?.data;
       if (res?.data?.success) {
         navigate(`/cases/${id}`); // back to details page
+      } else {
+        setBanner({ type: 'success', message: 'Update completed' });
       }
     } catch (err) {
       console.error('updateCase error', err);
@@ -104,188 +111,147 @@ export default function UpdateComplaint() {
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!form) return <div className="p-6">Complaint not found</div>;
-
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Update Complaint</h1>
+    <div className="min-h-screen bg-slate-50 py-8 px-4">
+      {/* header spans full width */}
+      <PoliceHeader />
 
-      {banner && (
-        <div
-          className={`mb-4 rounded-lg px-4 py-3 text-sm ${
-            banner.type === "success"
-              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-              : "bg-rose-50 text-rose-700 border border-rose-200"
-          }`}
-        >
-          {banner.message}
+      <div className="max-w-3xl md:max-w-4xl mx-auto">
+        <div className="bg-white shadow-lg rounded-2xl border border-slate-100 overflow-hidden">
+          <div className="px-4 py-6 sm:px-8 sm:py-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900">Update Complaint</h1>
+              <p className="mt-1 text-sm text-slate-500">Edit complaint details. Changes will be saved to the case record.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">← Back</button>
+            </div>
+          </div>
+
+          {/* banners */}
+          <div className="mt-4">
+            {banner && (
+              <div className={`mb-4 rounded-lg px-4 py-3 text-sm ${banner.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
+                {banner.message}
+              </div>
+            )}
+            {!hasAuth && canEditWithoutAuth && (
+              <div className="mb-4 rounded-lg px-4 py-3 text-sm bg-emerald-50 text-emerald-800 border border-emerald-200">
+                You are editing as the report creator using a one-time edit token. Your changes will be accepted once; you do not need to sign in now.
+              </div>
+            )}
+            {!hasAuth && !canEditWithoutAuth && (
+              <div className="mb-4 rounded-lg px-4 py-3 text-sm bg-amber-50 text-amber-800 border border-amber-200">
+                You are not signed in. To save changes you must <button onClick={() => navigate('/login')} className="underline font-medium">log in</button>.
+              </div>
+            )}
+          </div>
+
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="block">
+                <div className="text-sm font-medium text-slate-700">Full name</div>
+                <input value={form.complainant?.name || ''} onChange={(e) => onChange('complainant.name', e.target.value)} className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </label>
+
+              <label className="block">
+                <div className="text-sm font-medium text-slate-700">Phone</div>
+                <input value={form.complainant?.phone || ''} onChange={(e) => onChange('complainant.phone', e.target.value)} className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="block">
+                <div className="text-sm font-medium text-slate-700">Email</div>
+                <input value={form.complainant?.email || ''} onChange={(e) => onChange('complainant.email', e.target.value)} className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </label>
+
+              <label className="block">
+                <div className="text-sm font-medium text-slate-700">Location</div>
+                <input value={form.complaintDetails?.location || ''} onChange={(e) => onChange('complaintDetails.location', e.target.value)} className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <label className="block">
+                <div className="text-sm font-medium text-slate-700">ID Type</div>
+                <select value={form.idInfo?.type || ''} onChange={(e) => onChange('idInfo.type', e.target.value)} className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="">Select ID Type</option>
+                  <option value="NATIONAL_ID">National ID</option>
+                  <option value="PASSPORT">Passport</option>
+                  <option value="DRIVER_LICENSE">Driver License</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <div className="text-sm font-medium text-slate-700">ID Number</div>
+                <input value={form.idInfo?.value || ''} onChange={(e) => onChange('idInfo.value', e.target.value)} className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </label>
+
+              <label className="block">
+                <div className="text-sm font-medium text-slate-700">Priority</div>
+                <select value={form.priority || 'MEDIUM'} onChange={(e) => onChange('priority', e.target.value)} className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="block">
+                <div className="text-sm font-medium text-slate-700">Type of Complaint</div>
+                <select value={form.complaintDetails?.typeOfComplaint || ''} onChange={(e) => onChange('complaintDetails.typeOfComplaint', e.target.value)} className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="">Select Type of Complaint</option>
+                  <option value="THEFT">Theft</option>
+                  <option value="ASSAULT">Assault</option>
+                  <option value="VANDALISM">Vandalism</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <div className="text-sm font-medium text-slate-700">Incident Date</div>
+                <input type="date" value={form.complaintDetails?.incidentDate ? form.complaintDetails.incidentDate.split('T')[0] : ''} onChange={(e) => onChange('complaintDetails.incidentDate', e.target.value)} className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </label>
+            </div>
+
+            <label className="block">
+              <div className="text-sm font-medium text-slate-700">Estimated Loss</div>
+              <input value={form.estimatedLoss || ''} onChange={(e) => onChange('estimatedLoss', e.target.value)} className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </label>
+
+            <label className="block">
+              <div className="text-sm font-medium text-slate-700">Description</div>
+              <textarea value={form.complaintDetails?.description || ''} onChange={(e) => onChange('complaintDetails.description', e.target.value)} className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 h-28 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </label>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-sm font-medium text-slate-700 mb-2">Witness (optional)</h3>
+                <input value={(form.additionalInfo?.witnesses?.[0]?.name) || ''} onChange={(e) => onChange('additionalInfo.witnesses.0.name', e.target.value)} placeholder="Name" className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input value={(form.additionalInfo?.witnesses?.[0]?.phone) || ''} onChange={(e) => onChange('additionalInfo.witnesses.0.phone', e.target.value)} placeholder="Phone" className="mt-3 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input value={(form.additionalInfo?.witnesses?.[0]?.id) || ''} onChange={(e) => onChange('additionalInfo.witnesses.0.id', e.target.value)} placeholder="ID (optional)" className="mt-3 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-slate-700 mb-2">Suspect / Evidence (optional)</h3>
+                <input value={(form.additionalInfo?.suspects?.[0]?.name) || ''} onChange={(e) => onChange('additionalInfo.suspects.0.name', e.target.value)} placeholder="Suspect Name" className="mt-1 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input value={(form.additionalInfo?.suspects?.[0]?.appearance) || ''} onChange={(e) => onChange('additionalInfo.suspects.0.appearance', e.target.value)} placeholder="Appearance" className="mt-3 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input value={(form.additionalInfo?.evidence?.[0]) || ''} onChange={(e) => onChange('additionalInfo.evidence.0', e.target.value)} placeholder="Evidence (URL or note)" className="mt-3 block w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">Cancel</button>
+              <button type="submit" disabled={!canEdit} className={`px-4 py-2 rounded-md text-sm font-medium ${canEdit ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}>
+                Save Changes
+              </button>
+            </div>
+          </form>
         </div>
-      )}
-      {!hasAuth && canEditWithoutAuth && (
-        <div className="mb-4 rounded-lg px-4 py-3 text-sm bg-emerald-50 text-emerald-800 border border-emerald-200">
-          You are editing as the report creator using a one-time edit token. Your changes will be accepted once; you do not need to sign in now.
-        </div>
-      )}
-
-      {!hasAuth && !canEditWithoutAuth && (
-        <div className="mb-4 rounded-lg px-4 py-3 text-sm bg-amber-50 text-amber-800 border border-amber-200">
-          You are not signed in. To save changes you must <button onClick={() => navigate('/login')} className="underline font-medium">log in</button>.
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          value={form.complainant?.name || ""}
-          onChange={(e) => onChange("complainant.name", e.target.value)}
-          placeholder="Full Name"
-          className="w-full border px-3 py-2 rounded"
-        />
-        <input
-          value={form.complainant?.phone || ""}
-          onChange={(e) => onChange("complainant.phone", e.target.value)}
-          placeholder="Phone"
-          className="w-full border px-3 py-2 rounded"
-        />
-        <input
-          value={form.complainant?.email || ""}
-          onChange={(e) => onChange("complainant.email", e.target.value)}
-          placeholder="Email"
-          className="w-full border px-3 py-2 rounded"
-        />
-        <input
-          value={form.complaintDetails?.location || ""}
-          onChange={(e) => onChange("complaintDetails.location", e.target.value)}
-          placeholder="Location"
-          className="w-full border px-3 py-2 rounded"
-        />
-        <select
-          value={form.idInfo?.type || ""}
-          onChange={(e) => onChange("idInfo.type", e.target.value)}
-          className="w-full border px-3 py-2 rounded"
-        >
-          <option value="">Select ID Type</option>
-          <option value="NATIONAL_ID">National ID</option>
-          <option value="PASSPORT">Passport</option>
-          <option value="DRIVER_LICENSE">Driver License</option>
-        </select>
-        <input
-          value={form.idInfo?.value || ""}
-          onChange={(e) => onChange("idInfo.value", e.target.value)}
-          placeholder="ID Number"
-          className="w-full border px-3 py-2 rounded"
-        />
-        <h1>Complaint Details</h1>
-        <select
-          value={form.complaintDetails?.typeOfComplaint || ""}
-          onChange={(e) => onChange("complaintDetails.typeOfComplaint", e.target.value)}
-          className="w-full border px-3 py-2 rounded"
-        >
-          <option value="">Select Type of Complaint</option>
-          <option value="THEFT">Theft</option>
-          <option value="ASSAULT">Assault</option>
-          <option value="VANDALISM">Vandalism</option>
-        </select>
-        <select
-          value={form.priority || "MEDIUM"}
-          onChange={(e) => onChange("priority", e.target.value)}
-          className="w-full border px-3 py-2 rounded"
-        >
-          <option value="LOW">Low</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="HIGH">High</option>
-        </select>
-        <input
-          type="date"
-          value={form.complaintDetails?.incidentDate ? form.complaintDetails.incidentDate.split('T')[0] : ""}
-          onChange={(e) => onChange("complaintDetails.incidentDate", e.target.value)}
-          className="w-full border px-3 py-2 rounded"
-        />
-        <input
-          value={form.complaintDetails?.location || ""}
-          onChange={(e) => onChange("complaintDetails.location", e.target.value)}
-          placeholder="Location"
-          className="w-full border px-3 py-2 rounded"
-        />
-        <input
-          value={form.estimatedLoss || ""}
-          onChange={(e) => onChange("estimatedLoss", e.target.value)}
-          placeholder="Estimated Loss"
-          className="w-full border px-3 py-2 rounded"
-        />
-        <textarea
-          value={form.complaintDetails?.description || ""}
-          onChange={(e) =>
-            onChange("complaintDetails.description", e.target.value)
-          }
-          placeholder="Description"
-          className="w-full border px-3 py-2 rounded"
-        />
-
-        <h1>Additional Information</h1>
-        <h2>Witness Information</h2>
-        <input
-            value={(form.additionalInfo?.witnesses?.[0]?.name) || ""}
-            onChange={(e) => onChange("additionalInfo.witnesses.0.name", e.target.value)}
-            placeholder="Witness Name"
-            className="w-full border px-3 py-2 rounded"
-        />
-        <input
-            value={(form.additionalInfo?.witnesses?.[0]?.phone) || ""}
-            onChange={(e) => onChange("additionalInfo.witnesses.0.phone", e.target.value)}
-            placeholder="Witness Phone"
-            className="w-full border px-3 py-2 rounded"
-        />
-        <input
-            value={(form.additionalInfo?.witnesses?.[0]?.id) || ""}
-            onChange={(e) => onChange("additionalInfo.witnesses.0.id", e.target.value)}
-            placeholder="Witness ID"
-            className="w-full border px-3 py-2 rounded"
-        />
-
-        <h2>Suspect Information</h2>
-        <input
-            value={(form.additionalInfo?.suspects?.[0]?.name) || ""}
-            onChange={(e) => onChange("additionalInfo.suspects.0.name", e.target.value)}
-            placeholder="Suspect Name"
-            className="w-full border px-3 py-2 rounded"
-        />
-        <input
-            value={(form.additionalInfo?.suspects?.[0]?.appearance) || ""}
-            onChange={(e) => onChange("additionalInfo.suspects.0.appearance", e.target.value)}
-            placeholder="Suspect Appearance"
-            className="w-full border px-3 py-2 rounded"
-        />
-        <input
-            value={(form.additionalInfo?.suspects?.[0]?.photos?.[0]) || ""}
-            onChange={(e) => onChange("additionalInfo.suspects.0.photos.0", e.target.value)}
-            placeholder="Suspect Photo URL"
-            className="w-full border px-3 py-2 rounded"
-        />
-
-        <h2>Evidence</h2>
-        <input
-            value={(form.additionalInfo?.evidence?.[0]?.photos?.[0]) || ""}
-            onChange={(e) => onChange("additionalInfo.evidence.0.photos.0", e.target.value)}
-            placeholder="Evidence Photo URL"
-            className="w-full border px-3 py-2 rounded"
-        />
-
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={!canEdit}
-            className={`px-4 py-2 rounded font-medium ${canEdit ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
-          >
-            Save Changes
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="px-4 py-2 border rounded"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
+  </div>
   );
 }

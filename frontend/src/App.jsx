@@ -30,6 +30,7 @@ import OfficerCalendar from './Components/officer/OfficerCalendar';
 import CaseDetails from './Components/cases/CaseDetails';
 import UpdateComplaint from './Components/cases/UpdateComplaint';
 import CaseDetailsPublic from './Components/cases/CaseDetailsPublic';
+import ComplaintProgress from './Components/cases/ComplaintProgress';
 
 import Criminal from './Components/CriminalManage/Criminal';
 
@@ -59,7 +60,8 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/officers" element={<Officers />} />
         <Route path="/admin/officer/:id" element={<OfficerProfile />} />
-        <Route path="/track/case/:id" element={<CaseDetailsPublic />} />
+  <Route path="/track/case" element={<ComplaintProgress />} />
+  <Route path="/track/case/:id" element={<CaseDetailsPublic />} />
 
         <Route path="/report-form" element={<ReportForm />} />
   <Route path="/report-success" element={<ReportSuccess />} />
@@ -97,7 +99,7 @@ function App() {
         <Route path="/accidents/:id" element={<AccidentDetails />} />
         <Route path="/accidents/track" element={<TrackAccident />} />
         <Route path="/cases/update/:id" element={<UpdateComplaint />} />
-        
+        <Route path="/cases/progress" element={<ComplaintProgress />} />
 
 
 
