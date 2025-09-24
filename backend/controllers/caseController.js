@@ -19,6 +19,10 @@ exports.createCase = async (req, res) => {
       return res.status(400).json({ message: 'Complainant name and type of complaint are required' });
     }
 
+    // generate a short single-use random token for the creator to edit once without logging in
+    const makeToken = () => Math.random().toString(36).slice(2, 10);
+    const editToken = makeToken();
+
     const doc = await Case.create({
       complainant,
       complaintDetails,
@@ -28,9 +32,13 @@ exports.createCase = async (req, res) => {
       estimatedLoss: estimatedLoss || '',
       additionalInfo: additionalInfo || {},
       createdBy: req.user?.id || null,
+      editToken,
     });
 
-    res.status(201).json({ success: true, id: doc._id, data: doc });
+    // Return the edit token in response so the client can allow the creator to make one unauthenticated edit
+    const out = doc.toObject ? doc.toObject() : doc;
+    out.editToken = editToken;
+    res.status(201).json({ success: true, id: doc._id, data: out, editToken });
   } catch (err) {
     console.error('createCase error', err);
     res.status(500).json({ message: 'Failed to create case' });
@@ -165,8 +173,23 @@ exports.updateCase = async (req, res) => {
     const doc = await Case.findById(id);
     if (!doc) return res.status(404).json({ message: 'Case not found' });
 
-    // Allow update only if NEW (not yet assigned) or Admin/IT role
-    if (doc.status !== 'NEW' && req.user?.role !== 'Admin' && req.user?.role !== 'IT Officer') {
+    // Allow update if:
+    // - authenticated user with Admin/IT role, OR
+    // - case is NEW and creator has provided the single-use edit token in X-Edit-Token header
+    let allowed = false;
+    if (req.user && (req.user.role === 'Admin' || req.user.role === 'IT Officer')) allowed = true;
+
+    // If not allowed yet, check for X-Edit-Token header for unauthenticated creator edit
+    if (!allowed && (!req.user || !req.user.id)) {
+      const provided = req.headers['x-edit-token'] || req.headers['x-edit-token'.toLowerCase()];
+      if (provided && doc.editToken && !doc.editTokenUsed && doc.status === 'NEW' && provided === doc.editToken) {
+        allowed = true;
+        // mark token used later after successful save
+        req._usedEditToken = true;
+      }
+    }
+
+    if (!allowed) {
       return res.status(403).json({ message: 'You are not allowed to update this complaint' });
     }
 
@@ -190,6 +213,12 @@ exports.updateCase = async (req, res) => {
     if (additionalInfo) doc.additionalInfo = additionalInfo;
 
     await doc.save();
+    // if update permitted by edit token, mark it used and clear the token
+    if (req._usedEditToken) {
+      doc.editTokenUsed = true;
+      doc.editToken = null;
+      await doc.save();
+    }
     res.json({ success: true, data: doc });
   } catch (err) {
     console.error('updateCase error', err);
@@ -218,5 +247,28 @@ exports.deleteCase = async (req, res) => {
   } catch (err) {
     console.error('deleteCase error', err);
     res.status(500).json({ message: 'Failed to delete case' });
+  }
+};
+
+exports.createCase = async (req, res) => {
+  try {
+    const doc = await Case.create({
+      complainant: req.body.complainant,
+      complaintDetails: req.body.complaintDetails,
+      attachments: req.body.attachments || [],
+      idInfo: req.body.idInfo || {},
+      priority: req.body.priority || "MEDIUM",
+      estimatedLoss: req.body.estimatedLoss || "",
+      additionalInfo: req.body.additionalInfo || {},
+      createdBy: req.user?.id || null,
+    });
+
+    res.status(201).json({
+      success: true,
+      id: doc._id,   // ✅ send back the new case ID
+      data: doc
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to create case" });
   }
 };

@@ -310,6 +310,12 @@ function Home() {
           >
             Report an Incident
           </button>
+          <button
+            className="report-btn"
+            onClick={() => navigate('/report-form')}
+          >
+            Complaint Progress
+          </button>
         </div>
       </section>
 

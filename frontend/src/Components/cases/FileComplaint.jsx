@@ -101,7 +101,13 @@ export default function FileComplaint() {
     try {
       const res = await axiosInstance.post("/cases", form);
       if (res?.data?.success) {
-        navigate("/report-success", { state: { reportNumber: res.data.id } });
+        const newCase = res.data.data || res.data;
+        const newCaseId = res.data.id || newCase._id || newCase.id;
+        const editToken = res.data.editToken || newCase.editToken || null;
+        // navigate to success page with id in URL and pass full report + editToken in state so user can view/edit without re-fetch
+        navigate(`/report-success/${newCaseId}`, {
+          state: { reportNumber: newCaseId, reportType: form.complaintDetails.typeOfComplaint, report: newCase, editToken },
+        });
       } else {
         setBanner({ type: "error", message: "Failed to submit complaint." });
       }

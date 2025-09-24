@@ -16,7 +16,8 @@ const auth = require('../middlewares/authMiddleware');
 // public: allow unauthenticated users to submit complaints
 router.post('/', createCase);
 router.get('/', auth.protect, listCases);
-router.get('/:id', auth.protect, getCase);
+// allow public read of a single case so success pages can be viewed without login
+router.get('/:id', getCase);
 router.post('/:id/assign', auth.protect, auth.itOnly, assignOfficer);
 router.post('/:id/notes', auth.protect, addNote);
 router.post('/:id/close', auth.protect, closeCase);

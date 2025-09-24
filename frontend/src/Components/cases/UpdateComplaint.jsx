@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 
 export default function UpdateComplaint() {
@@ -9,10 +9,24 @@ export default function UpdateComplaint() {
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [banner, setBanner] = useState(null);
+  const location = useLocation();
+  const [hasAuth, setHasAuth] = useState(false);
 
   // Load existing complaint
   useEffect(() => {
+    // check for token in storage so we can provide a helpful UI if unauthenticated
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    setHasAuth(!!token);
+
     const fetchComplaint = async () => {
+      // If the report was passed via navigation state (from ReportSuccess), use it
+      const passed = location.state?.report;
+      if (passed) {
+        console.log('INFO: using passed report from location.state to avoid protected GET');
+        setForm(passed);
+        setLoading(false);
+        return;
+      }
       try {
         console.log('DEBUG: axios baseURL', axiosInstance.defaults.baseURL);
         console.log('DEBUG: GET URL', `${axiosInstance.defaults.baseURL.replace(/\/+$/, '')}/cases/${id}`);
@@ -35,6 +49,11 @@ export default function UpdateComplaint() {
     fetchComplaint();
   }, [id]);
 
+  // determine if a one-time edit token was passed (creator flow)
+  const passedEditToken = location.state?.editToken || location.state?.report?.editToken || null;
+  const canEditWithoutAuth = !!passedEditToken;
+  const canEdit = hasAuth || canEditWithoutAuth;
+
   const onChange = (path, value) => {
     const keys = path.split(".");
     setForm((prev) => {
@@ -49,10 +68,25 @@ export default function UpdateComplaint() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setBanner(null);
+    // re-check token just before submit (helpful for debugging race conditions)
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    console.log('DEBUG: submit token present?', !!token, token ? token.slice(0,10) + '...' : null);
+    if (!token) {
+      setBanner({ type: 'error', message: 'You must be signed in to update this complaint.' });
+      return;
+    }
     try {
       console.log('DEBUG: axios baseURL', axiosInstance.defaults.baseURL);
       console.log('DEBUG: PUT URL', `${axiosInstance.defaults.baseURL.replace(/\/+$/, '')}/cases/${id}`);
-      const res = await axiosInstance.put(`/cases/${id}`, form);
+      // If user not authenticated, but we were given an editToken via navigation state, include it in the header
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const headers = {};
+      if (!token) {
+        const passedToken = location.state?.editToken || location.state?.report?.editToken || form.editToken || null;
+        if (passedToken) headers['X-Edit-Token'] = passedToken;
+      }
+      const res = await axiosInstance.put(`/cases/${id}`, form, { headers });
+      const updated = res?.data?.data || res?.data;
       if (res?.data?.success) {
         navigate(`/cases/${id}`); // back to details page
       }
@@ -84,6 +118,17 @@ export default function UpdateComplaint() {
           }`}
         >
           {banner.message}
+        </div>
+      )}
+      {!hasAuth && canEditWithoutAuth && (
+        <div className="mb-4 rounded-lg px-4 py-3 text-sm bg-emerald-50 text-emerald-800 border border-emerald-200">
+          You are editing as the report creator using a one-time edit token. Your changes will be accepted once; you do not need to sign in now.
+        </div>
+      )}
+
+      {!hasAuth && !canEditWithoutAuth && (
+        <div className="mb-4 rounded-lg px-4 py-3 text-sm bg-amber-50 text-amber-800 border border-amber-200">
+          You are not signed in. To save changes you must <button onClick={() => navigate('/login')} className="underline font-medium">log in</button>.
         </div>
       )}
 
@@ -227,7 +272,8 @@ export default function UpdateComplaint() {
         <div className="flex gap-3">
           <button
             type="submit"
-            className="bg-indigo-600 text-white px-4 py-2 rounded"
+            disabled={!canEdit}
+            className={`px-4 py-2 rounded font-medium ${canEdit ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
           >
             Save Changes
           </button>
