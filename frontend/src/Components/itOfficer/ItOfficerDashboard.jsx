@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ServerCog, ShieldCheck, ClipboardList, Users2, LogOut } from 'lucide-react';
+import { ServerCog, ShieldCheck, Users2, LogOut } from 'lucide-react';
 import axiosInstance from '../../utils/axiosInstance';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
 
 const ItOfficerDashboard = () => {
   const navigate = useNavigate();
   const [kpis, setKpis] = useState({ activeCount: 0, officer: 0, it: 0, admin: 0 });
-  const [recentRequests, setRecentRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,10 +18,7 @@ const ItOfficerDashboard = () => {
         const k = offRes.data?.kpis || { activeCount: 0, officer: 0, it: 0, admin: 0 };
         setKpis(k);
 
-        // Fetch IT/admin requests overview if available
-        const reqRes = await axiosInstance.get('/requests', { params: { page: 1, limit: 5 } }).catch(() => ({ data: { data: [] } }));
-        const list = reqRes.data?.data?.docs || reqRes.data?.data || [];
-        setRecentRequests(list.slice(0, 5));
+        // Removed: IT dashboard no longer shows Requests
       } catch (e) {
         // silent fail, global interceptor handles auth
       } finally {
@@ -71,33 +67,11 @@ const ItOfficerDashboard = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 p-6 rounded-2xl bg-white border border-[#EEF2F7]">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold flex items-center gap-2"><ClipboardList className="h-5 w-5" /> Recent Requests</h2>
-              <button onClick={() => navigate('/admin/requests')} className="text-sm text-[#2B6CB0] hover:underline">View all</button>
-            </div>
-            <div className="space-y-3">
-              {loading ? (
-                <p className="text-sm text-[#5A6B85]">Loading…</p>
-              ) : recentRequests.length === 0 ? (
-                <p className="text-sm text-[#5A6B85]">No recent requests.</p>
-              ) : (
-                recentRequests.map((r) => (
-                  <div key={r._id} className="px-4 py-3 rounded-lg border border-[#EEF2F7]">
-                    <div className="text-sm font-medium">{r.subject || r.title || 'Request'}</div>
-                    <div className="text-[11px] text-[#5A6B85]">{r.status || 'Pending'} • {r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}</div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 gap-6">
           <div className="p-6 rounded-2xl bg-white border border-[#EEF2F7]">
             <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
             <div className="space-y-3">
               <button onClick={() => navigate('/admin/officers')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">Manage Officers</button>
-              <button onClick={() => navigate('/admin/requests')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">View Requests</button>
               <button onClick={() => navigate('/itOfficer/schedules')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">Manage Duty Schedules</button>
               <button onClick={() => navigate('/accidents')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">View Accidents</button>
               <button onClick={() => navigate('/it/cases')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">View Cases</button>

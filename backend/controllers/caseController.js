@@ -48,7 +48,7 @@ exports.createCase = async (req, res) => {
 // GET /api/cases - list (supports query param assignedOfficer, status, unassigned)
 exports.listCases = async (req, res) => {
   try {
-    const { assignedOfficer, status, unassigned, q } = req.query;
+    const { assignedOfficer, status, unassigned, q, page = 1, pageSize = 50 } = req.query;
     const filter = {};
     if (assignedOfficer) filter.assignedOfficer = assignedOfficer;
     if (status) filter.status = status;
@@ -75,8 +75,20 @@ exports.listCases = async (req, res) => {
       filter.$or = ors;
     }
 
-    const list = await Case.find(filter).populate('assignedOfficer', 'name officerId email role').sort({ createdAt: -1 });
-    res.json({ success: true, data: list });
+    const p = Math.max(1, parseInt(page, 10) || 1);
+    const ps = Math.min(200, Math.max(1, parseInt(pageSize, 10) || 50));
+    const skip = (p - 1) * ps;
+
+    const [list, total] = await Promise.all([
+      Case.find(filter)
+        .select('complainant complaintDetails status assignedOfficer createdAt')
+        .populate('assignedOfficer', 'name officerId email role')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(ps),
+      Case.countDocuments(filter),
+    ]);
+    res.json({ success: true, data: list, page: p, pageSize: ps, total });
   } catch (err) {
     console.error('listCases error', err);
     res.status(500).json({ message: 'Failed to list cases' });
