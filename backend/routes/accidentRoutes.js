@@ -15,7 +15,7 @@ const {
 
 router.post('/report', reportAccident);
 router.get('/insurance', getByInsuranceRef);
-router.get('/:trackingId', getByTrackingId);
+router.get('/by-tracking/:trackingId', getByTrackingId);
 
 router.get('/', listAccidents);
 router.get('/:id', getAccident);

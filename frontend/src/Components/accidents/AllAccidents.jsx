@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 import { Eye, UserCheck } from 'lucide-react';
 import axiosInstance from '../../utils/axiosInstance';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
@@ -29,8 +28,6 @@ function AllAccidents() {
   const [assigningId, setAssigningId] = useState(null);
   const [selectedOfficerId, setSelectedOfficerId] = useState('');
 
-  const navigate = useNavigate();
-
   useEffect(() => {
     fetchHandler().then((data) => setAccidents(data));
     // load officers for dropdown (requires auth)
@@ -42,14 +39,12 @@ function AllAccidents() {
         const list = res.data?.data?.docs || res.data?.data || res.data || [];
         setOfficers(Array.isArray(list) ? list : []);
       } catch (e) {
-        // ignore; dropdown will be empty on failure
+        alert(
+          e?.response?.data?.message || e.message || 'Failed to load officers'
+        );
       }
     })();
   }, []);
-
-  const handleView = (accident) => {
-    navigate(`/accidents/${accident._id}`);
-  };
 
   const startAssign = (accident) => {
     setAssigningId(accident._id);
@@ -153,12 +148,6 @@ function AllAccidents() {
                     </td>
                     <td className="px-4 py-3 align-middle">
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleView(accident)}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[#D6DEEB] text-xs hover:bg-[#F5F7FB]"
-                        >
-                          <Eye className="w-4 h-4" /> View
-                        </button>
                         {assigningId === accident._id ? (
                           <div className="flex items-center gap-2">
                             <select
