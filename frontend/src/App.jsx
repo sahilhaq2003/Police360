@@ -28,6 +28,7 @@ import ItOfficerDashboard from './Components/itOfficer/ItOfficerDashboard';
 import ItDutySchedules from './Components/itOfficer/ItDutySchedules';
 import OfficerCalendar from './Components/officer/OfficerCalendar';
 import CaseDetails from './Components/cases/CaseDetails';
+import UpdateComplaint from './Components/cases/UpdateComplaint';
 
 import Criminal from './Components/CriminalManage/Criminal';
 
@@ -92,6 +93,7 @@ function App() {
         <Route path="/accidents" element={<AllAccidents />} />
         <Route path="/accidents/:id" element={<AccidentDetails />} />
         <Route path="/accidents/track" element={<TrackAccident />} />
+        <Route path="/cases/update/:id" element={<UpdateComplaint />} />
 
 
 

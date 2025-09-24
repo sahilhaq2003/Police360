@@ -2,7 +2,10 @@ const jwt = require('jsonwebtoken');
 
 const protect = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ message: 'No token, unauthorized' });
+  if (!token) {
+    console.warn('[AUTH] No token provided for protected route', { method: req.method, url: req.originalUrl });
+    return res.status(401).json({ message: 'No token, unauthorized' });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

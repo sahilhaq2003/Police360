@@ -99,6 +99,12 @@ export default function ReportSuccess() {
               >
                 Submit Another
               </button>
+              <button
+                onClick={() => navigate("/apply/file-complaint")}
+                className="w-full sm:w-auto rounded-xl bg-emerald-600 px-5 py-2.5 font-medium text-white shadow-sm hover:bg-emerald-700 transition"
+              >
+                Viwe
+              </button>
             </div>
           </div>
 

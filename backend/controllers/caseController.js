@@ -30,7 +30,7 @@ exports.createCase = async (req, res) => {
       createdBy: req.user?.id || null,
     });
 
-    res.status(201).json({ success: true, data: doc });
+    res.status(201).json({ success: true, id: doc._id, data: doc });
   } catch (err) {
     console.error('createCase error', err);
     res.status(500).json({ message: 'Failed to create case' });
@@ -153,5 +153,70 @@ exports.closeCase = async (req, res) => {
   } catch (err) {
     console.error('closeCase error', err);
     res.status(500).json({ message: 'Failed to close case' });
+  }
+};
+
+// PUT /api/cases/:id - update complaint (before assignment or by Admin/IT)
+exports.updateCase = async (req, res) => {
+  try {
+    console.log('[CASE] updateCase called', { params: req.params, bodyKeys: Object.keys(req.body || {}) });
+    const { id } = req.params;
+
+    const doc = await Case.findById(id);
+    if (!doc) return res.status(404).json({ message: 'Case not found' });
+
+    // Allow update only if NEW (not yet assigned) or Admin/IT role
+    if (doc.status !== 'NEW' && req.user?.role !== 'Admin' && req.user?.role !== 'IT Officer') {
+      return res.status(403).json({ message: 'You are not allowed to update this complaint' });
+    }
+
+    // Update allowed fields
+    const {
+      complainant,
+      complaintDetails,
+      attachments,
+      idInfo,
+      priority,
+      estimatedLoss,
+      additionalInfo,
+    } = req.body;
+
+    if (complainant) doc.complainant = complainant;
+    if (complaintDetails) doc.complaintDetails = complaintDetails;
+    if (attachments) doc.attachments = attachments;
+    if (idInfo) doc.idInfo = idInfo;
+    if (priority) doc.priority = priority;
+    if (estimatedLoss) doc.estimatedLoss = estimatedLoss;
+    if (additionalInfo) doc.additionalInfo = additionalInfo;
+
+    await doc.save();
+    res.json({ success: true, data: doc });
+  } catch (err) {
+    console.error('updateCase error', err);
+    res.status(500).json({ message: 'Failed to update case' });
+  }
+};
+
+
+// (Duplicate earlier deleteCase removed - keep the permissive deleteCase below)
+
+// DELETE /api/cases/:id - delete a case (Admin / IT or owner)
+exports.deleteCase = async (req, res) => {
+  try {
+    const doc = await Case.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: 'Case not found' });
+
+    const uid = req.user?.id;
+    const role = req.user?.role;
+    // allow Admin, IT Officer, or the user who created the case to delete
+    if (role !== 'Admin' && role !== 'IT Officer' && (!doc.createdBy || doc.createdBy.toString() !== uid)) {
+      return res.status(403).json({ message: 'Not authorized to delete this case' });
+    }
+
+    await doc.deleteOne();
+    res.json({ success: true, message: 'Case deleted' });
+  } catch (err) {
+    console.error('deleteCase error', err);
+    res.status(500).json({ message: 'Failed to delete case' });
   }
 };

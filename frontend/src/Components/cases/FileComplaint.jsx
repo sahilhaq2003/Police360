@@ -101,7 +101,7 @@ export default function FileComplaint() {
     try {
       const res = await axiosInstance.post("/cases", form);
       if (res?.data?.success) {
-        navigate("/report-success", { state: { complaintId: res.data.id } });
+        navigate("/report-success", { state: { reportNumber: res.data.id } });
       } else {
         setBanner({ type: "error", message: "Failed to submit complaint." });
       }
