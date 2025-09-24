@@ -41,8 +41,8 @@ export default function InsuranceLookup() {
 
     try {
       setLoading(true);
-      const { data } = await axiosInstance.get('/accidents', {
-        params: { insuranceCompany: c, referenceNumber: r },
+      const { data } = await axiosInstance.get('/accidents/insurance', {
+        params: { company: c, ref: r },
       });
       setAccident(data);
     } catch (e2) {

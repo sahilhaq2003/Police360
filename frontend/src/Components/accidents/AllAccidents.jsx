@@ -66,8 +66,8 @@ function AllAccidents() {
 
     try {
       // Use axiosInstance to call your backend directly
-      const res = await axiosInstance.put(
-        `/accidents/${accident._id}/assign-officer`,
+      const res = await axiosInstance.post(
+        `/accidents/${accident._id}/assign`,
         { officerId: selectedOfficerId }
       );
 

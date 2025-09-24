@@ -14,8 +14,8 @@ const {
 } = require('../controllers/accidentController');
 
 router.post('/report', reportAccident);
-router.get('/track/:trackingId', getByTrackingId);
 router.get('/insurance', getByInsuranceRef);
+router.get('/:trackingId', getByTrackingId);
 
 router.get('/', listAccidents);
 router.get('/:id', getAccident);

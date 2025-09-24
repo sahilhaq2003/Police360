@@ -207,27 +207,27 @@ exports.assignOfficer = async (req, res) => {
 exports.getByInsuranceRef = async (req, res) => {
   try {
     let { company, ref } = req.query || {};
-    if (typeof company !== 'string' || typeof ref !== 'string') {
-      return res.status(400).json({ message: 'company and ref are required' });
-    }
-
-    company = company.trim();
-    ref = String(ref).trim();
+    console.log('Incoming query:', req.query);
 
     if (!company || !ref) {
       return res.status(400).json({ message: 'company and ref are required' });
     }
 
-    // Prefer exact match using collation (case-insensitive)
-
     const doc = await Accident.findOne({
-      'victim.insuranceCompany': company,
-      'victim.insuranceRefNo': ref,
-    }).collation({ locale: 'en', strength: 2 }); // strength 2 => case-insensitive
+      'victim.insuranceCompany': company.trim(),
+      'victim.insuranceRefNo': ref.trim(),
+    }).collation({ locale: 'en', strength: 2 });
 
-    if (!doc) return res.status(404).json({ message: 'Not found' });
+    if (!doc) {
+      console.log('No accident found for', company, ref);
+      return res.status(404).json({ message: 'Not found' });
+    }
+
     return res.json(doc);
   } catch (err) {
-    return res.status(400).json({ message: err.message });
+    console.error('getByInsuranceRef error:', err);
+    return res
+      .status(500)
+      .json({ message: 'Server error', details: err.message });
   }
 };

@@ -37,9 +37,7 @@ export default function TrackAccident() {
 
     try {
       setLoading(true);
-      const { data } = await axiosInstance.get('/accidents', {
-        params: { trackingId: id },
-      });
+      const { data } = await axiosInstance.get(`/accidents/${id}`);
       setAccident(data);
     } catch (e) {
       const msg =
