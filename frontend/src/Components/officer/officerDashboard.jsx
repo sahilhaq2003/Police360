@@ -220,11 +220,12 @@ const OfficerDashboard = () => {
                 <SkeletonRow />
               ) : myCases.length === 0 ? (
 
-                <div className="text-sm text-[#5A6B85]">
-                  No assigned cases yet.
-                </div>
-
-                <div className="text-sm text-[#5A6B85]">No assigned complaints yet.</div>
+                <>
+                  <div className="text-sm text-[#5A6B85]">
+                    No assigned cases yet.
+                  </div>
+                  <div className="text-sm text-[#5A6B85]">No assigned complaints yet.</div>
+                </>
 
               ) : (
                 myCases.slice(0, 5).map((c) => (

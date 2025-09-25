@@ -6,7 +6,7 @@ import axiosInstance from '../../utils/axiosInstance';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
 
 // for export
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
