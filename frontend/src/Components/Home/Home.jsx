@@ -51,23 +51,23 @@ function Home() {
           icon: '/images/2190967.png',
           title: 'eCrime',
           desc: 'This service allows applicants to file an e-crime complaint, whether the c.',
-          link: '/apply/ecrime',
+          link: '/report-form',
         },
         {
           icon: '/images/893905.png',
           title: 'Tourist Police',
           desc: 'This service allows tourists to submit a report or complaint to the Tourist Police.',
-          link: '/apply/tourist-police',
+          link: '/report-form/apply/tourist-police',
         },
         {
           icon: '/images/893881.png',
           title: 'Police Report Inquiry',
           desc: 'Check status of existing police reports.',
-          link: '/apply/report-inquiry',
+          link: '/report-form/apply/report-inquiry',
         },
         {
           icon: '/images/893881.png',
-          title: 'File Criminal Complaint',
+          title: 'File Complaint',
           desc: 'This service allows users to file a criminal complaint.',
           link: '/apply/file-complaint',
         },
@@ -75,7 +75,7 @@ function Home() {
           icon: '/images/893881.png',
           title: 'Criminal Status of Financial Cases',
           desc: 'This service allows users to check the criminal status of financial cases.',
-          link: '/apply/criminal-status-financial-cases',
+          link: '/report-form/apply/criminal-status-financial-cases',
         },
       ],
     ],
@@ -304,11 +304,20 @@ function Home() {
         <div className="hero-content">
           <h1>Police Service</h1>
           <p>A smart solution to enhance Police360 emergency response</p>
+          
+          {/* Report an Incident button (default style) */}
           <button
-            className="report-btn"
+            className="report-btn mr-4" // Tailwind: adds right margin
             onClick={() => navigate('/report-form')}
           >
             Report an Incident
+          </button>
+
+          <button
+            className="report-btn complaint-progress-btn"
+            onClick={() => navigate('/track/case')}
+          >
+            Complaint Progress
           </button>
         </div>
       </section>

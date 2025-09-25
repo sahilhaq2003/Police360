@@ -11,7 +11,7 @@ export default function CriminalRecord() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  // Offense code list
+  // Offense code list ..
   const OFFENSE_CODES = [
     { code: "09A", desc: "Murder and Nonnegligent Manslaughter" },
     { code: "09B", desc: "Negligent Manslaughter" },
@@ -28,7 +28,7 @@ export default function CriminalRecord() {
     { code: "220", desc: "Burglary / Breaking and Entering" },
     { code: "23A", desc: "Pocket-picking" },
   ];
-  // Institution options (police stations)
+  // Institution options (police stations) 
   const INSTITUTIONS = [
     "Gampaha Police Station",
     "Horana Police Station",

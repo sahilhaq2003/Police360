@@ -33,24 +33,30 @@ const ItCasesPanel = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // fetch cases (show new/unassigned by default for IT panel)
-        const params = { pageSize: 200 };
-        if (onlyUnassigned) {
-          params.unassigned = true;
-          params.status = 'NEW';
-        }
-        if (debouncedSearch) params.q = debouncedSearch;
-        const casesRes = await axiosInstance.get('/cases', { params });
-      const casesList = casesRes.data?.data || casesRes.data || [];
+      // fetch cases and officers in parallel
+      const params = { pageSize: 200 };
+      if (onlyUnassigned) {
+        params.unassigned = true;
+        params.status = 'NEW';
+      }
+      if (debouncedSearch) params.q = debouncedSearch;
 
-      // fetch assignable officers from server
-      const offRes = await axiosInstance.get('/officers', { params: { role: 'Officer', pageSize: 200 } });
+      const [casesRes, offRes] = await Promise.all([
+        axiosInstance.get('/cases', { params: { ...params, page: 1, pageSize: 50 } }),
+        axiosInstance.get('/officers', { params: { role: 'Officer', pageSize: 100, lite: 'true' } }),
+      ]);
+
+      const casesList = casesRes.data?.data || casesRes.data || [];
       const offList = offRes.data?.data || offRes.data || offRes.data?.items || [];
 
-  setCases(Array.isArray(casesList) ? casesList : []);
+      setCases(Array.isArray(casesList) ? casesList : []);
       setOfficers(Array.isArray(offList) ? offList : []);
     } catch (e) {
+      const isTimeout = e?.code === 'ECONNABORTED';
       console.error('Failed loading cases or officers', e);
+      if (isTimeout) {
+        alert('Request timed out. Please check the server and try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -91,7 +97,7 @@ const ItCasesPanel = () => {
       <PoliceHeader />
       <div className="max-w-7xl mx-auto px-4 py-10">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight">Cases</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight">Complaints</h1>
           <p className="text-sm text-[#5A6B85] mt-1">Submitted criminal complaints — assign officers and view details</p>
         </div>
 

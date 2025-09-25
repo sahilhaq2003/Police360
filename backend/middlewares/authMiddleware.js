@@ -2,7 +2,10 @@ const jwt = require('jsonwebtoken');
 
 const protect = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ message: 'No token, unauthorized' });
+  if (!token) {
+    console.warn('[AUTH] No token provided for protected route', { method: req.method, url: req.originalUrl });
+    return res.status(401).json({ message: 'No token, unauthorized' });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -20,6 +23,13 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
+// Allow Admin or IT Officer
+const adminOrIt = (req, res, next) => {
+  const role = req.user?.role;
+  if (role === 'Admin' || role === 'IT Officer') return next();
+  return res.status(403).json({ message: 'Access denied: Admin or IT only' });
+};
+
 const officerOnly = (req, res, next) => {
   if (req.user?.role !== 'Officer') return res.status(403).json({ message: 'Access denied: Officers only' });
   next();
@@ -30,4 +40,4 @@ const itOnly = (req, res, next) => {
   next();
 };
 
-module.exports = { protect, adminOnly, officerOnly, itOnly };
+module.exports = { protect, adminOnly, adminOrIt, officerOnly, itOnly };
