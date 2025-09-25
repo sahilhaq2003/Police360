@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const complaintTypes = ["Theft", "Assault", "Fraud", "Harassment", "Other"];
+const complaintTypes = ["eCrime", "Tourist Police", "Police Report Inquiry", "File Complaint", "Criminal Status of Financial Cases", "Other"];
 const idTypes = ["National ID", "Passport", "Driver's License", "Voter ID", "Other"];
 const priorityOptions = ["LOW", "MEDIUM", "HIGH"];
 
@@ -150,7 +150,7 @@ export default function FileComplaint() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-extrabold text-slate-800">
-            File a Criminal Complaint
+            File a Complaint
           </h1>
           <button
             onClick={() => (openedFromHome ? navigate(-1) : navigate("/"))}
