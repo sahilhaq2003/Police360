@@ -109,7 +109,7 @@ const ItCasesPanel = () => {
           <div className="flex items-center gap-2 text-sm">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={onlyUnassigned} onChange={(e) => { setOnlyUnassigned(e.target.checked); fetchData(); }} />
-              <span>Show only unassigned NEW cases</span>
+              <span>Show only unassigned NEW complaints</span>
             </label>
           </div>
         </div>
