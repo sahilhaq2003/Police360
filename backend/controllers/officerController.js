@@ -36,6 +36,7 @@ exports.getAllOfficers = async (req, res) => {
       sort = 'createdAt:desc', // name|officerId|email|station|role|createdAt : asc|desc
       page = 1,
       pageSize = 10,
+      lite = 'false',          // if 'true', skip KPIs and stations aggregation for speed
     } = req.query;
 
     // ---- Build filter ----
@@ -76,9 +77,26 @@ exports.getAllOfficers = async (req, res) => {
     const ps = Math.min(100, Math.max(1, parseInt(pageSize, 10) || 10));
     const skip = (p - 1) * ps;
 
-    // ---- Run queries in parallel ----
+    // Select minimal fields in lite mode
+    const baseSelect = lite === 'true' ? 'name officerId email role isActive station createdAt' : '-password';
+
+    if (lite === 'true') {
+      const [rows, total] = await Promise.all([
+        Officer.find(filter).select(baseSelect).sort(sortObj).skip(skip).limit(ps).lean(),
+        Officer.countDocuments(filter),
+      ]);
+      return res.json({
+        data: rows,
+        page: p,
+        pageSize: ps,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / ps)),
+      });
+    }
+
+    // ---- Full mode: include stations and KPIs ----
     const [rows, total, stationsAll, kpiAgg] = await Promise.all([
-      Officer.find(filter).select('-password').sort(sortObj).skip(skip).limit(ps).lean(),
+      Officer.find(filter).select(baseSelect).sort(sortObj).skip(skip).limit(ps).lean(),
       Officer.countDocuments(filter),
       Officer.distinct('station'),
       Officer.aggregate([

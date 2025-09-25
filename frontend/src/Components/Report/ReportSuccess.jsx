@@ -1,12 +1,14 @@
 // src/pages/ReportSuccess.jsx
 import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 export default function ReportSuccess() {
   const navigate = useNavigate();
   const location = useLocation();
-  const reportNumber = location.state?.reportNumber || null;
+  const params = useParams();
+  const reportNumber = location.state?.reportNumber || params.id || null;
   const reportType = location.state?.reportType || "Police Report";
+  const passedReport = location.state?.report || null;
   const [copied, setCopied] = useState(false);
 
   const copyNumber = async () => {
@@ -59,9 +61,9 @@ export default function ReportSuccess() {
               <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <div className="min-w-0">
                   <div className="text-xs uppercase tracking-wide text-slate-500">Report Number</div>
-                  <div className="truncate font-semibold text-slate-900">
-                    {reportNumber ?? "Pending assignment"}
-                  </div>
+                    <div className="truncate font-semibold text-slate-900">
+                      {reportNumber ?? "Pending assignment"}
+                    </div>
                 </div>
                 <button
                   onClick={copyNumber}
@@ -94,11 +96,21 @@ export default function ReportSuccess() {
                 Go to Home
               </button>
               <button
-                onClick={() => navigate("/report-form")}
+                onClick={() => navigate("/apply/file-complaint")}
                 className="w-full sm:w-auto rounded-xl bg-emerald-600 px-5 py-2.5 font-medium text-white shadow-sm hover:bg-emerald-700 transition"
               >
                 Submit Another
               </button>
+              
+                
+              <button
+                onClick={() => navigate(`/cases/update/${reportNumber}`, { state: { report: passedReport } })}
+                className="w-full sm:w-auto rounded-xl bg-indigo-600 px-5 py-2.5 font-medium text-white shadow-sm hover:bg-indigo-700 transition"
+              >
+                View
+              </button>
+
+              
             </div>
           </div>
 
