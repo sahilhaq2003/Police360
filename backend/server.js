@@ -17,11 +17,11 @@ const router = require('./routes/reportRoutes');
 const requestRoutes = require('./routes/requestRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
 const criminalRoutes = require('./routes/criminalRoutes');
-
+const uploadRoutes = require('./routes/uploadRoutes');
+const suspectRoutes = require('./routes/suspectRoutes');
 
 const accidentRoutes = require('./routes/accidentRoutes');
 const caseRoutes = require('./routes/caseRoutes');
-
 
 dotenv.config();
 connectDB();
@@ -75,6 +75,8 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/criminals', criminalRoutes);
+app.use('/api/uploads', uploadRoutes);
+app.use('/api/suspects', suspectRoutes);
 
 
 //tharusha Routes
@@ -99,6 +101,11 @@ app.use((err, _req, res, _next) => {
 });
 
 
+app.use('/api/reporting', reportingRoutes);
+
+app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
+
+
 
 app.use('/api/reporting', reportingRoutes);
 
@@ -107,6 +114,7 @@ app.use((req, res) => {
   console.warn('[404] Route not found', { method: req.method, url: req.originalUrl });
   return res.status(404).json({ message: 'Route not found' });
 });
+
 
 app.use((err, _req, res, _next) => {
   if (err.type === 'entity.too.large')

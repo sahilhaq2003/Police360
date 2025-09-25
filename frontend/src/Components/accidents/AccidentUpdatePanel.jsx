@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { updateAccident, addInvestigationNote } from '../../utils/accidentapi';
+import axiosInstance from '../../utils/axiosInstance';
 
 export default function AccidentUpdatePanel({ accident, onUpdated }) {
   const [editMode, setEditMode] = useState(false);
@@ -115,7 +115,10 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
       if (!victimLocked) payload.victim = draft.victim;
       if (!vehicleLocked) payload.vehicle = draft.vehicle;
 
-      const updated = await updateAccident(accident._id, payload);
+      const { data: updated } = await axiosInstance.put(
+        `/accidents/${accident._id}`,
+        payload
+      );
       setEditMode(false);
       setBanner({ type: 'success', message: 'Changes saved.' });
       onUpdated?.(updated);
@@ -135,7 +138,10 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
     try {
       setNoteSaving(true);
       setBanner(null);
-      const updated = await addInvestigationNote(accident._id, text);
+      const { data: updated } = await axiosInstance.post(
+        `/accidents/${accident._id}/notes`,
+        { note: text }
+      );
       setNoteText('');
       setBanner({ type: 'success', message: 'Note added.' });
       onUpdated?.(updated);
@@ -160,7 +166,7 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
         {!editMode ? (
           <button
             onClick={() => setEditMode(true)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-50"
+            className="rounded-lg border border-slate-200 bg-[#0B214A] px-3 py-1.5 text-white text-sm hover:opacity-90"
           >
             Edit Details
           </button>
@@ -205,7 +211,7 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
             <button
               onClick={onSaveChanges}
               disabled={saving}
-              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="rounded-lg bg-[#0B214A] px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save'}
             </button>
@@ -441,7 +447,7 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
               multiple
               accept="image/*,video/*"
               onChange={(e) => onFiles(e.target.files)}
-              className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+              className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-white file:font-semibold file:bg-[#0B214A] file:text-indigo-700 hover:file:bg-[#0B214A]/90 cursor-pointer"
             />
             {evidence.length > 0 && (
               <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
@@ -453,7 +459,7 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
                     <button
                       type="button"
                       onClick={() => removeEvidence(idx)}
-                      className="absolute right-2 top-2 rounded bg-white/90 px-2 py-0.5 text-xs shadow hover:bg-white"
+                      className="absolute right-2 top-2 rounded bg-[#0B214A] px-2 py-0.5 text-xs shadow hover:bg-[#0B214A]/90"
                     >
                       Remove
                     </button>
@@ -494,7 +500,7 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
           <button
             onClick={onAddNote}
             disabled={noteSaving || !noteText.trim()}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="rounded-lg bg-[#0B214A] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             {noteSaving ? 'Adding…' : 'Add Note'}
           </button>
