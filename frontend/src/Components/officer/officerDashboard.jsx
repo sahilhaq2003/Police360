@@ -9,6 +9,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import axiosInstance from '../../utils/axiosInstance';
+import { getMediaUrl } from '../../utils/mediaUrl';
 import PoliceHeader from '../../Components/PoliceHeader/PoliceHeader';
 
 const OfficerDashboard = () => {
@@ -52,7 +53,14 @@ const OfficerDashboard = () => {
           setMyCases(caseRes.data?.data || []);
         }
       } catch (err) {
-        console.error(err);
+        // Surface server error details to help debugging (500s)
+        if (err?.response) {
+          console.error('Reports API error:', err.response.status, err.response.data);
+        } else if (err?.request) {
+          console.error('Reports API network error (no response):', err.request);
+        } else {
+          console.error('Reports API unexpected error:', err.message);
+        }
       } finally {
         setLoading(false);
       }
@@ -68,16 +76,10 @@ const OfficerDashboard = () => {
         if (!id) return;
         const res = await axiosInstance.get(`/officers/${id}`);
         setMe(res.data || null);
-      } catch {}
+      } catch (err) { console.error('Failed to load officer:', err); }
     };
     loadMe();
   }, []);
-
-  const logout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    navigate('/login');
-  };
 
   const recentReports = useMemo(() => reports.slice(0, 5), [reports]);
 
@@ -85,6 +87,7 @@ const OfficerDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
       <PoliceHeader />
       <div className="max-w-6xl mx-auto px-4 py-10">
+
         <div className="flex items-center gap-3">
           {me?.photo ? (
             <img
@@ -103,6 +106,18 @@ const OfficerDashboard = () => {
         <p className="text-sm text-[#5A6B85] mb-8">
           Here is your report summary and recent activity overview.
         </p>
+
+      <div className="flex items-center gap-3">
+            {me?.photo ? (
+              <img src={getMediaUrl(me.photo)} alt={me.name} className="w-15 h-15 rounded-full object-cover border border-[#E4E9F2]" />
+            ) : (
+              <ShieldCheck className="w-6 h-6 text-[#00296B]" />
+            )}
+            <h2 className="text-3xl font-extrabold tracking-tight mb-4">Welcome, Officer</h2>           
+          </div>
+        
+        <p className="text-sm text-[#5A6B85] mb-8">Here is your report summary and recent activity overview.</p>
+
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
           <KpiCard
@@ -125,13 +140,19 @@ const OfficerDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ActionCard
             icon={<ShieldCheck className="h-10 w-10" />}
+            title="Suspect Manage"
+            desc="Create and manage suspect records."
+            onClick={() => navigate('/SuspectManage/SuspectManage')}
+          />
+        <ActionCard
+            icon={<ShieldCheck className="h-10 w-10" />}
             title="Criminal Manage"
             desc="Create and manage criminal records."
             onClick={() => navigate('/CriminalManage/CriminalManage')}
           />
           <ActionCard
             icon={<ClipboardCheck className="h-10 w-10" />}
-            title="Assigned Reports"
+            title="Assigned Cases"
             desc="View all your assigned complaint and accident reports."
             onClick={() => navigate('/officer/reports')}
           />
@@ -181,6 +202,7 @@ const OfficerDashboard = () => {
             onClick={() => navigate('/officer/cases')}
             className="bg-white border border-[#E4E9F2] rounded-2xl p-6 text-left shadow hover:shadow-lg transition hover:-translate-y-0.5"
           >
+
             <div className="mb-3 text-[#00296B]">
               <BookMarked className="h-10 w-10" />
             </div>
@@ -188,13 +210,22 @@ const OfficerDashboard = () => {
             <div className="text-sm text-[#5A6B85] mt-1">
               Cases assigned to you. View details and add investigation notes.
             </div>
+
+            <div className="mb-3 text-[#00296B]"><BookMarked className="h-10 w-10" /></div>
+            <div className="text-lg font-semibold">Assigned Complaints</div>
+            <div className="text-sm text-[#5A6B85] mt-1">Complaints assigned to you. View details and add investigation notes.</div>
+
             <div className="mt-4 space-y-2">
               {loading ? (
                 <SkeletonRow />
               ) : myCases.length === 0 ? (
+
                 <div className="text-sm text-[#5A6B85]">
                   No assigned cases yet.
                 </div>
+
+                <div className="text-sm text-[#5A6B85]">No assigned complaints yet.</div>
+
               ) : (
                 myCases.slice(0, 5).map((c) => (
                   <div

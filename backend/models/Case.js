@@ -13,7 +13,31 @@ const ComplaintSchema = new mongoose.Schema({
     location: { type: String, trim: true },
     description: { type: String },
   },
-  attachments: [{ type: String }], // paths to uploads
+  attachments: [{ type: String }], // paths to uploads (or base64 strings)
+  // new fields
+  idInfo: {
+    idType: { type: String, trim: true },
+    idValue: { type: String, trim: true },
+  },
+  priority: { type: String, enum: ['LOW','MEDIUM','HIGH'], default: 'MEDIUM' },
+  estimatedLoss: { type: String, trim: true },
+  additionalInfo: {
+    witnesses: [
+      {
+        name: { type: String, trim: true },
+        phone: { type: String, trim: true },
+        id: { type: String, trim: true },
+      }
+    ],
+    suspects: [
+      {
+        name: { type: String, trim: true },
+        appearance: { type: String },
+        photos: [{ type: String }],
+      }
+    ],
+    evidence: [{ type: String }], // base64 or paths
+  },
   status: { type: String, enum: ['NEW', 'ASSIGNED', 'IN_PROGRESS', 'CLOSED'], default: 'NEW' },
   assignedOfficer: { type: mongoose.Schema.Types.ObjectId, ref: 'Officer', default: null },
   investigationNotes: [
@@ -24,6 +48,9 @@ const ComplaintSchema = new mongoose.Schema({
     }
   ],
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Officer', required: false, default: null },
+  // Single-use edit token for the creator (allows editing the freshly created case once without auth)
+  editToken: { type: String, trim: true, default: null },
+  editTokenUsed: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Case', ComplaintSchema);
