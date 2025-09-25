@@ -97,7 +97,7 @@ const ItCasesPanel = () => {
       <PoliceHeader />
       <div className="max-w-7xl mx-auto px-4 py-10">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight">Cases</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight">Complaints</h1>
           <p className="text-sm text-[#5A6B85] mt-1">Submitted criminal complaints — assign officers and view details</p>
         </div>
 

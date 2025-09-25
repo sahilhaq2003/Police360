@@ -307,13 +307,12 @@ function Home() {
           
           {/* Report an Incident button (default style) */}
           <button
-            className="report-btn"
+            className="report-btn mr-4" // Tailwind: adds right margin
             onClick={() => navigate('/report-form')}
           >
             Report an Incident
           </button>
 
-          {/* Complaint Progress button (green style with spacing) */}
           <button
             className="report-btn complaint-progress-btn"
             onClick={() => navigate('/track/case')}

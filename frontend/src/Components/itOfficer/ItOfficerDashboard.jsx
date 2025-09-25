@@ -74,7 +74,7 @@ const ItOfficerDashboard = () => {
               <button onClick={() => navigate('/admin/officers')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">Manage Officers</button>
               <button onClick={() => navigate('/itOfficer/schedules')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">Manage Duty Schedules</button>
               <button onClick={() => navigate('/accidents')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">View Accidents</button>
-              <button onClick={() => navigate('/it/cases')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">View Cases</button>
+              <button onClick={() => navigate('/it/cases')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">View Complaints</button>
             </div>
           </div>
         </div>

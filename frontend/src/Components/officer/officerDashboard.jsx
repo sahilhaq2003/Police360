@@ -98,7 +98,7 @@ const OfficerDashboard = () => {
           />
           <ActionCard
             icon={<ClipboardCheck className="h-10 w-10" />}
-            title="Assigned Reports"
+            title="Assigned Cases"
             desc="View all your assigned complaint and accident reports."
             onClick={() => navigate('/officer/reports')}
           />
@@ -141,13 +141,13 @@ const OfficerDashboard = () => {
             className="bg-white border border-[#E4E9F2] rounded-2xl p-6 text-left shadow hover:shadow-lg transition hover:-translate-y-0.5"
           >
             <div className="mb-3 text-[#00296B]"><BookMarked className="h-10 w-10" /></div>
-            <div className="text-lg font-semibold">Assigned Cases</div>
-            <div className="text-sm text-[#5A6B85] mt-1">Cases assigned to you. View details and add investigation notes.</div>
+            <div className="text-lg font-semibold">Assigned Complaints</div>
+            <div className="text-sm text-[#5A6B85] mt-1">Complaints assigned to you. View details and add investigation notes.</div>
             <div className="mt-4 space-y-2">
               {loading ? (
                 <SkeletonRow />
               ) : myCases.length === 0 ? (
-                <div className="text-sm text-[#5A6B85]">No assigned cases yet.</div>
+                <div className="text-sm text-[#5A6B85]">No assigned complaints yet.</div>
               ) : (
                 myCases.slice(0, 5).map(c => (
                   <div key={c._id} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] bg-[#F8FAFC]">

@@ -142,7 +142,7 @@ export default function CaseDetails() {
       <PoliceHeader />
       <div className="max-w-7xl mx-auto px-4 py-10">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight">Case Details</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight">Complaint Details</h1>
           <p className="text-sm text-[#5A6B85] mt-1">Review and update complaint investigation</p>
         </div>
 
