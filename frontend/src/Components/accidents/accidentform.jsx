@@ -13,6 +13,7 @@ export default function AccidentForm() {
     isEmergency: true,
     nic: '',
     locationText: '',
+    geo: { lat: '', lng: '' },
     victim: {
       fullName: '',
       phone: '',
@@ -40,8 +41,12 @@ export default function AccidentForm() {
       const parts = path.split('.');
       let cur = clone;
       parts.forEach((p, i) => {
-        if (i === parts.length - 1) cur[p] = value;
-        else cur = cur[p];
+        if (i === parts.length - 1) {
+          cur[p] = value;
+        } else {
+          cur[p] = cur[p] ?? {};
+          cur = cur[p];
+        }
       });
       return clone;
     });
@@ -71,6 +76,10 @@ export default function AccidentForm() {
       isEmergency: form.isEmergency,
       nic: form.nic || undefined,
       locationText: form.locationText,
+      geo:
+        form?.geo?.lat && form?.geo?.lng
+          ? { lat: Number(form.geo.lat), lng: Number(form.geo.lng) }
+          : undefined,
       evidence: evidence.map((x) => x.url),
       victim: form.isEmergency ? undefined : form.victim,
       vehicle: form.isEmergency ? undefined : form.vehicle,
