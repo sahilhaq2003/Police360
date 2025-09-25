@@ -115,13 +115,24 @@ export default function AccidentDetails() {
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
       <PoliceHeader />
       <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight">
-            Accident Details
-          </h1>
-          <p className="text-sm text-[#5A6B85] mt-1">
-            Review and update investigation information
-          </p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight">
+              Accident Details
+            </h1>
+            <p className="text-sm text-[#5A6B85] mt-1">
+              Review and update investigation information
+            </p>
+          </div>
+          {/* Back */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-[#D6DEEB] text-white text-sm bg-[#0B214A] hover:opacity-90"
+            >
+              Back to Assigned Accidents
+            </button>
+          </div>
         </div>
 
         <div className="mx-auto max-w-4xl space-y-6">
@@ -273,15 +284,7 @@ export default function AccidentDetails() {
               setTimeout(() => setBanner(null), 2500);
             }}
           />
-          {/* Back */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-[#D6DEEB] text-sm hover:bg-[#F5F7FB]"
-            >
-              ← Back
-            </button>
-          </div>
+
           {/* Delete Accident */}
           <div className="flex justify-center">
             <DeleteAccident accidentId={accident._id} />

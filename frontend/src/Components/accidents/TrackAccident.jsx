@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 function StatusPill({ status }) {
   const map = {
@@ -23,6 +25,7 @@ export default function TrackAccident() {
   const [loading, setLoading] = useState(false);
   const [accident, setAccident] = useState(null);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -54,6 +57,14 @@ export default function TrackAccident() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
       <div className="max-w-3xl mx-auto px-4 py-10">
+        <div className="mb-6">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0B214A] text-white text-sm font-medium shadow hover:opacity-90 transition"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back
+          </button>
+        </div>
         {/* Heading */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">

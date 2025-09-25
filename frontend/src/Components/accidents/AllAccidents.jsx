@@ -217,6 +217,8 @@ function AllAccidents() {
                   <th className="px-5 py-3">Type</th>
                   <th className="px-5 py-3">Emergency</th>
                   <th className="px-5 py-3">Location</th>
+                  <th className="px-5 py-3">Reported Date</th>
+
                   <th className="px-5 py-3">Assigned Officer</th>
                   <th className="px-5 py-3 text-center">Actions</th>
                 </tr>
@@ -250,6 +252,10 @@ function AllAccidents() {
                     <td className="px-5 py-3 truncate max-w-[220px]">
                       {accident.locationText}
                     </td>
+                    <td className="px-5 py-3">
+                      {new Date(accident.createdAt).toLocaleDateString()}
+                    </td>
+
                     <td className="px-5 py-3">
                       {accident.assignedOfficer
                         ? accident.assignedOfficer.name ||
