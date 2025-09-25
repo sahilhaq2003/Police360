@@ -304,11 +304,20 @@ function Home() {
         <div className="hero-content">
           <h1>Police Service</h1>
           <p>A smart solution to enhance Police360 emergency response</p>
+          
+          {/* Report an Incident button (default style) */}
           <button
-            className="report-btn"
+            className="report-btn mr-4" // Tailwind: adds right margin
             onClick={() => navigate('/report-form')}
           >
             Report an Incident
+          </button>
+
+          <button
+            className="report-btn complaint-progress-btn"
+            onClick={() => navigate('/track/case')}
+          >
+            Complaint Progress
           </button>
         </div>
       </section>

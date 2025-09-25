@@ -49,6 +49,12 @@ app.use(
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
+// Simple request logger for debugging (temporary)
+app.use((req, _res, next) => {
+  console.log(`[REQ] ${new Date().toISOString()} ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -81,7 +87,10 @@ app.use('/api/accidents', accidentRoutes);
 app.use('/api/cases', caseRoutes);
 app.get('/', (_req, res) => res.send('Police360 API running'));
 
-app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
+app.use((req, res) => {
+  console.warn('[404] Route not found', { method: req.method, url: req.originalUrl });
+  return res.status(404).json({ message: 'Route not found' });
+});
 
 app.use((err, _req, res, _next) => {
   if (err.type === 'entity.too.large')
@@ -94,7 +103,10 @@ app.use((err, _req, res, _next) => {
 app.use('/api/reporting', reportingRoutes);
 
 
-app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
+app.use((req, res) => {
+  console.warn('[404] Route not found', { method: req.method, url: req.originalUrl });
+  return res.status(404).json({ message: 'Route not found' });
+});
 
 app.use((err, _req, res, _next) => {
   if (err.type === 'entity.too.large')

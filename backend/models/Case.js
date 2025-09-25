@@ -48,6 +48,9 @@ const ComplaintSchema = new mongoose.Schema({
     }
   ],
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Officer', required: false, default: null },
+  // Single-use edit token for the creator (allows editing the freshly created case once without auth)
+  editToken: { type: String, trim: true, default: null },
+  editTokenUsed: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Case', ComplaintSchema);

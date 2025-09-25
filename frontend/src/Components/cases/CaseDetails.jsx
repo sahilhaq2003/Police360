@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
+import { Link } from "react-router-dom";
 
 function LabelRow({ label, children }) {
   return (
@@ -111,12 +112,37 @@ export default function CaseDetails() {
     }
   };
 
+  const handleDelete = async (id) => {
+  if (!window.confirm("Are you sure you want to delete this complaint?")) return;
+  try {
+    await axiosInstance.delete(`/cases/${id}`);
+    setCases(prev => prev.filter(item => item._id !== id));
+    alert("Deleted successfully");
+  } catch (err) {
+    alert(err?.response?.data?.message || "Failed to delete");
+  }
+};
+
+  // Delete current case and navigate back to cases list
+  const deleteCurrentCase = async () => {
+    if (!window.confirm('Are you sure you want to delete this complaint?')) return;
+    try {
+      await axiosInstance.delete(`/cases/${c._id}`);
+      setBanner({ type: 'success', message: 'Deleted successfully' });
+      setTimeout(() => navigate('/it/cases'), 800);
+    } catch (err) {
+      console.error('delete case error', err);
+      setBanner({ type: 'error', message: err?.response?.data?.message || 'Failed to delete' });
+      setTimeout(() => setBanner(null), 2500);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
       <PoliceHeader />
       <div className="max-w-7xl mx-auto px-4 py-10">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight">Case Details</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight">Complaint Details</h1>
           <p className="text-sm text-[#5A6B85] mt-1">Review and update complaint investigation</p>
         </div>
 
@@ -259,10 +285,55 @@ export default function CaseDetails() {
             <h3 className="mb-4 text-lg font-semibold">Add Note / Actions</h3>
             <textarea value={noteText} onChange={e => setNoteText(e.target.value)} className="border p-2 w-full" placeholder="Add investigation note" />
             <div className="mt-3 flex gap-2">
-              <button onClick={addNote} className="bg-blue-600 text-white px-3 py-1 rounded">Add Note</button>
-              <button onClick={closeCase} className="bg-green-600 text-white px-3 py-1 rounded">Mark as Closed</button>
-              <button onClick={() => navigate(-1)} className="px-3 py-1 rounded border">Back</button>
-            </div>
+  {/* Add Note */}
+  <button
+    onClick={addNote}
+    className="bg-blue-600 text-white px-3 py-1 rounded"
+  >
+    Add Note
+  </button>
+
+  {/* Close Case */}
+  <button
+    onClick={closeCase}
+    className="bg-green-600 text-white px-3 py-1 rounded"
+  >
+    Mark as Closed
+  </button>
+
+  {/* Update Complaint (Edit) */}
+  <Link
+    to={`/cases/update/${c._id}`}
+    className="bg-indigo-600 text-white px-3 py-1 rounded inline-flex items-center"
+  >
+    Update
+  </Link>
+
+  <button
+  onClick={async () => {
+    if (!window.confirm("Are you sure you want to delete this complaint?")) return;
+    try {
+      await axiosInstance.delete(`/cases/${c._id}`);
+      alert("Deleted successfully");
+      navigate("/it/cases"); // go back to cases list
+    } catch (err) {
+      alert(err?.response?.data?.message || "Failed to delete");
+    }
+  }}
+  className="bg-rose-600 text-white px-3 py-1 rounded"
+>
+  Delete
+</button>
+
+  {/* Back */}
+  <button
+    onClick={() => navigate(-1)}
+    className="px-3 py-1 rounded border"
+  >
+    Back
+  </button>
+</div>
+
           </div>
         </div>
       </div>
