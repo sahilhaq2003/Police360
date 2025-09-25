@@ -32,15 +32,20 @@ import UpdateComplaint from './Components/cases/UpdateComplaint';
 import CaseDetailsPublic from './Components/cases/CaseDetailsPublic';
 import ComplaintProgress from './Components/cases/ComplaintProgress';
 
-import Criminal from './Components/CriminalManage/Criminal';
+
 
 import FileComplaint from './Components/cases/FileComplaint';
 import ItCasesPanel from './Components/cases/ItCasesPanel';
 import OfficerCases from './Components/cases/OfficerCases';
 
+import Criminal from './Components/CriminalManage/Criminal';
 import CriminalProfile from './Components/CriminalManage/CriminalProfile';
 import CriminalManage from './Components/CriminalManage/CriminalManage';
 
+import Suspect from './Components/Suspect/Suspect';
+import SuspectProfile from './Components/Suspect/SuspectProfile';
+import SuspectManage from './Components/Suspect/SuspectManage';
+import SuspectUpdate from './Components/Suspect/SuspectUpdate';
 
 
 
@@ -113,6 +118,15 @@ function App() {
         <Route path="/CriminalManage/Criminal" element={<Criminal/>}/>
         <Route path="/CriminalManage/CriminalProfile" element={<CriminalProfile />} />
         <Route path="/CriminalManage/CriminalProfile/:id" element={<CriminalProfile />} />
+
+        {/* Suspect Management Routes */}
+        <Route path="/SuspectManage/Suspect" element={<Suspect/>}/>
+        <Route path="/SuspectManage/SuspectProfile" element={<SuspectProfile/>}/>
+        <Route path="/SuspectManage/SuspectProfile/:id" element={<SuspectProfile/>}/>
+        <Route path="/SuspectManage/SuspectManage" element={<SuspectManage/>}/>
+        <Route path="/SuspectManage/Suspect/:id" element={<Suspect/>}/>
+        <Route path="/SuspectManage/SuspectUpdate/:id" element={<SuspectUpdate/>}/>
+        
 
 
       </Routes>

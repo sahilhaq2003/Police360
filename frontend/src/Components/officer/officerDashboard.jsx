@@ -4,6 +4,7 @@ import {
   FileText, ClipboardCheck, BookMarked, CalendarDays, ShieldCheck, LogOut
 } from 'lucide-react';
 import axiosInstance from '../../utils/axiosInstance';
+import { getMediaUrl } from '../../utils/mediaUrl';
 import PoliceHeader from '../../Components/PoliceHeader/PoliceHeader';
 
 const OfficerDashboard = () => {
@@ -40,7 +41,14 @@ const OfficerDashboard = () => {
           setMyCases(caseRes.data?.data || []);
         }
       } catch (err) {
-        console.error(err);
+        // Surface server error details to help debugging (500s)
+        if (err?.response) {
+          console.error('Reports API error:', err.response.status, err.response.data);
+        } else if (err?.request) {
+          console.error('Reports API network error (no response):', err.request);
+        } else {
+          console.error('Reports API unexpected error:', err.message);
+        }
       } finally {
         setLoading(false);
       }
@@ -55,16 +63,10 @@ const OfficerDashboard = () => {
         if (!id) return;
         const res = await axiosInstance.get(`/officers/${id}`);
         setMe(res.data || null);
-      } catch {}
+      } catch (err) { console.error('Failed to load officer:', err); }
     };
     loadMe();
   }, []);
-
-  const logout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    navigate('/login');
-  };
 
   const recentReports = useMemo(() => reports.slice(0, 5), [reports]);
 
@@ -74,7 +76,7 @@ const OfficerDashboard = () => {
       <div className="max-w-6xl mx-auto px-4 py-10">
       <div className="flex items-center gap-3">
             {me?.photo ? (
-              <img src={me.photo} alt={me.name} className="w-15 h-15 rounded-full object-cover border border-[#E4E9F2]" />
+              <img src={getMediaUrl(me.photo)} alt={me.name} className="w-15 h-15 rounded-full object-cover border border-[#E4E9F2]" />
             ) : (
               <ShieldCheck className="w-6 h-6 text-[#00296B]" />
             )}
@@ -90,6 +92,12 @@ const OfficerDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ActionCard
+            icon={<ShieldCheck className="h-10 w-10" />}
+            title="Suspect Manage"
+            desc="Create and manage suspect records."
+            onClick={() => navigate('/SuspectManage/SuspectManage')}
+          />
         <ActionCard
             icon={<ShieldCheck className="h-10 w-10" />}
             title="Criminal Manage"
