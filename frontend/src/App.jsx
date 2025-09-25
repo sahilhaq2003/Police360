@@ -5,10 +5,15 @@ import Home from './Components/Home/Home';
 import Login from './Components/UserManage/Login';
 import RegisterOfficer from './Components/admin/RegisterOfficer';
 import AdminDashboard from './Components/admin/AdminDashboard';
-import Officers from './Components/admin/officers';
-import OfficerProfile from './Components/admin/OfficerProfile';
+
 import ReportForm from './Components/Report/ReportForm';
 import ReportSuccess from './Components/Report/ReportSuccess';
+
+import Reports from './Components/Report/Reports';
+import UpdateReport from './Components/Report/UpdateReport';
+
+import Officers from './Components/admin/officers';
+import OfficerProfile from './Components/admin/OfficerProfile';
 
 import OfficerDashboard from './Components/officer/officerDashboard';
 import AssignAccidents from './Components/officer/AssignAccidents';
@@ -23,16 +28,24 @@ import ItOfficerDashboard from './Components/itOfficer/ItOfficerDashboard';
 import ItDutySchedules from './Components/itOfficer/ItDutySchedules';
 import OfficerCalendar from './Components/officer/OfficerCalendar';
 import CaseDetails from './Components/cases/CaseDetails';
+import UpdateComplaint from './Components/cases/UpdateComplaint';
+import CaseDetailsPublic from './Components/cases/CaseDetailsPublic';
+import ComplaintProgress from './Components/cases/ComplaintProgress';
 
-import Criminal from './Components/CriminalManage/Criminal';
+
 
 import FileComplaint from './Components/cases/FileComplaint';
 import ItCasesPanel from './Components/cases/ItCasesPanel';
 import OfficerCases from './Components/cases/OfficerCases';
 
+import Criminal from './Components/CriminalManage/Criminal';
 import CriminalProfile from './Components/CriminalManage/CriminalProfile';
 import CriminalManage from './Components/CriminalManage/CriminalManage';
 
+import Suspect from './Components/Suspect/Suspect';
+import SuspectProfile from './Components/Suspect/SuspectProfile';
+import SuspectManage from './Components/Suspect/SuspectManage';
+import SuspectUpdate from './Components/Suspect/SuspectUpdate';
 
 
 
@@ -52,8 +65,14 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/officers" element={<Officers />} />
         <Route path="/admin/officer/:id" element={<OfficerProfile />} />
+  <Route path="/track/case" element={<ComplaintProgress />} />
+  <Route path="/track/case/:id" element={<CaseDetailsPublic />} />
+
         <Route path="/report-form" element={<ReportForm />} />
-        <Route path="/report-success" element={<ReportSuccess />} />
+  <Route path="/report-success" element={<ReportSuccess />} />
+  <Route path="/report-success/:id" element={<ReportSuccess />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/reports/:id" element={<UpdateReport />} />
 
 
         <Route
@@ -84,6 +103,8 @@ function App() {
         <Route path="/accidents" element={<AllAccidents />} />
         <Route path="/accidents/:id" element={<AccidentDetails />} />
         <Route path="/accidents/track" element={<TrackAccident />} />
+        <Route path="/cases/update/:id" element={<UpdateComplaint />} />
+        <Route path="/cases/progress" element={<ComplaintProgress />} />
 
 
 
@@ -97,6 +118,15 @@ function App() {
         <Route path="/CriminalManage/Criminal" element={<Criminal/>}/>
         <Route path="/CriminalManage/CriminalProfile" element={<CriminalProfile />} />
         <Route path="/CriminalManage/CriminalProfile/:id" element={<CriminalProfile />} />
+
+        {/* Suspect Management Routes */}
+        <Route path="/SuspectManage/Suspect" element={<Suspect/>}/>
+        <Route path="/SuspectManage/SuspectProfile" element={<SuspectProfile/>}/>
+        <Route path="/SuspectManage/SuspectProfile/:id" element={<SuspectProfile/>}/>
+        <Route path="/SuspectManage/SuspectManage" element={<SuspectManage/>}/>
+        <Route path="/SuspectManage/Suspect/:id" element={<Suspect/>}/>
+        <Route path="/SuspectManage/SuspectUpdate/:id" element={<SuspectUpdate/>}/>
+        
 
 
       </Routes>

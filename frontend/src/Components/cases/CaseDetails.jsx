@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
+import { Link } from "react-router-dom";
 
 function LabelRow({ label, children }) {
   return (
@@ -111,12 +112,37 @@ export default function CaseDetails() {
     }
   };
 
+  const handleDelete = async (id) => {
+  if (!window.confirm("Are you sure you want to delete this complaint?")) return;
+  try {
+    await axiosInstance.delete(`/cases/${id}`);
+    setCases(prev => prev.filter(item => item._id !== id));
+    alert("Deleted successfully");
+  } catch (err) {
+    alert(err?.response?.data?.message || "Failed to delete");
+  }
+};
+
+  // Delete current case and navigate back to cases list
+  const deleteCurrentCase = async () => {
+    if (!window.confirm('Are you sure you want to delete this complaint?')) return;
+    try {
+      await axiosInstance.delete(`/cases/${c._id}`);
+      setBanner({ type: 'success', message: 'Deleted successfully' });
+      setTimeout(() => navigate('/it/cases'), 800);
+    } catch (err) {
+      console.error('delete case error', err);
+      setBanner({ type: 'error', message: err?.response?.data?.message || 'Failed to delete' });
+      setTimeout(() => setBanner(null), 2500);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
       <PoliceHeader />
       <div className="max-w-7xl mx-auto px-4 py-10">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight">Case Details</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight">Complaint Details</h1>
           <p className="text-sm text-[#5A6B85] mt-1">Review and update complaint investigation</p>
         </div>
 
@@ -143,6 +169,10 @@ export default function CaseDetails() {
             <LabelRow label="Assigned Officer">{c.assignedOfficer ? (c.assignedOfficer.name || c.assignedOfficer.officerId) : '—'}</LabelRow>
             <LabelRow label="Reported at">{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</LabelRow>
             <LabelRow label="Last updated">{c.updatedAt ? new Date(c.updatedAt).toLocaleString() : '—'}</LabelRow>
+            <LabelRow label="ID Type">{c.idInfo?.idType || '—'}</LabelRow>
+            <LabelRow label="ID Value">{c.idInfo?.idValue || '—'}</LabelRow>
+            <LabelRow label="Priority">{c.priority || '—'}</LabelRow>
+            <LabelRow label="Estimated Loss">{c.estimatedLoss || '—'}</LabelRow>
           </div>
 
           <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
@@ -164,6 +194,79 @@ export default function CaseDetails() {
             )}
           </div>
 
+          {/* Additional Information display */}
+          <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
+            <h3 className="mb-4 text-lg font-semibold">Additional Information</h3>
+
+            {/* Witnesses */}
+            <div className="mb-4">
+              <h4 className="font-medium mb-2">Witnesses</h4>
+              {(c.additionalInfo?.witnesses || []).length > 0 ? (
+                <ul className="space-y-2">
+                  {c.additionalInfo.witnesses.map((w, i) => (
+                    <li key={i} className="border rounded p-3">
+                      <div className="text-sm font-medium">{w.name || '—'}</div>
+                      <div className="text-xs text-slate-600">Phone: {w.phone || '—'}</div>
+                      <div className="text-xs text-slate-600">ID: {w.id || '—'}</div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-sm text-slate-600">No witnesses provided.</div>
+              )}
+            </div>
+
+            {/* Suspects */}
+            <div className="mb-4">
+              <h4 className="font-medium mb-2">Suspects</h4>
+              {(c.additionalInfo?.suspects || []).length > 0 ? (
+                <div className="space-y-3">
+                  {c.additionalInfo.suspects.map((s, i) => (
+                    <div key={i} className="border rounded p-3">
+                      <div className="text-sm font-medium">{s.name || '—'}</div>
+                      <div className="text-xs text-slate-600 mb-2">Appearance: {s.appearance || '—'}</div>
+                      {Array.isArray(s.photos) && s.photos.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                          {s.photos.map((p, j) => (
+                            <div key={j} className="overflow-hidden rounded border">
+                              {typeof p === 'string' && p.startsWith('data:video') ? (
+                                <video src={p} controls className="h-24 w-full object-cover" />
+                              ) : (
+                                <img src={p} alt={`suspect-${i}-${j}`} className="h-24 w-full object-cover" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-slate-600">No suspects provided.</div>
+              )}
+            </div>
+
+            {/* Evidence */}
+            <div>
+              <h4 className="font-medium mb-2">Evidence</h4>
+              {(c.additionalInfo?.evidence || []).length > 0 ? (
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                  {c.additionalInfo.evidence.map((evi, idx) => (
+                    <div key={idx} className="overflow-hidden rounded-xl border border-slate-200">
+                      {typeof evi === 'string' && evi.startsWith('data:video') ? (
+                        <video src={evi} controls className="h-40 w-full object-cover" />
+                      ) : (
+                        <img src={evi} alt={`evi-${idx}`} className="h-40 w-full object-cover" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-slate-600">No evidence uploaded.</div>
+              )}
+            </div>
+          </div>
+
           {Array.isArray(c.investigationNotes) && c.investigationNotes.length > 0 && (
             <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
               <h3 className="mb-4 text-lg font-semibold">Investigation Notes</h3>
@@ -182,10 +285,55 @@ export default function CaseDetails() {
             <h3 className="mb-4 text-lg font-semibold">Add Note / Actions</h3>
             <textarea value={noteText} onChange={e => setNoteText(e.target.value)} className="border p-2 w-full" placeholder="Add investigation note" />
             <div className="mt-3 flex gap-2">
-              <button onClick={addNote} className="bg-blue-600 text-white px-3 py-1 rounded">Add Note</button>
-              <button onClick={closeCase} className="bg-green-600 text-white px-3 py-1 rounded">Mark as Closed</button>
-              <button onClick={() => navigate(-1)} className="px-3 py-1 rounded border">Back</button>
-            </div>
+  {/* Add Note */}
+  <button
+    onClick={addNote}
+    className="bg-blue-600 text-white px-3 py-1 rounded"
+  >
+    Add Note
+  </button>
+
+  {/* Close Case */}
+  <button
+    onClick={closeCase}
+    className="bg-green-600 text-white px-3 py-1 rounded"
+  >
+    Mark as Closed
+  </button>
+
+  {/* Update Complaint (Edit) */}
+  <Link
+    to={`/cases/update/${c._id}`}
+    className="bg-indigo-600 text-white px-3 py-1 rounded inline-flex items-center"
+  >
+    Update
+  </Link>
+
+  <button
+  onClick={async () => {
+    if (!window.confirm("Are you sure you want to delete this complaint?")) return;
+    try {
+      await axiosInstance.delete(`/cases/${c._id}`);
+      alert("Deleted successfully");
+      navigate("/it/cases"); // go back to cases list
+    } catch (err) {
+      alert(err?.response?.data?.message || "Failed to delete");
+    }
+  }}
+  className="bg-rose-600 text-white px-3 py-1 rounded"
+>
+  Delete
+</button>
+
+  {/* Back */}
+  <button
+    onClick={() => navigate(-1)}
+    className="px-3 py-1 rounded border"
+  >
+    Back
+  </button>
+</div>
+
           </div>
         </div>
       </div>

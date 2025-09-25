@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import PoliceHeader from "../PoliceHeader/PoliceHeader";
+import { getMediaUrl } from '../../utils/mediaUrl';
 import axiosInstance from "../../utils/axiosInstance";
 
 export default function CriminalProfile() {
@@ -42,6 +43,60 @@ export default function CriminalProfile() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const buildPrintableHtml = (criminal) => {
+    return `
+      <html>
+        <head>
+          <title>Criminal Record - ${criminal.name || ''}</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #0B214A; padding: 20px }
+            .header { display:flex; gap:16px; align-items:center }
+            .photo { width:140px; height:180px; object-fit:cover; border:1px solid #E6E9EF }
+            .meta h1 { margin:0; font-size:22px }
+            .section { margin-top:14px }
+            .kv { display:flex; gap:8px }
+            .k { width:160px; font-weight:600 }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div><img src="${getMediaUrl(criminal.photo) || '/images/placeholder.png'}" class="photo"/></div>
+            <div>
+              <h1>${criminal.name || 'Unknown'}</h1>
+              <div>Criminal ID: ${criminal.criminalId || 'N/A'}</div>
+              <div>NIC: ${criminal.nic || 'N/A'}</div>
+            </div>
+          </div>
+          <div class="section">
+            <h3>Status</h3>
+            <div>${criminal.criminalStatus || 'N/A'}</div>
+            <div>${criminal.arrestDate ? 'Arrested: '+ new Date(criminal.arrestDate).toLocaleDateString() : ''}</div>
+          </div>
+          <div class="section">
+            <h3>Details</h3>
+            <div class="kv"><div class="k">Address:</div><div>${criminal.address || 'N/A'}</div></div>
+            <div class="kv"><div class="k">Aliases:</div><div>${criminal.aliases || 'N/A'}</div></div>
+            <div class="kv"><div class="k">Created:</div><div>${criminal.createdAt ? new Date(criminal.createdAt).toLocaleString() : 'N/A'}</div></div>
+          </div>
+          <script>window.onload=function(){ setTimeout(()=>{ window.print(); window.close(); },200); };</script>
+        </body>
+      </html>
+    `;
+  };
+
+  const handlePrintRecord = (ev) => {
+    ev.preventDefault();
+    if (!criminal) return alert('No record to print');
+    const html = buildPrintableHtml(criminal);
+    const w = window.open('', '_blank', 'width=900,height=1000');
+    w.document.open(); w.document.write(html); w.document.close();
+  };
+
+  const handleExportPdf = (ev) => {
+    // Use same flow — browser print dialog supports Save as PDF
+    handlePrintRecord(ev);
   };
 
   const formatDate = (dateString) => {
@@ -129,20 +184,15 @@ export default function CriminalProfile() {
               <div className="w-32 h-40 border-2 border-gray-300 rounded-lg overflow-hidden bg-gray-100">
                 {criminal.photo ? (
                   <img 
-                    src={criminal.photo.startsWith('http') ? criminal.photo : `${axiosInstance.defaults.baseURL}${criminal.photo}`}
+                    src={getMediaUrl(criminal.photo)} 
                     alt="Criminal Photo" 
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
                   />
-                ) : null}
-                <div 
-                  className={`w-full h-full flex items-center justify-center text-gray-400 ${criminal.photo ? 'hidden' : ''}`}
-                >
-                  <span className="text-sm">NO PHOTO</span>
-                </div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <span className="text-sm">NO PHOTO</span>
+                  </div>
+                )}
               </div>
               
               {/* Basic Info */}
@@ -181,10 +231,10 @@ export default function CriminalProfile() {
               >
                 Edit Record
               </button>
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">
+              <button onClick={handlePrintRecord} className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">
                 Print Record
               </button>
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">
+              <button onClick={handleExportPdf} className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">
                 Export PDF
               </button>
               <button 
@@ -367,39 +417,27 @@ export default function CriminalProfile() {
                 </h2>
                 
                 <div className="grid grid-cols-2 gap-3">
-                  {criminal.fingerprints.map((print, index) => (
+                        {criminal.fingerprints.map((print, index) => (
                     <div key={index} className="border border-gray-300 rounded p-2 text-center">
-                      <div className="h-20 bg-gray-100 rounded mb-2 flex items-center justify-center">
-                        <span className="text-xs text-gray-500">Print #{index + 1}</span>
+                      <div className="h-20 bg-gray-100 rounded mb-2 flex items-center justify-center overflow-hidden">
+                        {print?.url ? (
+                          <img src={getMediaUrl(print.url)} alt={`fp-${index + 1}`} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs text-gray-500">Print #{index + 1}</span>
+                        )}
                       </div>
-                      <p className="text-xs text-gray-600 truncate">{print}</p>
+                      <p className="text-xs text-gray-600 truncate">{print?.name || print?.url || `#${index + 1}`}</p>
                     </div>
                   ))}
                 </div>
+
+                <div className="mt-4 space-y-2">
+                  <button className="w-full px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm">Update Status</button>
+                  <button className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Add New Arrest</button>
+                  <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">View Full History</button>
+                </div>
               </div>
             )}
-
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-bold text-[#0B214A] mb-4 border-b border-gray-200 pb-2">
-                Quick Actions
-              </h2>
-              
-              <div className="space-y-3">
-                <button className="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm">
-                  Mark as Wanted
-                </button>
-                <button className="w-full px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm">
-                  Update Status
-                </button>
-                <button className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
-                  Add New Arrest
-                </button>
-                <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">
-                  View Full History
-                </button>
-              </div>
-            </div>
 
             {/* Record Information */}
             <div className="bg-white rounded-lg shadow-lg p-6">

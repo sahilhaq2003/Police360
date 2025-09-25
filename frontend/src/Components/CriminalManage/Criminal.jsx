@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PoliceHeader from "../PoliceHeader/PoliceHeader";
 import axiosInstance from "../../utils/axiosInstance";
+import { getMediaUrl } from '../../utils/mediaUrl';
 
 export default function CriminalRecord() {
   const navigate = useNavigate();
@@ -124,23 +125,24 @@ export default function CriminalRecord() {
   const [fileNumber, setFileNumber] = useState("");
   const [recordId, setRecordId] = useState("");
 
-  // Load criminal data for editing or generate new IDs
-  useEffect(() => {
-    if (editId) {
-      loadCriminalForEdit(editId);
-    } else {
-      // Generate unique IDs for new criminal
-      const now = new Date();
-      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-      const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-      setFileNumber(`CR-${dateStr}-${randomNum}`);
+  // helper to load criminal for edit - defined before useEffect to avoid TDZ
 
-      const randomId = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
-      setRecordId(`RID-${dateStr}-${randomId}`);
+  // helper: upload a single File to the backend upload endpoint
+  const uploadFile = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await axiosInstance.post('/uploads/criminal', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return res.data?.fileUrl;
+    } catch (err) {
+      console.error('File upload failed', err);
+      return null;
     }
-  }, [editId]);
+  };
 
-  const loadCriminalForEdit = async (id) => {
+  const loadCriminalForEdit = React.useCallback(async (id) => {
     try {
       setLoading(true);
       const response = await axiosInstance.get(`/criminals/${id}`);
@@ -196,14 +198,13 @@ export default function CriminalRecord() {
       // Set fingerprints data
       if (criminal.fingerprints && criminal.fingerprints.length > 0) {
         const formattedPrints = criminal.fingerprints.map(print => ({
-          name: print.name || "",
-          url: print.url || ""
+          name: print?.name || "",
+          url: print?.url || "",
+          _id: print?._id
         }));
-        // Pad to 6 slots
-        while (formattedPrints.length < 6) {
-          formattedPrints.push({ name: "", url: "" });
-        }
-        setPrints(formattedPrints);
+        // Ensure exactly 6 distinct slots
+        const padded = Array.from({ length: 6 }, (_, i) => formattedPrints[i] ? { ...formattedPrints[i] } : { name: "", url: "" });
+        setPrints(padded);
       }
 
       setIsEditing(true);
@@ -214,10 +215,29 @@ export default function CriminalRecord() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  // Load criminal data for editing or generate new IDs
+  useEffect(() => {
+    if (editId) {
+      loadCriminalForEdit(editId);
+    } else {
+      // Generate unique IDs for new criminal
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      setFileNumber(`CR-${dateStr}-${randomNum}`);
+
+      const randomId = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+      setRecordId(`RID-${dateStr}-${randomId}`);
+    }
+  }, [editId, loadCriminalForEdit]);
 
   // --- Photo ---
+  // photoUrl is used for preview (could be blob: or server path)
   const [photoUrl, setPhotoUrl] = useState("");
+  // keep the selected File so we can upload it to server instead of saving blob: into DB
+  const [photoFile, setPhotoFile] = useState(null);
   const photoInputRef = useRef(null);
 
   // --- Arrest & Sentencing rows ---
@@ -226,44 +246,19 @@ export default function CriminalRecord() {
   ]);
 
   // --- Fingerprints (6 slots) ---
-  const [prints, setPrints] = useState(Array(6).fill({ name: "", url: "" }));
-  const printInputRefs = useRef([...Array(6)].map(() => React.createRef()));
+  // Create 6 unique empty objects to avoid shared reference mutation issues
+  const [prints, setPrints] = useState(() => Array.from({ length: 6 }, () => ({ name: "", url: "" })));
+  const printInputRefs = useRef(Array.from({ length: 6 }, () => React.createRef()));
 
   // Helpers
   const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
-  const handlePhotoChange = async (e) => {
+  const handlePhotoChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    // Show preview immediately
     const url = URL.createObjectURL(file);
     setPhotoUrl(url);
-    
-    // Upload to server
-    try {
-      const formData = new FormData();
-      formData.append('photo', file);
-      
-      const response = await axiosInstance.post('/criminals/upload-photo', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
-      if (response.data.success) {
-        // Update photoUrl with server URL
-        setPhotoUrl(response.data.photoUrl);
-      } else {
-        console.error('Photo upload failed:', response.data.message);
-        alert('Failed to upload photo. Please try again.');
-        setPhotoUrl(''); // Clear the preview
-      }
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      alert('Failed to upload photo. Please try again.');
-      setPhotoUrl(''); // Clear the preview
-    }
+    setPhotoFile(file);
   };
 
   const addRow = () =>
@@ -279,7 +274,8 @@ export default function CriminalRecord() {
     const url = URL.createObjectURL(file);
     setPrints((p) => {
       const copy = [...p];
-      copy[i] = { name: file.name, url };
+      // store preview url and keep the File object in-memory for upload
+      copy[i] = { name: file.name, url, _file: file };
       return copy;
     });
   };
@@ -312,13 +308,19 @@ export default function CriminalRecord() {
       date: row.date ? new Date(row.date) : null
     }));
 
-    // Prepare fingerprints data to match model structure
-    const fingerprintsData = prints
-      .filter(p => p.name && p.url)
-      .map(p => ({
-        name: p.name,
-        url: p.url
-      }));
+    // Upload photo and fingerprint files if new files were selected (they are stored in state)
+    const uploadedPhotoPath = photoFile ? await uploadFile(photoFile) : (photoUrl || undefined);
+
+    const fingerprintsData = [];
+    for (const p of prints) {
+      if (p && p._file) {
+        const uploaded = await uploadFile(p._file);
+        if (uploaded) fingerprintsData.push({ name: p.name || p._file.name, url: uploaded });
+      } else if (p && p.name && p.url) {
+        // existing server path or preview url
+        fingerprintsData.push({ name: p.name, url: p.url });
+      }
+    }
 
     const payload = {
       // Auto-generated IDs
@@ -357,7 +359,7 @@ export default function CriminalRecord() {
       
       // Arrays
       arrests: arrestsData,
-      photo: photoUrl || undefined,
+      photo: uploadedPhotoPath || photoUrl || undefined,
       fingerprints: fingerprintsData,
     };
 
@@ -780,7 +782,7 @@ export default function CriminalRecord() {
             <div className="flex flex-col items-center">
               <div className="flex h-80 w-56 items-center justify-center border border-gray-300 bg-gray-50">
                 {photoUrl ? (
-                  <img src={photoUrl} alt="Photo" className="h-full w-full object-cover" />
+                  <img src={getMediaUrl(photoUrl)} alt="Photo" className="h-full w-full object-cover" />
                 ) : (
                   <span className="text-xs text-gray-400">PHOTO</span>
                 )}
@@ -830,7 +832,7 @@ export default function CriminalRecord() {
               <div key={i} className="rounded border border-gray-300 p-3 text-center">
                 <div className="mb-2 h-30 w-full overflow-hidden rounded bg-gray-50">
                   {p.url ? (
-                    <img src={p.url} alt={`fp-${i + 1}`} className="h-full w-full object-cover" />
+                    <img src={getMediaUrl(p.url)} alt={`fp-${i + 1}`} className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full items-center justify-center">
                       <span className="text-xs text-gray-400">#{i + 1}</span>
