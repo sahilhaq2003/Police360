@@ -9,7 +9,7 @@ function maybeCreateInsuranceRef(victim) {
   return `INS-${Math.random().toString().slice(2, 8)}`;
 }
 
-// POST /api/accidents/report  (public)
+// POST /api/accidents/report
 exports.reportAccident = async (req, res) => {
   try {
     const trackingId = `ACC-${nanoid(8).toUpperCase()}`;
@@ -39,7 +39,7 @@ exports.reportAccident = async (req, res) => {
   }
 };
 
-// GET /api/accidents/track/:trackingId  (public)
+// GET /api/accidents/track/:trackingId
 exports.getByTrackingId = async (req, res) => {
   try {
     const { trackingId } = req.params;

@@ -75,15 +75,43 @@ export default function AccidentForm() {
       victim: form.isEmergency ? undefined : form.victim,
       vehicle: form.isEmergency ? undefined : form.vehicle,
     };
+    function formatSriLankaPhone(phone) {
+      if (!phone) return null;
+      let cleaned = phone.replace(/\D/g, ''); // remove non-digits
+
+      if (cleaned.startsWith('0')) {
+        cleaned = '94' + cleaned.slice(1); // replace leading 0 with 94
+      } else if (!cleaned.startsWith('94')) {
+        cleaned = '94' + cleaned; // fallback
+      }
+      return cleaned;
+    }
 
     try {
       const { data } = await axiosInstance.post('/accidents/report', payload);
+
+      const phone = formatSriLankaPhone(form.victim.phone);
+
+      if (phone) {
+        const message = `Hello, this is a message regarding the accident report. Your tracking ID is ${
+          data.trackingId
+        }. Please keep this ID for future reference.\nYour Insurance Reference Number is ${
+          data.insuranceRefNo || 'None'
+        }`;
+        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(
+          message
+        )}`;
+        window.open(whatsappUrl, '_blank');
+      }
+
       setBanner({
         type: 'success',
         message: `Reported successfully. Tracking ID: ${data.trackingId}${
           data.insuranceRefNo ? `, Insurance Ref: ${data.insuranceRefNo}` : ''
         }`,
       });
+
+      // Reset form
       setEvidence([]);
       setForm({
         accidentType: 'ROAD_ACCIDENT',
