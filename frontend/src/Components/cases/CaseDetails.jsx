@@ -141,9 +141,14 @@ export default function CaseDetails() {
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
       <PoliceHeader />
       <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight">Complaint Details</h1>
-          <p className="text-sm text-[#5A6B85] mt-1">Review and update complaint investigation</p>
+        <div className="mb-8 relative">
+          <div className="text-center">
+            <h1 className="text-4xl font-extrabold tracking-tight">Complaint Details</h1>
+            <p className="text-sm text-[#5A6B85] mt-1">Review and update complaint investigation</p>
+          </div>
+          <div className="absolute right-0 top-0">
+            <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">← Back</button>
+          </div>
         </div>
 
         <div className="mx-auto max-w-4xl space-y-6">
