@@ -21,6 +21,7 @@ import Accidentform from './Components/accidents/accidentform';
 import AllAccidents from './Components/accidents/AllAccidents';
 import AccidentDetails from './Components/accidents/AccidentDetails';
 import TrackAccident from './Components/accidents/TrackAccident';
+import InsuranceLookup from './Components/accidents/InsuranceLookup';
 
 import OfficerRequest from './Components/officer/OfficerRequest';
 import ViewRequests from './Components/admin/ViewRequests';
@@ -42,6 +43,7 @@ import Criminal from './Components/CriminalManage/Criminal';
 import CriminalProfile from './Components/CriminalManage/CriminalProfile';
 import CriminalManage from './Components/CriminalManage/CriminalManage';
 
+
 import Suspect from './Components/Suspect/Suspect';
 import SuspectProfile from './Components/Suspect/SuspectProfile';
 import SuspectManage from './Components/Suspect/SuspectManage';
@@ -52,8 +54,6 @@ import SuspectUpdate from './Components/Suspect/SuspectUpdate';
 
 import ReportsDetails from './Components/ReportsDetails/reportsDetails';
 import Report from './Components/Report/Report';
-
-
 
 function App() {
   return (
@@ -74,7 +74,6 @@ function App() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/reports/:id" element={<UpdateReport />} />
 
-
         <Route
           path="/officer/OfficerDashboard"
           element={<OfficerDashboard />}
@@ -82,9 +81,10 @@ function App() {
         <Route path="/officer/dashboard" element={<OfficerDashboard />} />
         <Route path="/officer/assign-accidents" element={<AssignAccidents />} />
 
-
-        <Route path="/officer/OfficerDashboard" element={<OfficerDashboard />} />
-
+        <Route
+          path="/officer/OfficerDashboard"
+          element={<OfficerDashboard />}
+        />
 
         <Route path="/officer/calendar" element={<OfficerCalendar />} />
         <Route path="/officer/request" element={<OfficerRequest />} />
@@ -103,8 +103,15 @@ function App() {
         <Route path="/accidents" element={<AllAccidents />} />
         <Route path="/accidents/:id" element={<AccidentDetails />} />
         <Route path="/accidents/track" element={<TrackAccident />} />
+
+        <Route
+          path="/accidents/insurance-lookup"
+          element={<InsuranceLookup />}
+        />
+
         <Route path="/cases/update/:id" element={<UpdateComplaint />} />
         <Route path="/cases/progress" element={<ComplaintProgress />} />
+
 
 
 
@@ -112,8 +119,22 @@ function App() {
         <Route path="/report-details" element={<ReportsDetails />} />
         <Route path="/report" element={<Report />} />
 
-
         {/* Criminal Management Routes */}
+
+        <Route
+          path="/CriminalManage/CriminalManage"
+          element={<CriminalManage />}
+        />
+        <Route path="/CriminalManage/Criminal" element={<Criminal />} />
+        <Route
+          path="/CriminalManage/CriminalProfile"
+          element={<CriminalProfile />}
+        />
+        <Route
+          path="/CriminalManage/CriminalProfile/:id"
+          element={<CriminalProfile />}
+        />
+
         <Route path="/CriminalManage/CriminalManage" element={<CriminalManage />} />
         <Route path="/CriminalManage/Criminal" element={<Criminal/>}/>
         <Route path="/CriminalManage/CriminalProfile" element={<CriminalProfile />} />
