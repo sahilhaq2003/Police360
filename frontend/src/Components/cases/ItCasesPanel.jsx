@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const ItCasesPanel = () => {
   const [cases, setCases] = useState([]);
@@ -97,6 +99,37 @@ const ItCasesPanel = () => {
     return <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]"><PoliceHeader /><div className="max-w-7xl mx-auto px-4 py-10">Loading…</div></div>;
   }
 
+  const exportExcelCase = () => {
+    try {
+      if (!cases || cases.length === 0) {
+        alert('No cases to export');
+        return;
+      }
+
+      const rows = cases.map((item) => ({
+        'Case ID': item._id || '',
+        'Complainant': item.complainant?.name || '',
+        'Type': item.complaintDetails?.typeOfComplaint || '',
+        'Status': item.status || '',
+        'Location': item.complaintDetails?.location || '',
+        'Assigned Officer': item.assignedOfficer ? (item.assignedOfficer.name || item.assignedOfficer.officerId) : 'Unassigned',
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Cases');
+
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/octet-stream' });
+      const filename = `cases-${new Date().toISOString().slice(0,10)}.xlsx`;
+      saveAs(blob, filename);
+    } catch (e) {
+      console.error('exportExcelCase error', e);
+      alert('Failed to generate Excel file');
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
       <PoliceHeader />
@@ -121,6 +154,14 @@ const ItCasesPanel = () => {
               </select>
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={searchField === 'ALL' ? 'Search id, complainant, type, location...' : (searchField === 'ID' ? 'Enter complaint ID...' : (searchField === 'NAME' ? 'Search by complainant name...' : 'Search by complaint type...'))} className="border p-2 rounded-md text-sm w-72" />
               {search && <button onClick={() => { setSearch(''); setDebouncedSearch(''); }} className="text-sm text-slate-500">Clear</button>}
+              {/* Export Excel */}
+                <button
+                  onClick={exportExcelCase}
+                  className="bg-green-600 text-white px-3 py-1 rounded"
+                  title="Download Excel"
+                >
+                  Export Excel
+                </button>
             </div>
           <div className="flex items-center gap-2 text-sm">
             <label className="flex items-center gap-2">
