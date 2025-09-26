@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import { useNavigate, useLocation } from "react-router-dom";
+import Nav from '../Nav/Nav';
+import hero from '../../assets/loginbg.jpg';
 
-const complaintTypes = ["Theft", "Assault", "Fraud", "Harassment", "Other"];
+const complaintTypes = ["eCrime", "Tourist Police", "Police Report Inquiry", "File Complaint", "Criminal Status of Financial Cases", "Other"];
+const idTypes = ["National ID", "Passport", "Driver's License", "Voter ID", "Other"];
+const priorityOptions = ["LOW", "MEDIUM", "HIGH"];
 
 export default function FileComplaint() {
   const navigate = useNavigate();
@@ -18,6 +22,14 @@ export default function FileComplaint() {
       description: "",
     },
     attachments: [],
+    idInfo: { idType: "", idValue: "" },
+    priority: "MEDIUM",
+    estimatedLoss: "",
+    additionalInfo: {
+      witnesses: [],
+      suspects: [],
+      evidence: [],
+    },
   });
 
   const [banner, setBanner] = useState(null);
@@ -56,6 +68,33 @@ export default function FileComplaint() {
       .catch(() => {});
   }
 
+  function handleAdditionalFiles(path, e) {
+    const files = Array.from(e.target.files || []);
+    Promise.all(
+      files.map(
+        (f) =>
+          new Promise((res, rej) => {
+            const reader = new FileReader();
+            reader.onload = () => res(reader.result);
+            reader.onerror = rej;
+            reader.readAsDataURL(f);
+          })
+      )
+    )
+      .then((data) => {
+        const keys = path.split(".");
+        setForm((prev) => {
+          const copy = JSON.parse(JSON.stringify(prev));
+          let cur = copy;
+          for (let i = 0; i < keys.length - 1; i++) cur = cur[keys[i]];
+          const last = keys[keys.length - 1];
+          cur[last] = cur[last] ? cur[last].concat(data) : data;
+          return copy;
+        });
+      })
+      .catch(() => {});
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
@@ -64,21 +103,13 @@ export default function FileComplaint() {
     try {
       const res = await axiosInstance.post("/cases", form);
       if (res?.data?.success) {
-        setBanner({
-          type: "success",
-          message: "Your complaint has been submitted successfully.",
+        const newCase = res.data.data || res.data;
+        const newCaseId = res.data.id || newCase._id || newCase.id;
+        const editToken = res.data.editToken || newCase.editToken || null;
+        // navigate to success page with id in URL and pass full report + editToken in state so user can view/edit without re-fetch
+        navigate(`/report-success/${newCaseId}`, {
+          state: { reportNumber: newCaseId, reportType: form.complaintDetails.typeOfComplaint, report: newCase, editToken },
         });
-        setForm({
-          complainant: { name: "", address: "", phone: "", email: "" },
-          complaintDetails: {
-            typeOfComplaint: "",
-            incidentDate: "",
-            location: "",
-            description: "",
-          },
-          attachments: [],
-        });
-        if (!openedFromHome) navigate("/officer/cases");
       } else {
         setBanner({ type: "error", message: "Failed to submit complaint." });
       }
@@ -92,26 +123,64 @@ export default function FileComplaint() {
     }
   }
 
+  function handleClear() {
+    if (window.confirm("Are you sure you want to clear the form?")) {
+      setForm({
+        complainant: { name: "", address: "", phone: "", email: "" },
+        complaintDetails: {
+          typeOfComplaint: "",
+          incidentDate: "",
+          location: "",
+          description: "",
+        },
+        attachments: [],
+        idInfo: { idType: "", idValue: "" },
+        priority: "MEDIUM",
+        estimatedLoss: "",
+        additionalInfo: {
+          witnesses: [],
+          suspects: [],
+          evidence: [],
+        },
+      });
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4">
-      <div className="mx-auto max-w-3xl bg-white rounded-2xl shadow p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">
-            File Criminal Complaint
-          </h1>
-          {openedFromHome && (
+    <div className="min-h-screen relative">
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${hero})` }}
+        aria-hidden
+      />
+      {/* Dim overlay to ensure readability */}
+      <div className="absolute inset-0 bg-black/30" aria-hidden />
+
+      {/* Content - placed above background */}
+      <div className="relative z-10 py-10 px-4">
+        <Nav /><br /><br />
+  <div className="mt-8 mx-auto max-w-5xl bg-white/100 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/30 p-10">
+        {/* Header */}
+        <div className="mb-8 relative">
+          <div className="text-center">
+            <h1 className="text-3xl font-extrabold text-slate-800">Complaint Reporting Form</h1>
+            <p className="text-sm text-slate-600 mt-1">Please provide the incident details below to file a complaint.</p>
+          </div>
+          <div className="absolute right-0 top-0">
             <button
-              onClick={() => navigate(-1)}
-              className="text-sm text-slate-500 hover:underline"
+              onClick={() => (openedFromHome ? navigate(-1) : navigate("/"))}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50"
             >
-              Close
+              ✕ Close
             </button>
-          )}
+          </div>
         </div>
 
+        {/* Banner */}
         {banner && (
           <div
-            className={`mb-6 rounded-xl px-4 py-3 text-sm ${
+            className={`mb-6 rounded-lg px-4 py-3 text-sm font-medium ${
               banner.type === "success"
                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                 : "bg-rose-50 text-rose-700 border border-rose-200"
@@ -121,54 +190,96 @@ export default function FileComplaint() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-10">
           {/* Instructions */}
-          <p className="text-sm text-slate-600">
+          <p className="text-slate-600 text-sm">
             Please provide as many details as possible. Your submission will be
             reviewed by IT and assigned to an officer.
           </p>
 
-          {/* Complainant Details */}
-          <div>
-            <h3 className="font-medium text-slate-700 mb-2">Complainant</h3>
-            <div className="grid grid-cols-1 gap-3">
+          {/* Section: Complainant */}
+          <section>
+            <h3 className="text-lg font-semibold text-slate-700 mb-3">
+              Complainant Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
                 value={form.complainant.name}
                 onChange={(e) => onChange("complainant.name", e.target.value)}
                 placeholder="Full Name"
-                className="border p-3 rounded-lg text-sm focus:ring focus:ring-indigo-200"
+                className={inputField}
               />
               <input
                 value={form.complainant.phone}
                 onChange={(e) => onChange("complainant.phone", e.target.value)}
                 placeholder="Phone"
-                className="border p-3 rounded-lg text-sm focus:ring focus:ring-indigo-200"
+                className={inputField}
               />
               <input
                 value={form.complainant.email}
                 onChange={(e) => onChange("complainant.email", e.target.value)}
                 placeholder="Email"
-                className="border p-3 rounded-lg text-sm focus:ring focus:ring-indigo-200"
+                className={inputField}
               />
               <input
                 value={form.complainant.address}
                 onChange={(e) => onChange("complainant.address", e.target.value)}
                 placeholder="Address"
-                className="border p-3 rounded-lg text-sm focus:ring focus:ring-indigo-200"
+                className={`${inputField} md:col-span-2`}
+              />
+              <select
+                value={form.idInfo.idType}
+                onChange={(e) => onChange("idInfo.idType", e.target.value)}
+                className={inputField}
+              >
+                <option value="">Select ID type (optional)</option>
+                {idTypes.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+              <input
+                value={form.idInfo.idValue}
+                onChange={(e) => onChange("idInfo.idValue", e.target.value)}
+                placeholder="ID Number (optional)"
+                className={inputField}
+              />
+              <select
+                value={form.priority}
+                onChange={(e) => onChange("priority", e.target.value)}
+                className={inputField}
+              >
+                {priorityOptions.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+              <input
+                value={form.estimatedLoss}
+                onChange={(e) => onChange("estimatedLoss", e.target.value)}
+                placeholder="Estimated loss (optional)"
+                className={inputField}
               />
             </div>
-          </div>
+          </section>
 
-          {/* Complaint Details */}
-          <div>
-            <h3 className="font-medium text-slate-700 mb-2">Complaint</h3>
-            <div className="grid grid-cols-1 gap-3">
+          
+
+          {/* Section: Complaint */}
+          <section>
+            <h3 className="text-lg font-semibold text-slate-700 mb-3">
+              Complaint Details
+            </h3>
+            <div className="grid grid-cols-1 gap-4">
               <select
                 value={form.complaintDetails.typeOfComplaint}
                 onChange={(e) =>
                   onChange("complaintDetails.typeOfComplaint", e.target.value)
                 }
-                className="border p-3 rounded-lg text-sm focus:ring focus:ring-indigo-200"
+                className={inputField}
               >
                 <option value="">Select type of complaint</option>
                 {complaintTypes.map((t) => (
@@ -183,7 +294,7 @@ export default function FileComplaint() {
                 onChange={(e) =>
                   onChange("complaintDetails.incidentDate", e.target.value)
                 }
-                className="border p-3 rounded-lg text-sm focus:ring focus:ring-indigo-200"
+                className={inputField}
               />
               <input
                 value={form.complaintDetails.location}
@@ -191,7 +302,7 @@ export default function FileComplaint() {
                   onChange("complaintDetails.location", e.target.value)
                 }
                 placeholder="Incident Location"
-                className="border p-3 rounded-lg text-sm focus:ring focus:ring-indigo-200"
+                className={inputField}
               />
               <textarea
                 value={form.complaintDetails.description}
@@ -199,49 +310,232 @@ export default function FileComplaint() {
                   onChange("complaintDetails.description", e.target.value)
                 }
                 placeholder="Description"
-                className="border p-3 rounded-lg text-sm focus:ring focus:ring-indigo-200 h-28"
+                className={`${inputField} h-28`}
               />
+              <input type="file" multiple onChange={handleFile} />
+            </div>
+          </section>
+
+          
+
+          {/* Section: Additional Info */}
+          <section>
+            <h3 className="text-lg font-semibold text-slate-700 mb-3">
+              Additional Information (Optional)
+            </h3>
+
+            {/* Witnesses */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-medium text-slate-600">Witnesses</h4>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      additionalInfo: {
+                        ...prev.additionalInfo,
+                        witnesses: [
+                          ...(prev.additionalInfo.witnesses || []),
+                          { name: "", phone: "", id: "" },
+                        ],
+                      },
+                    }))
+                  }
+                  className={btnSecondary}
+                >
+                  + Add
+                </button>
+              </div>
+              {(form.additionalInfo.witnesses || []).map((w, idx) => (
+                <div
+                  key={idx}
+                  className="grid grid-cols-1 gap-2 border border-slate-200 rounded-lg p-4 mb-3 bg-slate-50"
+                >
+                  <input
+                    value={w.name}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm((prev) => {
+                        const copy = JSON.parse(JSON.stringify(prev));
+                        copy.additionalInfo.witnesses[idx].name = val;
+                        return copy;
+                      });
+                    }}
+                    placeholder="Name"
+                    className={inputField}
+                  />
+                  <input
+                    value={w.phone}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm((prev) => {
+                        const copy = JSON.parse(JSON.stringify(prev));
+                        copy.additionalInfo.witnesses[idx].phone = val;
+                        return copy;
+                      });
+                    }}
+                    placeholder="Phone"
+                    className={inputField}
+                  />
+                  <input
+                    value={w.id}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm((prev) => {
+                        const copy = JSON.parse(JSON.stringify(prev));
+                        copy.additionalInfo.witnesses[idx].id = val;
+                        return copy;
+                      });
+                    }}
+                    placeholder="ID (optional)"
+                    className={inputField}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm((prev) => {
+                        const copy = JSON.parse(JSON.stringify(prev));
+                        copy.additionalInfo.witnesses.splice(idx, 1);
+                        return copy;
+                      })
+                    }
+                    className="text-sm text-rose-600 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Suspects */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-medium text-slate-600">Suspects</h4>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      additionalInfo: {
+                        ...prev.additionalInfo,
+                        suspects: [
+                          ...(prev.additionalInfo.suspects || []),
+                          { name: "", appearance: "", photos: [] },
+                        ],
+                      },
+                    }))
+                  }
+                  className={btnSecondary}
+                >
+                  + Add
+                </button>
+              </div>
+              {(form.additionalInfo.suspects || []).map((s, idx) => (
+                <div
+                  key={idx}
+                  className="grid grid-cols-1 gap-2 border border-slate-200 rounded-lg p-4 mb-3 bg-slate-50"
+                >
+                  <input
+                    value={s.name}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm((prev) => {
+                        const copy = JSON.parse(JSON.stringify(prev));
+                        copy.additionalInfo.suspects[idx].name = val;
+                        return copy;
+                      });
+                    }}
+                    placeholder="Name"
+                    className={inputField}
+                  />
+                  <textarea
+                    value={s.appearance}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm((prev) => {
+                        const copy = JSON.parse(JSON.stringify(prev));
+                        copy.additionalInfo.suspects[idx].appearance = val;
+                        return copy;
+                      });
+                    }}
+                    placeholder="Appearance"
+                    className={`${inputField} h-20`}
+                  />
+                  <input
+                    type="file"
+                    multiple
+                    onChange={(e) =>
+                      handleAdditionalFiles(
+                        `additionalInfo.suspects.${idx}.photos`,
+                        e
+                      )
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm((prev) => {
+                        const copy = JSON.parse(JSON.stringify(prev));
+                        copy.additionalInfo.suspects.splice(idx, 1);
+                        return copy;
+                      })
+                    }
+                    className="text-sm text-rose-600 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Evidence */}
+            <div>
+              <h4 className="font-medium text-slate-600 mb-2">
+                Evidence (images/videos)
+              </h4>
               <input
                 type="file"
                 multiple
-                onChange={handleFile}
-                className="text-sm"
+                onChange={(e) =>
+                  handleAdditionalFiles("additionalInfo.evidence", e)
+                }
               />
+              <p className="mt-2 text-sm text-slate-500">
+                Upload optional evidence files. Images and short videos are
+                supported.
+              </p>
             </div>
-          </div>
+          </section>
 
           {/* Buttons */}
-          <div className="pt-4 flex gap-3">
+          <div className="flex gap-4 pt-6">
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-indigo-600 text-white py-3 font-medium hover:bg-indigo-700 disabled:opacity-50"
+              className="flex-1 rounded-xl bg-indigo-600 text-white py-3 font-semibold hover:bg-indigo-700 disabled:opacity-50 shadow-md transition"
             >
               {loading ? "Submitting..." : "Submit Complaint"}
             </button>
-            {openedFromHome && (
-              <button
-                type="button"
-                onClick={() =>
-                  setForm({
-                    complainant: { name: "", address: "", phone: "", email: "" },
-                    complaintDetails: {
-                      typeOfComplaint: "",
-                      incidentDate: "",
-                      location: "",
-                      description: "",
-                    },
-                    attachments: [],
-                  })
-                }
-                className="px-4 py-2 text-sm text-slate-600 hover:underline"
-              >
-                Clear
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleClear}
+              className="px-6 py-3 rounded-xl border border-slate-300 text-slate-600 font-medium hover:bg-slate-100 transition"
+            >
+              Clear
+            </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
 }
+
+/* Tailwind reusable styles */
+const inputField =
+  "w-full rounded-lg border border-slate-300 bg-white/80 px-3 py-2 text-sm shadow-sm " +
+  "focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400 focus:bg-white outline-none transition";
+
+const btnSecondary =
+  "text-sm text-indigo-600 hover:text-indigo-800 font-medium transition";

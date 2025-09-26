@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, adminOnly } = require('../middlewares/authMiddleware');
+const { protect, adminOnly, adminOrIt } = require('../middlewares/authMiddleware');
 const {
   createRequest,
   getMyRequests,
@@ -15,14 +15,14 @@ router.post('/', protect, createRequest);
 // Officer: get own requests
 router.get('/my', protect, getMyRequests);
 
-// Admin: get all requests
-router.get('/', protect, adminOnly, getAllRequests);
+// Admin or IT: get all requests
+router.get('/', protect, adminOrIt, getAllRequests);
 
-// Admin: update status
-router.put('/:id', protect, adminOnly, updateRequestStatus);
+// Admin or IT: update status
+router.put('/:id', protect, adminOrIt, updateRequestStatus);
 
-// Admin: add reply
-router.post('/:id/replies', protect, adminOnly, addReply);
+// Admin or IT: add reply
+router.post('/:id/replies', protect, adminOrIt, addReply);
 
 module.exports = router;
 
