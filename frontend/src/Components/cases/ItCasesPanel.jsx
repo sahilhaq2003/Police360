@@ -12,6 +12,7 @@ const ItCasesPanel = () => {
   const [onlyUnassigned, setOnlyUnassigned] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [searchField, setSearchField] = useState('ALL');
 
   const navigate = useNavigate();
 
@@ -39,7 +40,11 @@ const ItCasesPanel = () => {
         params.unassigned = true;
         params.status = 'NEW';
       }
-      if (debouncedSearch) params.q = debouncedSearch;
+      if (debouncedSearch) {
+        // The backend supports a single `q` param that searches id, complainant name, type, location and description.
+        // Use `q` regardless of the selected searchField so behavior is consistent with server-side search.
+        params.q = debouncedSearch;
+      }
 
       const [casesRes, offRes] = await Promise.all([
         axiosInstance.get('/cases', { params: { ...params, page: 1, pageSize: 50 } }),
@@ -96,16 +101,27 @@ const ItCasesPanel = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
       <PoliceHeader />
       <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight">Complaints</h1>
-          <p className="text-sm text-[#5A6B85] mt-1">Submitted criminal complaints — assign officers and view details</p>
+        <div className="mb-8 relative">
+          <div className="text-center">
+            <h1 className="text-4xl font-extrabold tracking-tight">Complaints</h1>
+            <p className="text-sm text-[#5A6B85] mt-1">Submitted criminal complaints — assign officers and view details</p>
+          </div>
+          <div className="absolute right-0 top-0">
+            <button onClick={() => navigate('/itOfficer/ItOfficerDashboard')} className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">← Back</button>
+          </div>
         </div>
 
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search complainant, type, location..." className="border p-2 rounded-md text-sm w-72" />
-            {search && <button onClick={() => { setSearch(''); setDebouncedSearch(''); }} className="text-sm text-slate-500">Clear</button>}
-          </div>
+              <select value={searchField} onChange={(e) => setSearchField(e.target.value)} className="border p-2 rounded-md text-sm">
+                <option value="ALL">All</option>
+                <option value="ID">Complaint ID</option>
+                <option value="NAME">Complainant Name</option>
+                <option value="TYPE">Complaint Type</option>
+              </select>
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={searchField === 'ALL' ? 'Search id, complainant, type, location...' : (searchField === 'ID' ? 'Enter complaint ID...' : (searchField === 'NAME' ? 'Search by complainant name...' : 'Search by complaint type...'))} className="border p-2 rounded-md text-sm w-72" />
+              {search && <button onClick={() => { setSearch(''); setDebouncedSearch(''); }} className="text-sm text-slate-500">Clear</button>}
+            </div>
           <div className="flex items-center gap-2 text-sm">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={onlyUnassigned} onChange={(e) => { setOnlyUnassigned(e.target.checked); fetchData(); }} />
