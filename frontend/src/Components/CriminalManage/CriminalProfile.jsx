@@ -46,40 +46,117 @@ export default function CriminalProfile() {
   };
 
   const buildPrintableHtml = (criminal) => {
+    const arrestsRows = (criminal.arrests || []).map(a => `
+        <tr>
+          <td style="padding:6px;border:1px solid #e6e6e6">${a.date ? new Date(a.date).toLocaleDateString() : 'N/A'}</td>
+          <td style="padding:6px;border:1px solid #e6e6e6">${a.offenseCode || 'N/A'}</td>
+          <td style="padding:6px;border:1px solid #e6e6e6">${a.institution || 'N/A'}</td>
+          <td style="padding:6px;border:1px solid #e6e6e6">${a.charge || 'N/A'}</td>
+          <td style="padding:6px;border:1px solid #e6e6e6">${a.term || 'N/A'}</td>
+        </tr>
+      `).join('');
+
+    const fingerprintsHtml = (criminal.fingerprints || []).map(fp => `
+        <div style="display:inline-block;width:120px;text-align:center;margin:50px">
+        </br>
+        </br>
+          <div style="width:100px;height:80px;border:1px solid #eee;overflow:hidden;margin:0 auto">
+            ${fp.url ? `<img src="${getMediaUrl(fp.url)}" style="width:100%;height:100%;object-fit:cover"/>` : '<div style="line-height:80px;color:#999">No Image</div>'}
+          </div>
+          <div style="font-size:11px;color:#444;margin-top:6px">${fp.name || ''}</div>
+        </div>
+      `).join('');
+
     return `
       <html>
         <head>
           <title>Criminal Record - ${criminal.name || ''}</title>
+          </br>
+          <meta name="viewport" content="width=device-width,initial-scale=1" />
           <style>
             body { font-family: Arial, sans-serif; color: #0B214A; padding: 20px }
-            .header { display:flex; gap:16px; align-items:center }
+            .header { display:flex; gap:16px; align-items:flex-start }
             .photo { width:140px; height:180px; object-fit:cover; border:1px solid #E6E9EF }
             .meta h1 { margin:0; font-size:22px }
-            .section { margin-top:14px }
-            .kv { display:flex; gap:8px }
-            .k { width:160px; font-weight:600 }
+            .section { margin-top:18px }
+            .kv { display:flex; gap:8px; margin-top:6px }
+            .k { width:180px; font-weight:600 }
+            table { border-collapse:collapse; width:100%; margin-top:8px }
+            th, td { text-align:left; padding:8px; border:1px solid #e6e6e6 }
           </style>
         </head>
         <body>
           <div class="header">
             <div><img src="${getMediaUrl(criminal.photo) || '/images/placeholder.png'}" class="photo"/></div>
-            <div>
-              <h1>${criminal.name || 'Unknown'}</h1>
-              <div>Criminal ID: ${criminal.criminalId || 'N/A'}</div>
+            <div style="flex:1">
+              <h1 style="margin:0">${criminal.name || 'Unknown'}</h1>
+              <div style="margin-top:6px">Criminal ID: ${criminal.criminalId || 'N/A'}</div>
               <div>NIC: ${criminal.nic || 'N/A'}</div>
+              <div>File Number: ${criminal.fileNumber || 'N/A'}</div>
+              <div>Record ID: ${criminal.recordId || 'N/A'}</div>
+              <div style="margin-top:8px">Created By: ${criminal.createdBy || 'System'}</div>
             </div>
           </div>
+
           <div class="section">
-            <h3>Status</h3>
+            <h3 style="margin:0 0 6px 0">Status</h3>
             <div>${criminal.criminalStatus || 'N/A'}</div>
-            <div>${criminal.arrestDate ? 'Arrested: '+ new Date(criminal.arrestDate).toLocaleDateString() : ''}</div>
+            <div style="margin-top:6px">${criminal.rewardPrice ? 'Reward: LKR ' + criminal.rewardPrice.toLocaleString() : ''}</div>
+            <div style="margin-top:6px">${criminal.arrestDate ? 'Arrested: ' + new Date(criminal.arrestDate).toLocaleDateString() : ''}</div>
+            <div style="margin-top:6px">${(criminal.prisonDays || criminal.prisonDays === 0) ? 'Prison Time: ' + criminal.prisonDays + ' days' : ''}</div>
+            <div style="margin-top:6px">${criminal.releaseDate ? 'Released: ' + new Date(criminal.releaseDate).toLocaleDateString() : ''}</div>
           </div>
+
           <div class="section">
-            <h3>Details</h3>
+            <h3 style="margin:0 0 6px 0">Personal Details</h3>
             <div class="kv"><div class="k">Address:</div><div>${criminal.address || 'N/A'}</div></div>
             <div class="kv"><div class="k">Aliases:</div><div>${criminal.aliases || 'N/A'}</div></div>
-            <div class="kv"><div class="k">Created:</div><div>${criminal.createdAt ? new Date(criminal.createdAt).toLocaleString() : 'N/A'}</div></div>
+            <div class="kv"><div class="k">DOB:</div><div>${(criminal.dob ? (criminal.dob.day && criminal.dob.month && criminal.dob.year ? `${criminal.dob.day}/${criminal.dob.month}/${criminal.dob.year}` : (criminal.dob.d && criminal.dob.m && criminal.dob.y ? `${criminal.dob.d}/${criminal.dob.m}/${criminal.dob.y}` : 'N/A')) : 'N/A')}</div></div>
+            <div class="kv"><div class="k">Gender:</div><div>${criminal.gender || 'N/A'}</div></div>
+            <div class="kv"><div class="k">Citizenship:</div><div>${criminal.citizen || 'N/A'}</div></div>
+            <div class="kv"><div class="k">Height:</div><div>${criminal.height ? criminal.height + ' cm' : 'N/A'}</div></div>
+            <div class="kv"><div class="k">Weight:</div><div>${criminal.weight ? criminal.weight + ' kg' : 'N/A'}</div></div>
+            <div class="kv"><div class="k">Eye Color:</div><div>${criminal.eyeColor || 'N/A'}</div></div>
+            <div class="kv"><div class="k">Hair Color:</div><div>${criminal.hairColor || 'N/A'}</div></div>
+            <div class="kv"><div class="k">Marital Status:</div><div>${criminal.maritalStatus || 'N/A'}</div></div>
           </div>
+
+          ${criminal.arrests && criminal.arrests.length > 0 ? `
+            <div class="section">
+              <h3 style="margin:0 0 6px 0">Arrest & Sentencing History</h3>
+              <table>
+                <thead>
+                  <tr><th>Date</th><th>Offense Code</th><th>Institution</th><th>Charge</th><th>Term</th></tr>
+                </thead>
+                <tbody>
+                  ${arrestsRows}
+                </tbody>
+              </table>
+            </div>
+          ` : ''}
+
+          ${criminal.fingerprints && criminal.fingerprints.length > 0 ? `
+            <div class="section">
+              <h3 style="margin:0 0 6px 0">Fingerprints</h3>
+              <div style="display:flex;flex-wrap:wrap">${fingerprintsHtml}</div>
+            </div>
+          ` : ''}
+
+          <div class="section">
+            <h3 style="margin: 0 6px 0">Other Information</h3>
+            <div>${criminal.otherInfo ? `<pre style="white-space:pre-wrap;font-family:inherit">${criminal.otherInfo}</pre>` : 'N/A'}</div>
+          </div>
+
+          <div class="section">
+            <h3 style="margin:0 0 6px 0">Crime Information</h3>
+            <div>${criminal.crimeInfo ? `<pre style="white-space:pre-wrap;font-family:inherit">${criminal.crimeInfo}</pre>` : 'N/A'}</div>
+          </div>
+
+          <div class="section" style="margin-top:18px;color:#666;font-size:12px">
+            <div>Record Created: ${criminal.createdAt ? new Date(criminal.createdAt).toLocaleString() : 'N/A'}</div>
+            <div>Last Updated: ${criminal.updatedAt ? new Date(criminal.updatedAt).toLocaleString() : 'N/A'}</div>
+          </div>
+
           <script>window.onload=function(){ setTimeout(()=>{ window.print(); window.close(); },200); };</script>
         </body>
       </html>
