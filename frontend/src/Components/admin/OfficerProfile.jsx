@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
+import { getMediaUrl } from '../../utils/mediaUrl';
 import { ArrowLeft, Pencil, Save, X, Loader2, ImagePlus } from 'lucide-react';
 
 function normalizeForForm(data) {
@@ -268,7 +269,7 @@ const OfficerProfile = () => {
         <div className="bg-white border border-[#E4E9F2] rounded-2xl shadow p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-8">
             {formData?.photo ? (
-              <img src={formData.photo} alt={`${formData.name} profile`} className="w-28 h-28 rounded-full object-cover border border-gray-300" />
+              <img src={getMediaUrl(formData.photo)} alt={`${formData.name} profile`} className="w-28 h-28 rounded-full object-cover border border-gray-300" />
             ) : (
               <div className="w-28 h-28 rounded-full bg-[#EAF0FF] border border-gray-300 flex items-center justify-center text-2xl font-bold text-[#00296B]">
                 {initials || '👤'}
