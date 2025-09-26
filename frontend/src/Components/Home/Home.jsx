@@ -95,13 +95,13 @@ function Home() {
           icon: '/images/893905.png',
           title: 'Reporting Vehicle Obstruction',
           desc: 'This service allows users to report vehicle obstructions.',
-          link: '/apply/vehicle-obstruction',
+          link: '/accidents/track',
         },
         {
           icon: '/images/893881.png',
           title: 'Traffic Violations Copy',
           desc: 'This service enables applicants to obtain information related to a traffic violation.',
-          link: '/apply/violations',
+          link: '/accidents/insurance-lookup',
         },
         {
           icon: '/images/893881.png',
