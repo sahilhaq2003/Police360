@@ -181,14 +181,19 @@ exports.addInvestigationNote = async (req, res) => {
 exports.assignOfficer = async (req, res) => {
   try {
     const { officerId } = req.body;
-    if (!officerId) return res.status(400).json({ message: 'officerId is required' });
+    if (!officerId)
+      return res.status(400).json({ message: 'officerId is required' });
 
     const officer = await Officer.findById(officerId);
     if (!officer) return res.status(404).json({ message: 'Officer not found' });
 
     const doc = await Accident.findByIdAndUpdate(
       req.params.id,
-      { assignedOfficer: officer._id, status: 'UNDER_INVESTIGATION', updatedAt: new Date() },
+      {
+        assignedOfficer: officer._id,
+        status: 'UNDER_INVESTIGATION',
+        updatedAt: new Date(),
+      },
       { new: true }
     ).populate('assignedOfficer', 'name officerId email station role');
 
@@ -196,5 +201,33 @@ exports.assignOfficer = async (req, res) => {
     return res.json(doc);
   } catch (err) {
     return res.status(400).json({ error: err.message });
+  }
+};
+
+exports.getByInsuranceRef = async (req, res) => {
+  try {
+    let { company, ref } = req.query || {};
+    console.log('Incoming query:', req.query);
+
+    if (!company || !ref) {
+      return res.status(400).json({ message: 'company and ref are required' });
+    }
+
+    const doc = await Accident.findOne({
+      'victim.insuranceCompany': company.trim(),
+      'victim.insuranceRefNo': ref.trim(),
+    }).collation({ locale: 'en', strength: 2 });
+
+    if (!doc) {
+      console.log('No accident found for', company, ref);
+      return res.status(404).json({ message: 'Not found' });
+    }
+
+    return res.json(doc);
+  } catch (err) {
+    console.error('getByInsuranceRef error:', err);
+    return res
+      .status(500)
+      .json({ message: 'Server error', details: err.message });
   }
 };
