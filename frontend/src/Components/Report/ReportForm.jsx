@@ -69,13 +69,18 @@ function ReportForm() {
     <div className="min-h-screen bg-slate-50 py-10 px-4">
       <div className="mx-auto max-w-5xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <FileText className="text-blue-700" /> Create New Report
-          </h1>
-          <p className="text-slate-600 text-sm mt-1">
-            Fill in the following details to register a new police report.
-          </p>
+        <div className="mb-8 relative">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2 justify-center">
+              <FileText className="text-blue-700" /> Create New Report
+            </h1>
+            <p className="text-slate-600 text-sm mt-1">
+              Fill in the following details to register a new police report.
+            </p>
+          </div>
+          <div className="absolute right-0 top-0">
+            <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">← Back</button>
+          </div>
         </div>
 
         <form

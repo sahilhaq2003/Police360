@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import { useNavigate, useLocation } from "react-router-dom";
+import Nav from '../Nav/Nav';
+import hero from '../../assets/loginbg.jpg';
 
 const complaintTypes = ["eCrime", "Tourist Police", "Police Report Inquiry", "File Complaint", "Criminal Status of Financial Cases", "Other"];
 const idTypes = ["National ID", "Passport", "Driver's License", "Voter ID", "Other"];
@@ -145,19 +147,34 @@ export default function FileComplaint() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 py-10 px-4">
-      <div className="mx-auto max-w-4xl bg-white rounded-2xl shadow-xl border border-slate-200 p-10">
+    <div className="min-h-screen relative">
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${hero})` }}
+        aria-hidden
+      />
+      {/* Dim overlay to ensure readability */}
+      <div className="absolute inset-0 bg-black/30" aria-hidden />
+
+      {/* Content - placed above background */}
+      <div className="relative z-10 py-10 px-4">
+        <Nav /><br /><br />
+  <div className="mt-8 mx-auto max-w-5xl bg-white/100 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/30 p-10">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-extrabold text-slate-800">
-            File a Complaint
-          </h1>
-          <button
-            onClick={() => (openedFromHome ? navigate(-1) : navigate("/"))}
-            className="text-sm text-slate-500 hover:text-slate-700 transition"
-          >
-            ✕ Close
-          </button>
+        <div className="mb-8 relative">
+          <div className="text-center">
+            <h1 className="text-3xl font-extrabold text-slate-800">Complaint Reporting Form</h1>
+            <p className="text-sm text-slate-600 mt-1">Please provide the incident details below to file a complaint.</p>
+          </div>
+          <div className="absolute right-0 top-0">
+            <button
+              onClick={() => (openedFromHome ? navigate(-1) : navigate("/"))}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              ✕ Close
+            </button>
+          </div>
         </div>
 
         {/* Banner */}
@@ -509,6 +526,7 @@ export default function FileComplaint() {
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
@@ -516,7 +534,7 @@ export default function FileComplaint() {
 
 /* Tailwind reusable styles */
 const inputField =
-  "w-full rounded-lg border border-slate-400 bg-slate-50 px-3 py-2 text-sm shadow-sm " +
+  "w-full rounded-lg border border-slate-300 bg-white/80 px-3 py-2 text-sm shadow-sm " +
   "focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400 focus:bg-white outline-none transition";
 
 const btnSecondary =
