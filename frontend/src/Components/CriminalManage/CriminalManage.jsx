@@ -190,13 +190,22 @@ export default function CriminalManage() {
             <h1 className="text-4xl font-bold text-[#0B214A] mb-2">Criminal Management</h1>
             <p className="text-gray-600">Manage and monitor criminal records and status</p>
           </div>
-          <button
-            onClick={() => navigate('/CriminalManage/Criminal')}
-            className="flex items-center gap-2 bg-[#0B214A] text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-5 w-5" />
-            Add New Criminal
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={() => navigate('/CriminalManage/Criminal')}
+              className="flex items-center gap-2 bg-[#0B214A] text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+              Add New Criminal
+            </button>
+
+            <button
+              onClick={() => navigate('/officer/officerDashboard')}
+              className="flex items-center gap-2 mt-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
         </div>
 
         {/* Statistics Cards */}
