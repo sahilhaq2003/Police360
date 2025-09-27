@@ -2,10 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 
-/**
- * DeleteAccidentButton
- * Shows a confirmation prompt and deletes the accident.
- */
 export default function DeleteAccident({ accidentId, onDeleted }) {
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
@@ -25,7 +21,7 @@ export default function DeleteAccident({ accidentId, onDeleted }) {
       // optional callback for parent
       onDeleted?.();
       // navigate back to list page
-      navigate('/');
+      navigate('../../officer/AssignAccidents');
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || 'Delete failed');
     } finally {
