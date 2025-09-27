@@ -30,9 +30,14 @@ const OfficerCases = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
       <PoliceHeader />
       <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="mb-6">
-          <h1 className="text-3xl font-extrabold">Assigned Complaints</h1>
-          <p className="text-sm text-[#5A6B85] mt-1">Complaints assigned to you. Review details, add notes and close complaints.</p>
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold">Assigned Complaints</h1>
+            <p className="text-sm text-[#5A6B85] mt-1">Complaints assigned to you. Review details, add notes and close complaints.</p>
+          </div>
+          <div className="ml-4">
+            <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">← Back</button>
+          </div>
         </div>
 
         {loading ? (

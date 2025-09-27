@@ -4,6 +4,19 @@ import axiosInstance from '../../utils/axiosInstance';
 import AccidentUpdatePanel from './AccidentUpdatePanel';
 import DeleteAccident from './DeleteAccident';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 function LabelRow({ label, children }) {
   return (
@@ -175,6 +188,22 @@ export default function AccidentDetails() {
                 ? `${accident.geo.lat}, ${accident.geo.lng}`
                 : '—'}
             </LabelRow>
+          {accident.geo?.lat && accident.geo?.lng && (
+            <div className="mt-4">
+              <MapContainer
+                center={[accident.geo.lat, accident.geo.lng]}
+                zoom={14}
+                style={{ height: '300px', width: '100%', borderRadius: '12px' }}
+                scrollWheelZoom={false}
+              >
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                <Marker position={[accident.geo.lat, accident.geo.lng]} />
+              </MapContainer>
+            </div>
+          )}
             <LabelRow label="NIC">{accident.nic || '—'}</LabelRow>
             <LabelRow label="Assigned Officer">
               {accident.assignedOfficer

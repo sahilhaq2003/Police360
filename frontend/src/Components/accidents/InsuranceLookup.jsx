@@ -169,9 +169,126 @@ export default function InsuranceLookup() {
           )}
         </div>
 
+        {/* Full Accident Details + PDF button */}
         {accident && (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
-            {/* ...existing accident details UI... */}
+            {/* Basic Details */}
+            <div>
+              <h2 className="text-lg font-semibold text-[#0B214A] mb-3">
+                Basic Details
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-4 text-sm">
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <span className="text-xs text-[#0B214A]/70">Tracking ID</span>
+                  <p className="font-medium text-[#0B214A]">
+                    {accident.trackingId}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <span className="text-xs text-[#0B214A]/70">Type</span>
+                  <p className="font-medium text-[#0B214A]">
+                    {accident.accidentType?.replaceAll('_', ' ')}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <span className="text-xs text-[#0B214A]/70">Emergency</span>
+                  <p className="font-medium text-[#0B214A]">
+                    {accident.isEmergency ? 'Yes' : 'No'}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <span className="text-xs text-[#0B214A]/70">Status</span>
+                  <StatusPill status={accident.status} />
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <span className="text-xs text-[#0B214A]/70">Location</span>
+                  <p className="font-medium text-[#0B214A]">
+                    {accident.locationText}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <span className="text-xs text-[#0B214A]/70">Reported At</span>
+                  <p className="font-medium text-[#0B214A]">
+                    {accident.createdAt
+                      ? new Date(accident.createdAt).toLocaleString()
+                      : '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Victim + Vehicle */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 p-4">
+                <h3 className="font-semibold text-[#0B214A]">Victim</h3>
+                <p className="text-[#0B214A]">
+                  Name: {accident.victim?.fullName || '—'}
+                </p>
+                <p className="text-[#0B214A]">
+                  Phone: {accident.victim?.phone || '—'}
+                </p>
+                <p className="text-[#0B214A]">
+                  Email: {accident.victim?.email || '—'}
+                </p>
+                <p className="text-[#0B214A]">
+                  Address: {accident.victim?.address || '—'}
+                </p>
+                <p className="text-[#0B214A]">
+                  Insurance: {accident.victim?.insuranceCompany || '—'}
+                </p>
+                <p className="text-[#0B214A]">
+                  Policy No: {accident.victim?.insurancePolicyNo || '—'}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-4">
+                <h3 className="font-semibold text-[#0B214A]">Vehicle</h3>
+                <p className="text-[#0B214A]">
+                  Plate: {accident.vehicle?.plateNo || '—'}
+                </p>
+                <p className="text-[#0B214A]">
+                  Make: {accident.vehicle?.make || '—'}
+                </p>
+                <p className="text-[#0B214A]">
+                  Model: {accident.vehicle?.model || '—'}
+                </p>
+                <p className="text-[#0B214A]">
+                  Color: {accident.vehicle?.color || '—'}
+                </p>
+                <p className="text-[#0B214A]">
+                  Owner NIC: {accident.vehicle?.ownerNIC || '—'}
+                </p>
+              </div>
+            </div>
+
+            {/* Investigation Notes */}
+            <div>
+              <h3 className="mb-2 text-md font-semibold text-[#0B214A]">
+                Investigation Notes
+              </h3>
+              {Array.isArray(accident.investigationNotes) &&
+              accident.investigationNotes.length > 0 ? (
+                <ul className="space-y-3">
+                  {accident.investigationNotes.map((n, idx) => (
+                    <li
+                      key={n._id || idx}
+                      className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+                    >
+                      <div className="text-sm text-[#0B214A]">{n.note}</div>
+                      <div className="mt-1 text-xs text-[#0B214A]/70">
+                        {n.addedBy ? `By ${n.addedBy} • ` : ''}
+                        {n.createdAt
+                          ? new Date(n.createdAt).toLocaleString()
+                          : ''}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-[#0B214A]/70">
+                  No notes available yet.
+                </p>
+              )}
+            </div>
 
             {/* PDF Download */}
             <div className="pt-4">
