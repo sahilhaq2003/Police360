@@ -12,7 +12,14 @@ import {
   ArrowLeft,
   ClipboardList,
   RotateCcw,
+  Download,
+  FileSpreadsheet,
+  Search,
 } from "lucide-react";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const ItDutySchedules = () => {
   const navigate = useNavigate();
@@ -37,6 +44,14 @@ const ItDutySchedules = () => {
   });
   const [showReassignForm, setShowReassignForm] = useState(null);
   const [reassignReason, setReassignReason] = useState('');
+  const [exportFilters, setExportFilters] = useState({
+    officer: '',
+    status: '',
+    startDate: '',
+    endDate: ''
+  });
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -155,6 +170,146 @@ const ItDutySchedules = () => {
     [officers]
   );
 
+  // Filter schedules based on search term
+  const getFilteredSchedules = () => {
+    if (!searchTerm.trim()) {
+      return items;
+    }
+    
+    const searchLower = searchTerm.toLowerCase();
+    return items.filter(item => {
+      const officerName = officerMap[item.officer?._id || item.officer]?.name || '';
+      const location = item.location || '';
+      
+      return officerName.toLowerCase().includes(searchLower) || 
+             location.toLowerCase().includes(searchLower);
+    });
+  };
+
+  // Filter data based on export filters
+  const getFilteredData = () => {
+    return items.filter(item => {
+      const officerMatch = !exportFilters.officer || item.officer?._id === exportFilters.officer || item.officer === exportFilters.officer;
+      const statusMatch = !exportFilters.status || item.remark === exportFilters.status;
+      const startDateMatch = !exportFilters.startDate || new Date(item.date) >= new Date(exportFilters.startDate);
+      const endDateMatch = !exportFilters.endDate || new Date(item.date) <= new Date(exportFilters.endDate);
+      
+      return officerMatch && statusMatch && startDateMatch && endDateMatch;
+    });
+  };
+
+  // Generate PDF Report
+  const generatePDF = () => {
+    try {
+      const filteredData = getFilteredData();
+      
+      const doc = new jsPDF();
+      
+      // Title
+      doc.setFontSize(20);
+      doc.text('Duty Schedule Report', 14, 22);
+      
+      // Report info
+      doc.setFontSize(10);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+      doc.text(`Total Records: ${filteredData.length}`, 14, 35);
+      
+      // Filters applied
+      if (exportFilters.officer || exportFilters.status || exportFilters.startDate || exportFilters.endDate) {
+        doc.text('Filters Applied:', 14, 45);
+        let yPos = 50;
+        
+        if (exportFilters.officer) {
+          const officerName = officerMap[exportFilters.officer]?.name || 'Unknown';
+          doc.text(`Officer: ${officerName}`, 20, yPos);
+          yPos += 5;
+        }
+        if (exportFilters.status) {
+          doc.text(`Status: ${exportFilters.status}`, 20, yPos);
+          yPos += 5;
+        }
+        if (exportFilters.startDate) {
+          doc.text(`From: ${exportFilters.startDate}`, 20, yPos);
+          yPos += 5;
+        }
+        if (exportFilters.endDate) {
+          doc.text(`To: ${exportFilters.endDate}`, 20, yPos);
+          yPos += 5;
+        }
+      }
+      
+      // Table data
+      const tableData = filteredData.map(item => [
+        officerMap[item.officer?._id || item.officer]?.name || 'Unknown',
+        item.date ? new Date(item.date).toLocaleDateString() : '',
+        item.shift || '',
+        item.location || '',
+        item.notes || '',
+        item.remark || 'pending',
+        item.declineReason || ''
+      ]);
+      
+      // Table
+      autoTable(doc, {
+        head: [['Officer', 'Date', 'Shift', 'Location', 'Notes', 'Status', 'Decline Reason']],
+        body: tableData,
+        startY: exportFilters.officer || exportFilters.status || exportFilters.startDate || exportFilters.endDate ? 70 : 50,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [41, 128, 185] }
+      });
+      
+      // Save the PDF
+      doc.save(`duty-schedule-report-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
+    }
+  };
+
+  // Generate Excel Report
+  const generateExcel = () => {
+    try {
+      const filteredData = getFilteredData();
+      
+      // Prepare data for Excel
+      const excelData = filteredData.map(item => ({
+        'Officer': officerMap[item.officer?._id || item.officer]?.name || 'Unknown',
+        'Date': item.date ? new Date(item.date).toLocaleDateString() : '',
+        'Shift': item.shift || '',
+        'Location': item.location || '',
+        'Notes': item.notes || '',
+        'Status': item.remark || 'pending',
+        'Decline Reason': item.declineReason || ''
+      }));
+      
+      // Create workbook and worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Duty Schedules');
+      
+      // Add metadata sheet
+      const metadata = [
+        { 'Report': 'Duty Schedule Report' },
+        { 'Generated On': new Date().toLocaleDateString() },
+        { 'Total Records': filteredData.length },
+        { 'Officer Filter': exportFilters.officer ? officerMap[exportFilters.officer]?.name : 'All' },
+        { 'Status Filter': exportFilters.status || 'All' },
+        { 'Date Range': `${exportFilters.startDate || 'Any'} to ${exportFilters.endDate || 'Any'}` }
+      ];
+      
+      const metadataWs = XLSX.utils.json_to_sheet(metadata);
+      XLSX.utils.book_append_sheet(wb, metadataWs, 'Report Info');
+      
+      // Generate and save Excel file
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(data, `duty-schedule-report-${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (error) {
+      console.error('Error generating Excel:', error);
+      alert('Error generating Excel. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F4F7FB] via-[#E9EEF5] to-[#F4F7FB] text-[#0B214A]">
       <PoliceHeader />
@@ -167,6 +322,13 @@ const ItDutySchedules = () => {
               Assign shifts and manage upcoming officer schedules
             </p>
           </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+            >
+              <Download className="w-4 h-4" /> Export Reports
+            </button>
           <button
             onClick={() => navigate(-1)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0B214A] text-white hover:bg-[#123974] transition"
@@ -174,6 +336,115 @@ const ItDutySchedules = () => {
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
         </div>
+        </div>
+
+        {/* Export Dropdown Section */}
+        {showExportDropdown && (
+          <div className="mb-6 p-6 rounded-2xl bg-white shadow-md border border-[#E5E9F2]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Download className="w-5 h-5 text-green-600" />
+                Export Reports
+              </h3>
+              <button
+                onClick={() => setShowExportDropdown(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Filter by Officer
+                </label>
+                <select
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  value={exportFilters.officer}
+                  onChange={(e) => setExportFilters(prev => ({ ...prev, officer: e.target.value }))}
+                >
+                  <option value="">All Officers</option>
+                  {officers.map((o) => (
+                    <option key={o._id} value={o._id}>
+                      {o.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Filter by Status
+                </label>
+                <select
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  value={exportFilters.status}
+                  onChange={(e) => setExportFilters(prev => ({ ...prev, status: e.target.value }))}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="completed">Completed</option>
+                  <option value="declined">Declined</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  value={exportFilters.startDate}
+                  onChange={(e) => setExportFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  value={exportFilters.endDate}
+                  onChange={(e) => setExportFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowExportDropdown(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  generatePDF();
+                  setShowExportDropdown(false);
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Export PDF
+              </button>
+              <button
+                onClick={() => {
+                  generateExcel();
+                  setShowExportDropdown(false);
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition flex items-center gap-2"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Export Excel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Form */}
         <form
@@ -258,22 +529,49 @@ const ItDutySchedules = () => {
             <CalendarDays className="w-5 h-5 text-[#0B214A]" />
             Upcoming Schedules
           </h2>
+          
+          {/* Search Input */}
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search by officer name or location..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            {searchTerm && (
+              <div className="mt-2 text-xs text-gray-600">
+                Showing {getFilteredSchedules().length} of {items.length} schedules
+              </div>
+            )}
+          </div>
           {loading ? (
             <p className="text-sm text-[#5A6B85] animate-pulse">
               Loading schedules…
             </p>
-          ) : items.length === 0 ? (
+          ) : getFilteredSchedules().length === 0 ? (
             <div className="text-center py-10">
               <FileText className="w-10 h-10 mx-auto text-[#9AA7C2]" />
               <p className="mt-3 text-sm text-[#5A6B85]">
-                No schedules have been assigned yet.
+                {searchTerm ? 'No schedules found matching your search.' : 'No schedules have been assigned yet.'}
               </p>
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                >
+                  Clear search
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
-              {items.map((it) => (
+              {getFilteredSchedules().map((it) => (
                 <div
-                  key={it._id}
+                      key={it._id}
                   className="px-5 py-4 rounded-xl border border-[#E5E9F2] bg-gradient-to-r from-[#F9FBFF] to-[#F2F6FB] hover:shadow-md transition"
                 >
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between">
