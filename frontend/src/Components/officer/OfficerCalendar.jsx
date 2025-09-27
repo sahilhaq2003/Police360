@@ -8,12 +8,17 @@ import {
   Clock,
   ClipboardList,
   ArrowLeft,
+  CheckCircle,
+  PlayCircle,
+  XCircle,
 } from "lucide-react";
 
 const OfficerCalendar = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [declineReason, setDeclineReason] = useState('');
+  const [showDeclineInput, setShowDeclineInput] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -34,6 +39,27 @@ const OfficerCalendar = () => {
     };
     load();
   }, [navigate]);
+
+  const updateScheduleRemark = async (scheduleId, remark, reason = '') => {
+    try {
+      const payload = { remark };
+      if (remark === 'declined' && reason) {
+        payload.declineReason = reason;
+      }
+      
+      await axiosInstance.put(`/schedules/${scheduleId}/remark`, payload);
+      // Update the local state
+      setItems(prev => prev.map(item => 
+        item._id === scheduleId ? { ...item, remark, declineReason: reason || item.declineReason } : item
+      ));
+      
+      // Reset decline input
+      setShowDeclineInput(null);
+      setDeclineReason('');
+    } catch (error) {
+      console.error("Error updating schedule remark:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F4F7FB] via-[#E9EEF5] to-[#F4F7FB] text-[#0B214A]">
@@ -95,10 +121,27 @@ const OfficerCalendar = () => {
                       {it.shift}
                     </div>
 
-                    {/* Location */}
-                    <div className="mt-2 md:mt-0 flex items-center gap-2 text-xs text-[#374151]">
-                      <MapPin className="w-4 h-4 text-[#DC2626]" />
-                      {it.location || "Location not specified"}
+                    {/* Location & Status */}
+                    <div className="mt-2 md:mt-0 flex items-center gap-4">
+                      <div className="flex items-center gap-2 text-xs text-[#374151]">
+                        <MapPin className="w-4 h-4 text-[#DC2626]" />
+                        {it.location || "Location not specified"}
+                      </div>
+                      
+                      {/* Status Badge */}
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        it.remark === 'pending' 
+                          ? 'bg-yellow-100 text-yellow-800' 
+                          : it.remark === 'accepted' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : it.remark === 'completed' 
+                          ? 'bg-green-100 text-green-800' 
+                          : it.remark === 'declined'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {it.remark || 'pending'}
+                      </span>
                     </div>
                   </div>
 
@@ -107,6 +150,91 @@ const OfficerCalendar = () => {
                     <div className="mt-3 flex items-start gap-2 text-xs text-[#4B5563]">
                       <ClipboardList className="w-4 h-4 text-[#F59E0B]" />
                       <span>{it.notes}</span>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="mt-4 flex gap-2">
+                    {it.remark === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => updateScheduleRemark(it._id, 'accepted')}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition"
+                        >
+                          <PlayCircle className="w-3 h-3" />
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => setShowDeclineInput(it._id)}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-red-600 text-white text-xs rounded-md hover:bg-red-700 transition"
+                        >
+                          <XCircle className="w-3 h-3" />
+                          Decline
+                        </button>
+                      </>
+                    )}
+                    {it.remark === 'accepted' && (
+                      <button
+                        onClick={() => updateScheduleRemark(it._id, 'completed')}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 transition"
+                      >
+                        <CheckCircle className="w-3 h-3" />
+                        Complete
+                      </button>
+                    )}
+                    {it.remark === 'completed' && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">
+                        <CheckCircle className="w-3 h-3" />
+                        Completed
+                      </span>
+                    )}
+                    {it.remark === 'declined' && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-600 text-xs rounded-md">
+                        <XCircle className="w-3 h-3" />
+                        Declined
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Decline Reason Input */}
+                  {showDeclineInput === it._id && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <label className="block text-sm font-medium text-red-800 mb-2">
+                        Reason for declining:
+                      </label>
+                      <textarea
+                        value={declineReason}
+                        onChange={(e) => setDeclineReason(e.target.value)}
+                        placeholder="Please provide a reason for declining this schedule..."
+                        className="w-full px-3 py-2 border border-red-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                        rows={3}
+                      />
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          onClick={() => updateScheduleRemark(it._id, 'declined', declineReason)}
+                          disabled={!declineReason.trim()}
+                          className="px-3 py-1 bg-red-600 text-white text-xs rounded-md hover:bg-red-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          Submit Decline
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowDeclineInput(null);
+                            setDeclineReason('');
+                          }}
+                          className="px-3 py-1 bg-gray-500 text-white text-xs rounded-md hover:bg-gray-600 transition"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Decline Reason Display */}
+                  {it.remark === 'declined' && it.declineReason && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <div className="text-sm font-medium text-red-800 mb-1">Decline Reason:</div>
+                      <div className="text-sm text-red-700">{it.declineReason}</div>
                     </div>
                   )}
                 </div>

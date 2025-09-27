@@ -3,7 +3,7 @@ const Schedule = require('../models/Schedule');
 // Create or update a schedule entry
 exports.upsertSchedule = async (req, res) => {
   try {
-    const { officer, date, shift, location, notes } = req.body;
+    const { officer, date, shift, location, notes, remark } = req.body;
     if (!officer || !date || !shift) return res.status(400).json({ message: 'officer, date and shift are required' });
 
     const d = new Date(date);
@@ -11,7 +11,7 @@ exports.upsertSchedule = async (req, res) => {
 
     const saved = await Schedule.findOneAndUpdate(
       { officer, date: d },
-      { officer, date: d, shift, location: location || '', notes: notes || '' },
+      { officer, date: d, shift, location: location || '', notes: notes || '', remark: remark || 'pending' },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     );
     res.status(200).json(saved);
@@ -42,6 +42,81 @@ exports.listSchedules = async (req, res) => {
     ]);
 
     res.json({ data: rows, page: p, pageSize: ps, total, totalPages: Math.max(1, Math.ceil(total / ps)) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Update schedule remark (for officers to accept/complete/decline schedules)
+exports.updateScheduleRemark = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { remark, declineReason } = req.body;
+    
+    if (!remark || !['pending', 'accepted', 'completed', 'declined'].includes(remark)) {
+      return res.status(400).json({ message: 'Valid remark (pending, accepted, completed, declined) is required' });
+    }
+
+    const updateData = { remark };
+    
+    // If declining, include the decline reason
+    if (remark === 'declined' && declineReason) {
+      updateData.declineReason = declineReason;
+    } else if (remark !== 'declined') {
+      // Clear decline reason if not declining
+      updateData.declineReason = '';
+    }
+
+    const schedule = await Schedule.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    ).populate('officer', 'name officerId role station');
+
+    if (!schedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+
+    res.status(200).json(schedule);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Re-assign a declined schedule to another officer
+exports.reassignSchedule = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { officer, date, shift, location, notes } = req.body;
+    
+    if (!officer || !date || !shift) {
+      return res.status(400).json({ message: 'officer, date and shift are required for reassignment' });
+    }
+
+    const d = new Date(date);
+    if (Number.isNaN(d.getTime())) {
+      return res.status(400).json({ message: 'Invalid date' });
+    }
+
+    const schedule = await Schedule.findByIdAndUpdate(
+      id,
+      { 
+        officer, 
+        date: d, 
+        shift, 
+        location: location || '', 
+        notes: notes || '', 
+        remark: 'pending',
+        declineReason: '' // Clear the decline reason
+      },
+      { new: true }
+    ).populate('officer', 'name officerId role station');
+
+    if (!schedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+
+    res.status(200).json(schedule);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

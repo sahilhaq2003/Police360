@@ -11,6 +11,7 @@ import {
   Trash2,
   ArrowLeft,
   ClipboardList,
+  RotateCcw,
 } from "lucide-react";
 
 const ItDutySchedules = () => {
@@ -26,6 +27,16 @@ const ItDutySchedules = () => {
     location: "",
     notes: "",
   });
+  const [reassignForm, setReassignForm] = useState({
+    officer: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    location: "",
+    notes: "",
+  });
+  const [showReassignForm, setShowReassignForm] = useState(null);
+  const [reassignReason, setReassignReason] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -85,6 +96,58 @@ const ItDutySchedules = () => {
   const remove = async (id) => {
     await axiosInstance.delete(`/schedules/${id}`);
     setItems((prev) => prev.filter((x) => x._id !== id));
+  };
+
+  const reassign = async (id) => {
+    if (!reassignForm.officer || !reassignForm.date || !reassignForm.startTime || !reassignForm.endTime) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    const payload = {
+      officer: reassignForm.officer,
+      date: reassignForm.date,
+      shift: `${reassignForm.startTime}-${reassignForm.endTime}`,
+      location: reassignForm.location,
+      notes: reassignForm.notes,
+    };
+    
+    await axiosInstance.put(`/schedules/${id}/reassign`, payload);
+    
+    // Refresh the schedules list
+    const res = await axiosInstance.get("/schedules", {
+      params: { page: 1, pageSize: 200 },
+    });
+    setItems(res.data?.data || []);
+    
+    // Reset form and close
+    setReassignForm({
+      officer: "",
+      date: "",
+      startTime: "",
+      endTime: "",
+      location: "",
+      notes: "",
+    });
+    setShowReassignForm(null);
+    setReassignReason('');
+  };
+
+  const openReassignForm = (schedule) => {
+    // Pre-fill the form with current schedule data
+    const startTime = schedule.shift ? schedule.shift.split('-')[0] : '';
+    const endTime = schedule.shift ? schedule.shift.split('-')[1] : '';
+    
+    setReassignForm({
+      officer: schedule.officer?._id || schedule.officer || "",
+      date: schedule.date ? new Date(schedule.date).toISOString().split('T')[0] : "",
+      startTime: startTime,
+      endTime: endTime,
+      location: schedule.location || "",
+      notes: schedule.notes || "",
+    });
+    setShowReassignForm(schedule._id);
+    setReassignReason('');
   };
 
   const officerMap = useMemo(
@@ -207,32 +270,23 @@ const ItDutySchedules = () => {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm border border-[#E5E9F2] rounded-lg overflow-hidden">
-                <thead className="bg-[#F9FBFF] text-[#374151] text-xs uppercase tracking-wide">
-                  <tr>
-                    <th className="px-4 py-3 text-left">Officer</th>
-                    <th className="px-4 py-3 text-left">Date</th>
-                    <th className="px-4 py-3 text-left">Shift</th>
-                    <th className="px-4 py-3 text-left">Location</th>
-                    <th className="px-4 py-3 text-left">Notes</th>
-                    <th className="px-4 py-3 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#EEF2F7]">
-                  {items.map((it, idx) => (
-                    <tr
-                      key={it._id}
-                      className={`${
-                        idx % 2 === 0 ? "bg-white" : "bg-[#F9FAFB]"
-                      } hover:bg-[#F1F5F9] transition`}
-                    >
-                      <td className="px-4 py-3 font-medium text-[#0B214A]">
+            <div className="space-y-4">
+              {items.map((it) => (
+                <div
+                  key={it._id}
+                  className="px-5 py-4 rounded-xl border border-[#E5E9F2] bg-gradient-to-r from-[#F9FBFF] to-[#F2F6FB] hover:shadow-md transition"
+                >
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                    {/* Schedule Details */}
+                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-[#0B214A]">
+                        <User className="w-4 h-4 text-[#1D4ED8]" />
                         {officerMap[it.officer?._id || it.officer]?.name ||
                           it.officer?.name ||
                           "—"}
-                      </td>
-                      <td className="px-4 py-3">
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-[#374151]">
+                        <CalendarDays className="w-4 h-4 text-[#059669]" />
                         {it.date
                           ? new Date(it.date).toLocaleDateString("en-US", {
                               weekday: "short",
@@ -241,27 +295,184 @@ const ItDutySchedules = () => {
                               day: "numeric",
                             })
                           : ""}
-                      </td>
-                      <td className="px-4 py-3">{it.shift}</td>
-                      <td className="px-4 py-3">{it.location || "—"}</td>
-                      <td
-                        className="px-4 py-3 max-w-xs truncate"
-                        title={it.notes}
-                      >
-                        {it.notes || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-right">
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-[#374151]">
+                        <Clock className="w-4 h-4 text-[#059669]" />
+                        {it.shift}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-[#374151]">
+                        <MapPin className="w-4 h-4 text-[#DC2626]" />
+                        {it.location || "Location not specified"}
+                      </div>
+                    </div>
+
+                    {/* Status and Actions */}
+                    <div className="mt-2 md:mt-0 flex items-center gap-4">
+                      {/* Status Badge */}
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        it.remark === 'pending' 
+                          ? 'bg-yellow-100 text-yellow-800' 
+                          : it.remark === 'accepted' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : it.remark === 'completed' 
+                          ? 'bg-green-100 text-green-800' 
+                          : it.remark === 'declined'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {it.remark || 'pending'}
+                      </span>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        {it.remark === 'declined' && (
+                          <button
+                            onClick={() => openReassignForm(it)}
+                            className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            Re-assign
+                          </button>
+                        )}
                         <button
                           onClick={() => remove(it._id)}
-                          className="inline-flex items-center gap-1 text-red-600 hover:text-red-800 transition text-sm"
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-red-600 text-white text-xs rounded-md hover:bg-red-700 transition"
                         >
-                          <Trash2 className="w-4 h-4" /> Delete
+                          <Trash2 className="w-3 h-3" />
+                          Delete
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  {it.notes && (
+                    <div className="mt-3 flex items-start gap-2 text-xs text-[#4B5563]">
+                      <ClipboardList className="w-4 h-4 text-[#F59E0B]" />
+                      <span>{it.notes}</span>
+                    </div>
+                  )}
+
+                  {/* Decline Reason Display */}
+                  {it.remark === 'declined' && it.declineReason && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <div className="text-sm font-medium text-red-800 mb-1">Decline Reason:</div>
+                      <div className="text-sm text-red-700">{it.declineReason}</div>
+                    </div>
+                  )}
+
+                  {/* Re-assign Form */}
+                  {showReassignForm === it._id && (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                      <div className="text-sm font-medium text-blue-800 mb-3">Re-assign Schedule:</div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <label className="block text-xs font-medium text-blue-700 mb-1">
+                            Officer *
+                          </label>
+                          <select
+                            className="w-full border border-blue-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            value={reassignForm.officer}
+                            onChange={(e) => setReassignForm((v) => ({ ...v, officer: e.target.value }))}
+                            required
+                          >
+                            <option value="">Select Officer</option>
+                            {officers.map((o) => (
+                              <option key={o._id} value={o._id}>
+                                {o.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-blue-700 mb-1">
+                            Date *
+                          </label>
+                          <input
+                            type="date"
+                            className="w-full border border-blue-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            value={reassignForm.date}
+                            onChange={(e) => setReassignForm((v) => ({ ...v, date: e.target.value }))}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-blue-700 mb-1">
+                            Start Time *
+                          </label>
+                          <input
+                            type="time"
+                            className="w-full border border-blue-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            value={reassignForm.startTime}
+                            onChange={(e) => setReassignForm((v) => ({ ...v, startTime: e.target.value }))}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-blue-700 mb-1">
+                            End Time *
+                          </label>
+                          <input
+                            type="time"
+                            className="w-full border border-blue-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            value={reassignForm.endTime}
+                            onChange={(e) => setReassignForm((v) => ({ ...v, endTime: e.target.value }))}
+                            required
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-medium text-blue-700 mb-1">
+                            Location
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Location"
+                            className="w-full border border-blue-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            value={reassignForm.location}
+                            onChange={(e) => setReassignForm((v) => ({ ...v, location: e.target.value }))}
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-medium text-blue-700 mb-1">
+                            Notes
+                          </label>
+                          <textarea
+                            placeholder="Notes (optional)"
+                            className="w-full border border-blue-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            value={reassignForm.notes}
+                            onChange={(e) => setReassignForm((v) => ({ ...v, notes: e.target.value }))}
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => reassign(it._id)}
+                          className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition"
+                        >
+                          Submit Re-assignment
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowReassignForm(null);
+                            setReassignReason('');
+                          }}
+                          className="px-3 py-1 bg-gray-500 text-white text-xs rounded-md hover:bg-gray-600 transition"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
