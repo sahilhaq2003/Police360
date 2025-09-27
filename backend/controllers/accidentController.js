@@ -9,12 +9,94 @@ function maybeCreateInsuranceRef(victim) {
   return `INS-${Math.random().toString().slice(2, 8)}`;
 }
 
-// POST /api/accidents/report  (public)
+// --- Validation helpers ---
+const ALLOWED_TYPES = ['ROAD_ACCIDENT', 'FIRE', 'STRUCTURAL_COLLAPSE', 'OTHER'];
+const SL_BOUNDS = { lat: { min: 5.916, max: 9.835 }, lng: { min: 79.521, max: 81.879 } };
+const NIC_REGEX = /^(\d{9}[VvXx]|\d{12})$/;
+const EMAIL_REGEX = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+
+function validateGeo(geo, errors) {
+  if (!geo) return;
+  const lat = Number(geo.lat);
+  const lng = Number(geo.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    errors.push('geo.lat and geo.lng must be numeric');
+    return;
+  }
+  if (lat < SL_BOUNDS.lat.min || lat > SL_BOUNDS.lat.max || lng < SL_BOUNDS.lng.min || lng > SL_BOUNDS.lng.max) {
+    errors.push('geo coordinates must be within Sri Lanka bounds');
+  }
+}
+
+function validateVictim(victim, errors, isUpdate) {
+  if (!victim) return;
+  if (victim.email && !EMAIL_REGEX.test(String(victim.email))) {
+    errors.push('victim.email must be a valid email');
+  }
+  if (victim.phone && String(victim.phone).replace(/\D/g, '').length < 7) {
+    errors.push('victim.phone must be a valid phone number');
+  }
+}
+
+function validateVehicle(vehicle, errors) {
+  if (!vehicle) return;
+  // basic type checks (all optional)
+  ['plateNo', 'make', 'model', 'color', 'ownerNIC'].forEach((k) => {
+    if (vehicle[k] != null && typeof vehicle[k] !== 'string') errors.push(`vehicle.${k} must be a string`);
+  });
+}
+
+function validateEvidence(evidence, errors) {
+  if (evidence == null) return;
+  if (!Array.isArray(evidence)) {
+    errors.push('evidence must be an array of strings');
+    return;
+  }
+  if (evidence.some((e) => typeof e !== 'string')) {
+    errors.push('evidence must contain only string items');
+  }
+}
+
+function validateAccidentPayload(body, isUpdate = false) {
+  const errors = [];
+  // required on create
+  if (!isUpdate) {
+    if (!body.locationText || !String(body.locationText).trim()) errors.push('locationText is required');
+    if (!body.accidentType) errors.push('accidentType is required');
+  }
+
+  if (body.accidentType && !ALLOWED_TYPES.includes(body.accidentType)) {
+    errors.push(`accidentType must be one of: ${ALLOWED_TYPES.join(', ')}`);
+  }
+
+  if (body.isEmergency != null && typeof body.isEmergency !== 'boolean') {
+    errors.push('isEmergency must be a boolean');
+  }
+
+  if (body.nic && !NIC_REGEX.test(String(body.nic))) {
+    errors.push('nic must be 9 digits + V/X or 12 digits');
+  }
+
+  validateGeo(body.geo, errors);
+  validateVictim(body.victim, errors, isUpdate);
+  validateVehicle(body.vehicle, errors);
+  validateEvidence(body.evidence, errors);
+
+  return errors;
+}
+
+// POST /api/accidents/report
 exports.reportAccident = async (req, res) => {
   try {
     const trackingId = `ACC-${nanoid(8).toUpperCase()}`;
 
     const body = { ...req.body, trackingId };
+
+    // validate input
+    const errors = validateAccidentPayload(body, false);
+    if (errors.length) {
+      return res.status(400).json({ message: 'Validation failed', errors });
+    }
 
     // insurance ref generation
     if (
@@ -39,7 +121,7 @@ exports.reportAccident = async (req, res) => {
   }
 };
 
-// GET /api/accidents/track/:trackingId  (public)
+// GET /api/accidents/track/:trackingId
 exports.getByTrackingId = async (req, res) => {
   try {
     const { trackingId } = req.params;
@@ -122,6 +204,12 @@ exports.updateAccident = async (req, res) => {
   try {
     const update = { ...req.body, updatedAt: new Date() };
 
+    // validate input (partial allowed)
+    const errors = validateAccidentPayload(update, true);
+    if (errors.length) {
+      return res.status(400).json({ message: 'Validation failed', errors });
+    }
+
     // if officer added insurance after the fact
     if (
       update.victim &&
@@ -186,6 +274,8 @@ exports.assignOfficer = async (req, res) => {
 
     const officer = await Officer.findById(officerId);
     if (!officer) return res.status(404).json({ message: 'Officer not found' });
+    if (!officer.isActive) return res.status(400).json({ message: 'Officer is not active' });
+    if (officer.role !== 'Officer') return res.status(400).json({ message: 'Only Officers can be assigned' });
 
     const doc = await Accident.findByIdAndUpdate(
       req.params.id,
