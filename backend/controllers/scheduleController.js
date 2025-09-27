@@ -37,7 +37,7 @@ exports.listSchedules = async (req, res) => {
 
     const skip = (p - 1) * ps;
     const [rows, total] = await Promise.all([
-      Schedule.find(filter).populate('officer', 'name officerId role station').sort({ date: 1 }).skip(skip).limit(ps),
+      Schedule.find(filter).populate('officer', 'name officerId role station').sort({ createdAt: -1, date: 1 }).skip(skip).limit(ps),
       Schedule.countDocuments(filter),
     ]);
 

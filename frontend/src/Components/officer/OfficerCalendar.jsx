@@ -30,7 +30,11 @@ const OfficerCalendar = () => {
         const res = await axiosInstance.get("/schedules", {
           params: { officer: id, page: 1, pageSize: 200 },
         });
-        setItems(res.data?.data || []);
+        // Sort by creation date (newest first) to show latest schedules at top
+        const sortedSchedules = (res.data?.data || []).sort((a, b) => 
+          new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
+        );
+        setItems(sortedSchedules);
       } catch (e) {
         console.error("Error loading schedules:", e);
       } finally {
@@ -39,6 +43,14 @@ const OfficerCalendar = () => {
     };
     load();
   }, [navigate]);
+
+  // Helper function to check if a schedule is new (created within last 24 hours)
+  const isNewSchedule = (schedule) => {
+    const createdAt = new Date(schedule.createdAt);
+    const now = new Date();
+    const hoursDiff = (now - createdAt) / (1000 * 60 * 60);
+    return hoursDiff <= 24;
+  };
 
   const updateScheduleRemark = async (scheduleId, remark, reason = '') => {
     try {
@@ -102,7 +114,11 @@ const OfficerCalendar = () => {
               {items.map((it) => (
                 <div
                   key={it._id}
-                  className="px-5 py-4 rounded-xl border border-[#E5E9F2] bg-gradient-to-r from-[#F9FBFF] to-[#F2F6FB] hover:shadow-md transition"
+                  className={`px-5 py-4 rounded-xl border border-[#E5E9F2] bg-gradient-to-r hover:shadow-md transition ${
+                    isNewSchedule(it) 
+                      ? 'from-[#FEF3C7] to-[#FDE68A] border-[#F59E0B] shadow-sm' 
+                      : 'from-[#F9FBFF] to-[#F2F6FB]'
+                  }`}
                 >
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                     {/* Date & Shift */}
@@ -119,6 +135,11 @@ const OfficerCalendar = () => {
                       <span className="mx-2">•</span>
                       <Clock className="w-4 h-4 text-[#059669]" />
                       {it.shift}
+                      {isNewSchedule(it) && (
+                        <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-[#F59E0B] text-white animate-pulse">
+                          NEW
+                        </span>
+                      )}
                     </div>
 
                     {/* Location & Status */}
