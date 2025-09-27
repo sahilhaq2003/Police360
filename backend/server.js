@@ -22,6 +22,7 @@ const suspectRoutes = require('./routes/suspectRoutes');
 
 const accidentRoutes = require('./routes/accidentRoutes');
 const caseRoutes = require('./routes/caseRoutes');
+const itCaseRoutes = require('./routes/itCaseRoutes');
 
 dotenv.config();
 connectDB();
@@ -87,6 +88,7 @@ app.use('/api/reports', router);
 
 app.use('/api/accidents', accidentRoutes);
 app.use('/api/cases', caseRoutes);
+app.use('/api/it-cases', itCaseRoutes);
 app.get('/', (_req, res) => res.send('Police360 API running'));
 
 app.use((req, res) => {

@@ -1,30 +1,35 @@
 const mongoose = require('mongoose');
 
-const ComplaintSchema = new mongoose.Schema({
+const ITCaseSchema = new mongoose.Schema({
   // Case ID for IT Officer created cases (different from complaint ID)
-  caseId: { type: String, trim: true, unique: true, sparse: true },
-  // Type to distinguish between complaints and cases
-  type: { type: String, enum: ['COMPLAINT', 'CASE'], default: 'COMPLAINT' },
+  caseId: { type: String, trim: true, unique: true, required: true },
+  
+  // Basic case information
   complainant: {
     name: { type: String, required: true, trim: true },
     address: { type: String, trim: true },
     phone: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
   },
+  
   complaintDetails: {
     typeOfComplaint: { type: String, required: true },
     incidentDate: { type: Date },
     location: { type: String, trim: true },
     description: { type: String },
   },
+  
   attachments: [{ type: String }], // paths to uploads (or base64 strings)
-  // new fields
+  
+  // Additional case information
   idInfo: {
     idType: { type: String, trim: true },
     idValue: { type: String, trim: true },
   },
+  
   priority: { type: String, enum: ['LOW','MEDIUM','HIGH'], default: 'MEDIUM' },
   estimatedLoss: { type: String, trim: true },
+  
   additionalInfo: {
     witnesses: [
       {
@@ -42,8 +47,11 @@ const ComplaintSchema = new mongoose.Schema({
     ],
     evidence: [{ type: String }], // base64 or paths
   },
+  
+  // Case status and assignment
   status: { type: String, enum: ['NEW', 'ASSIGNED', 'IN_PROGRESS', 'CLOSED'], default: 'NEW' },
   assignedOfficer: { type: mongoose.Schema.Types.ObjectId, ref: 'Officer', default: null },
+  
   investigationNotes: [
     {
       author: { type: mongoose.Schema.Types.ObjectId, ref: 'Officer' },
@@ -51,7 +59,9 @@ const ComplaintSchema = new mongoose.Schema({
       createdAt: { type: Date, default: Date.now },
     }
   ],
+  
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Officer', required: false, default: null },
+  
   // IT Officer specific fields
   itOfficerDetails: {
     caseAnalysis: { type: String, trim: true },
@@ -62,15 +72,17 @@ const ComplaintSchema = new mongoose.Schema({
     followUpRequired: { type: Boolean, default: false },
     followUpDate: { type: Date },
   },
+  
   // Resource allocation
   resourceAllocation: {
     supportOfficers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Officer' }],
     vehicles: [{ type: String, trim: true }],
     firearms: [{ type: String, trim: true }],
   },
+  
   // Single-use edit token for the creator (allows editing the freshly created case once without auth)
   editToken: { type: String, trim: true, default: null },
   editTokenUsed: { type: Boolean, default: false },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Case', ComplaintSchema);
+module.exports = mongoose.model('ITCase', ITCaseSchema);
