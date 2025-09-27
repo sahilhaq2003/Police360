@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ServerCog, ShieldCheck, Users2, LogOut } from 'lucide-react';
+import { ServerCog, ShieldCheck, Users2 } from 'lucide-react';
 import axiosInstance from '../../utils/axiosInstance';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
 
@@ -28,11 +28,6 @@ const ItOfficerDashboard = () => {
     loadData();
   }, []);
 
-  const logout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    navigate('/login');
-  };
 
   const quickStats = useMemo(() => ([
     { label: 'Active Staff', value: kpis.activeCount, icon: <ShieldCheck className="h-6 w-6" /> },
@@ -50,9 +45,6 @@ const ItOfficerDashboard = () => {
             <h1 className="text-2xl md:text-3xl font-bold">IT Officer Dashboard</h1>
             <p className="text-sm text-[#5A6B85]">Systems overview and service requests</p>
           </div>
-          <button onClick={logout} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#EAF1FF] text-[#0B214A] hover:bg-[#DDE9FF] transition">
-            <LogOut className="h-4 w-4" /> Logout
-          </button>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
