@@ -288,57 +288,40 @@ export default function CaseDetails() {
 
           <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
             <h3 className="mb-4 text-lg font-semibold">Add Note / Actions</h3>
-            <textarea value={noteText} onChange={e => setNoteText(e.target.value)} className="border p-2 w-full" placeholder="Add investigation note" />
-            <div className="mt-3 flex gap-2">
-  {/* Add Note */}
-  <button
-    onClick={addNote}
-    className="bg-blue-600 text-white px-3 py-1 rounded"
-  >
-    Add Note
-  </button>
+            <textarea value={noteText} onChange={e => setNoteText(e.target.value)} className="border p-3 w-full rounded-md" placeholder="Add investigation note" />
 
-  {/* Close Case */}
-  <button
-    onClick={closeCase}
-    className="bg-green-600 text-white px-3 py-1 rounded"
-  >
-    Mark as Closed
-  </button>
+            <div className="mt-4 flex items-start justify-between gap-4">
+              {/* Left side: Add Note + Mark as Closed */}
+              <div className="flex items-center gap-3">
+                <button onClick={addNote} className="bg-blue-600 text-white px-4 py-2 rounded-md">Add Note</button>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
+            <div className="mt-4 flex items-start justify-between gap-4">
+              {/* Mark as Closed */}
+              <div className="flex items-center gap-3">
+                <button onClick={closeCase} className="bg-green-600 text-white px-4 py-2 rounded-md">Mark as Closed</button>
+              </div>
 
-  {/* Update Complaint (Edit) */}
-  <Link
-    to={`/cases/update/${c._id}`}
-    className="bg-indigo-600 text-white px-3 py-1 rounded inline-flex items-center"
-  >
-    Update
-  </Link>
+              {/* Right side: Update / Delete / Back */}
+              <div className="flex items-center gap-3">
+                <Link to={`/cases/update/${c._id}`} className="bg-indigo-600 text-white px-4 py-2 rounded-md inline-flex items-center">Update</Link>
 
-  <button
-  onClick={async () => {
-    if (!window.confirm("Are you sure you want to delete this complaint?")) return;
-    try {
-      await axiosInstance.delete(`/cases/${c._id}`);
-      alert("Deleted successfully");
-      navigate("/it/cases"); // go back to cases list
-    } catch (err) {
-      alert(err?.response?.data?.message || "Failed to delete");
-    }
-  }}
-  className="bg-rose-600 text-white px-3 py-1 rounded"
->
-  Delete
-</button>
+                <button onClick={async () => {
+                    if (!window.confirm("Are you sure you want to delete this complaint?")) return;
+                    try {
+                      await axiosInstance.delete(`/cases/${c._id}`);
+                      alert("Deleted successfully");
+                      navigate("/it/cases"); // go back to cases list
+                    } catch (err) {
+                      alert(err?.response?.data?.message || "Failed to delete");
+                    }
+                  }} className="bg-rose-600 text-white px-4 py-2 rounded-md">Delete</button>
 
-  {/* Back */}
-  <button
-    onClick={() => navigate(-1)}
-    className="px-3 py-1 rounded border"
-  >
-    Back
-  </button>
-</div>
-
+                <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-md border">Back</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
