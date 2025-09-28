@@ -139,7 +139,8 @@ const ItCasesPanel = () => {
             <h1 className="text-4xl font-extrabold tracking-tight">Complaints</h1>
             <p className="text-sm text-[#5A6B85] mt-1">Submitted criminal complaints — assign officers and view details</p>
           </div>
-          <div className="absolute right-0 top-0">
+          <div className="absolute right-0 top-0 flex gap-2">
+            <button onClick={() => navigate('/create-case')} className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-[#0B214A] text-white text-sm hover:bg-[#0A1E42]">+ Create Cases</button>
             <button onClick={() => navigate('/itOfficer/ItOfficerDashboard')} className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">← Back</button>
           </div>
         </div>

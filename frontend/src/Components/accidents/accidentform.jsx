@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import AdditionalDetails from './additionalDetails';
 import BasicDetails from './basicDetails';
-import { ArrowLeft } from 'lucide-react';
+import Nav from '../Nav/Nav';
+import accbg from '../../assets/accbg.png';
 
 export default function AccidentForm() {
-  const navigate = useNavigate();
-
   const [form, setForm] = useState({
     accidentType: 'ROAD_ACCIDENT',
     isEmergency: true,
     nic: '',
     locationText: '',
+    geo: { lat: '', lng: '' },
     victim: {
       fullName: '',
       phone: '',
@@ -40,8 +39,12 @@ export default function AccidentForm() {
       const parts = path.split('.');
       let cur = clone;
       parts.forEach((p, i) => {
-        if (i === parts.length - 1) cur[p] = value;
-        else cur = cur[p];
+        if (i === parts.length - 1) {
+          cur[p] = value;
+        } else {
+          cur[p] = cur[p] ?? {};
+          cur = cur[p];
+        }
       });
       return clone;
     });
@@ -71,19 +74,51 @@ export default function AccidentForm() {
       isEmergency: form.isEmergency,
       nic: form.nic || undefined,
       locationText: form.locationText,
+      geo:
+        form?.geo?.lat && form?.geo?.lng
+          ? { lat: Number(form.geo.lat), lng: Number(form.geo.lng) }
+          : undefined,
       evidence: evidence.map((x) => x.url),
       victim: form.isEmergency ? undefined : form.victim,
       vehicle: form.isEmergency ? undefined : form.vehicle,
     };
+    function formatSriLankaPhone(phone) {
+      if (!phone) return null;
+      let cleaned = phone.replace(/\D/g, ''); // remove non-digits
+
+      if (cleaned.startsWith('0')) {
+        cleaned = '94' + cleaned.slice(1); // replace leading 0 with 94
+      } else if (!cleaned.startsWith('94')) {
+        cleaned = '94' + cleaned; // fallback
+      }
+      return cleaned;
+    }
 
     try {
       const { data } = await axiosInstance.post('/accidents/report', payload);
+
+      const phone = formatSriLankaPhone(form.victim.phone);
+
+      if (phone) {
+        const message = `Hello, this is a message regarding the accident report. Your tracking ID is ${
+          data.trackingId
+        }. Please keep this ID for future reference.\nYour Insurance Reference Number is ${
+          data.insuranceRefNo || 'None'
+        }`;
+        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(
+          message
+        )}`;
+        window.open(whatsappUrl, '_blank');
+      }
+
       setBanner({
         type: 'success',
         message: `Reported successfully. Tracking ID: ${data.trackingId}${
           data.insuranceRefNo ? `, Insurance Ref: ${data.insuranceRefNo}` : ''
         }`,
       });
+
+      // Reset form
       setEvidence([]);
       setForm({
         accidentType: 'ROAD_ACCIDENT',
@@ -114,16 +149,17 @@ export default function AccidentForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-white py-10 px-4">
-      {/* Back button ABOVE the form */}
-      <div className="max-w-5xl mx-auto mb-6">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-white bg-[#0B214A] text-white text-sm font-medium shadow hover:opacity-90 transition"
-        >
-          <ArrowLeft size={18} />
-          Back to Home
-        </button>
+    <div
+      className="min-h-screen relative bg-gradient-to-br from-slate-100 via-slate-50 to-white py-10 px-4 absolute inset-0 bg-cover bg-center"
+      style={{ backgroundImage: `url(${accbg})` }}
+      aria-hidden
+    >
+      <div>
+        <Nav />
+        <br />
+        <br />
+        <br />
+        <br />
       </div>
 
       {/* Form Card */}

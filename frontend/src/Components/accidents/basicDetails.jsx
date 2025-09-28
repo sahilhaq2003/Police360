@@ -136,7 +136,7 @@ export default function BasicDetails({ form, updateField, evidence, onFiles }) {
           value={form.evidence}
           accept="image/*,video/*"
           onChange={(e) => onFiles(e.target.files)}
-          className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+          className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#0B214A] file:text-white hover:file:opacity-80 cursor-pointer"
         />
         {evidence.length > 0 && (
           <div className="mt-3 grid grid-cols-2 gap-3">
