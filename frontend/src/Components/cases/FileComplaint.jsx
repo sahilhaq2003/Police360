@@ -240,7 +240,7 @@ export default function FileComplaint() {
         {/* Header */}
         <div className="mb-8 relative">
           <div className="text-center">
-            <h1 className="text-3xl font-extrabold text-slate-800">Complaint Reporting Form</h1>
+            <h1 className="text-3xl font-extrabold text-[#0B214A] mb-6 text-center">Complaint Reporting Form</h1>
             <p className="text-sm text-slate-600 mt-1">Please provide the incident details below to file a complaint.</p>
           </div>
           <div className="absolute right-0 top-0">
@@ -392,7 +392,7 @@ export default function FileComplaint() {
               <h4 className="font-medium text-slate-600 mb-2">
                 Location (images/videos) (Optional)
               </h4>
-              <input type="file" className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" multiple onChange={handleFile} />
+              <input type="file" className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#0B214A] file:text-white hover:file:opacity-80 cursor-pointer" multiple onChange={handleFile} />
               {renderPreviewGrid('attachments')}
             </div>
           </section>
@@ -548,7 +548,7 @@ export default function FileComplaint() {
                   </h4>
                   <input
                     type="file"
-                    className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                    className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#0B214A] file:text-white hover:file:opacity-80 cursor-pointer"
                     multiple
                     onChange={(e) =>
                       handleAdditionalFiles(
@@ -603,7 +603,7 @@ export default function FileComplaint() {
               </h4>
               <input
                 type="file"
-                className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#0B214A] file:text-white hover:file:opacity-80 cursor-pointer"
                 multiple
                 onChange={(e) =>
                   handleAdditionalFiles("additionalInfo.evidence", e)
@@ -622,7 +622,7 @@ export default function FileComplaint() {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 rounded-xl bg-indigo-600 text-white py-3 font-semibold hover:bg-indigo-700 disabled:opacity-50 shadow-md transition"
+              className="flex-1 rounded-xl bg-[#0B214A] text-white py-3 font-semibold text-lg shadow hover:opacity-90 transition disabled:opacity-50 transition-colors duration-200"
             >
               {loading ? "Submitting..." : "Submit Complaint"}
             </button>
@@ -644,7 +644,7 @@ export default function FileComplaint() {
 /* Tailwind reusable styles */
 const inputField =
   "w-full rounded-lg border border-slate-300 bg-white/80 px-3 py-2 text-sm shadow-sm " +
-  "focus:border-indigo-500 focus:ring-2 focus:ring-indigo-400 focus:bg-white outline-none transition";
+  "focus:border-[#0B214A] focus:ring-2 focus:ring-[#0B214A] focus:bg-white outline-none transition";
 
 const btnSecondary =
-  "text-sm text-indigo-600 hover:text-indigo-800 font-medium transition";
+  "text-sm text-[#0B214A] hover:text-[#0B114C] font-medium transition";
