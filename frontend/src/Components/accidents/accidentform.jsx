@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import api from '../../utils/accidentapi';
+import axiosInstance from '../../utils/axiosInstance';
 import AdditionalDetails from './additionalDetails';
 import BasicDetails from './basicDetails';
+import Nav from '../Nav/Nav';
+import accbg from '../../assets/accbg.png';
 
 export default function AccidentForm() {
   const [form, setForm] = useState({
     accidentType: 'ROAD_ACCIDENT',
-    isEmergency: true, // default to emergency quick mode
+    isEmergency: true,
     nic: '',
     locationText: '',
+    geo: { lat: '', lng: '' },
     victim: {
       fullName: '',
       phone: '',
@@ -36,8 +39,12 @@ export default function AccidentForm() {
       const parts = path.split('.');
       let cur = clone;
       parts.forEach((p, i) => {
-        if (i === parts.length - 1) cur[p] = value;
-        else cur = cur[p];
+        if (i === parts.length - 1) {
+          cur[p] = value;
+        } else {
+          cur[p] = cur[p] ?? {};
+          cur = cur[p];
+        }
       });
       return clone;
     });
@@ -67,19 +74,51 @@ export default function AccidentForm() {
       isEmergency: form.isEmergency,
       nic: form.nic || undefined,
       locationText: form.locationText,
+      geo:
+        form?.geo?.lat && form?.geo?.lng
+          ? { lat: Number(form.geo.lat), lng: Number(form.geo.lng) }
+          : undefined,
       evidence: evidence.map((x) => x.url),
       victim: form.isEmergency ? undefined : form.victim,
       vehicle: form.isEmergency ? undefined : form.vehicle,
     };
+    function formatSriLankaPhone(phone) {
+      if (!phone) return null;
+      let cleaned = phone.replace(/\D/g, ''); // remove non-digits
+
+      if (cleaned.startsWith('0')) {
+        cleaned = '94' + cleaned.slice(1); // replace leading 0 with 94
+      } else if (!cleaned.startsWith('94')) {
+        cleaned = '94' + cleaned; // fallback
+      }
+      return cleaned;
+    }
 
     try {
-      const res = await api.post('/api/accidents/report', payload);
+      const { data } = await axiosInstance.post('/accidents/report', payload);
+
+      const phone = formatSriLankaPhone(form.victim.phone);
+
+      if (phone) {
+        const message = `Hello, this is a message regarding the accident report. Your tracking ID is ${
+          data.trackingId
+        }. Please keep this ID for future reference.\nYour Insurance Reference Number is ${
+          data.insuranceRefNo || 'None'
+        }`;
+        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(
+          message
+        )}`;
+        window.open(whatsappUrl, '_blank');
+      }
+
       setBanner({
         type: 'success',
-        message: `Reported successfully. Tracking ID: ${res.trackingId}${
-          res.insuranceRefNo ? `, Insurance Ref: ${res.insuranceRefNo}` : ''
+        message: `Reported successfully. Tracking ID: ${data.trackingId}${
+          data.insuranceRefNo ? `, Insurance Ref: ${data.insuranceRefNo}` : ''
         }`,
       });
+
+      // Reset form
       setEvidence([]);
       setForm({
         accidentType: 'ROAD_ACCIDENT',
@@ -110,15 +149,32 @@ export default function AccidentForm() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4">
-      <div className="mx-auto max-w-3xl bg-white rounded-2xl shadow p-8">
-        <h1 className="text-2xl font-bold text-slate-800 mb-6">
+    <div
+      className="min-h-screen relative bg-gradient-to-br from-slate-100 via-slate-50 to-white py-10 px-4 absolute inset-0 bg-cover bg-center"
+      style={{ backgroundImage: `url(${accbg})` }}
+      aria-hidden
+    >
+      <div>
+        <Nav />
+        <br />
+        <br />
+        <br />
+        <br />
+      </div>
+
+      {/* Form Card */}
+      <div className="mx-auto max-w-5xl bg-white rounded-2xl shadow-xl border border-slate-200 p-10">
+        <h1 className="text-3xl font-extrabold text-[#0B214A] mb-6 text-center">
           Accident Reporting Form
         </h1>
+        <p className="text-slate-500 text-center mb-8">
+          Please fill in the details below to report an accident. For
+          emergencies, keep the toggle checked for a quick submission.
+        </p>
 
         {banner && (
           <div
-            className={`mb-6 rounded-xl px-4 py-3 text-sm ${
+            className={`mb-6 rounded-xl px-4 py-3 text-sm font-medium shadow-sm ${
               banner.type === 'success'
                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                 : 'bg-rose-50 text-rose-700 border border-rose-200'
@@ -129,22 +185,20 @@ export default function AccidentForm() {
         )}
 
         {/* Emergency toggle */}
-        <div className="mb-6">
-          <label className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              name="isEmergency"
-              checked={form.isEmergency}
-              onChange={(e) => updateField('isEmergency', e.target.checked)}
-              className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-            />
-            <span className="text-slate-700 font-medium">
-              This is an <b>Emergency</b> accident
-            </span>
-          </label>
+        <div className="mb-6 flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-lg border border-slate-200">
+          <input
+            type="checkbox"
+            name="isEmergency"
+            checked={form.isEmergency}
+            onChange={(e) => updateField('isEmergency', e.target.checked)}
+            className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+          />
+          <span className="text-slate-700 font-semibold">
+            Mark as <span className="text-rose-600">Emergency</span>
+          </span>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-6">
+        <form onSubmit={onSubmit} className="space-y-8">
           {/* Common fields */}
           <BasicDetails
             form={form}
@@ -166,7 +220,7 @@ export default function AccidentForm() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-xl bg-indigo-600 text-white py-3 font-medium hover:bg-indigo-700 disabled:opacity-50"
+              className="w-full rounded-xl bg-[#0B214A] text-white py-3 font-semibold text-lg shadow hover:opacity-90 transition disabled:opacity-50 transition-colors duration-200"
             >
               {submitting ? 'Submitting...' : 'Submit Report'}
             </button>

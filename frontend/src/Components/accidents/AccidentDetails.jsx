@@ -1,9 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getAccidentById } from '../../utils/accidentapi';
+import axiosInstance from '../../utils/axiosInstance';
 import AccidentUpdatePanel from './AccidentUpdatePanel';
 import DeleteAccident from './DeleteAccident';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 function LabelRow({ label, children }) {
   return (
@@ -51,7 +64,7 @@ export default function AccidentDetails() {
       try {
         setLoading(true);
         setErr('');
-        const data = await getAccidentById(id);
+        const { data } = await axiosInstance.get(`/accidents/${id}`);
         if (mounted) setAccident(data);
       } catch (e) {
         if (mounted) {
@@ -94,7 +107,9 @@ export default function AccidentDetails() {
         <PoliceHeader />
         <div className="max-w-7xl mx-auto px-4 py-10">
           <div className="mx-auto max-w-4xl">
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-700">{err}</div>
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-700">
+              {err}
+            </div>
             <button
               onClick={() => navigate(-1)}
               className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-md border border-[#D6DEEB] text-sm hover:bg-[#F5F7FB]"
@@ -113,9 +128,24 @@ export default function AccidentDetails() {
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
       <PoliceHeader />
       <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight">Accident Details</h1>
-          <p className="text-sm text-[#5A6B85] mt-1">Review and update investigation information</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight">
+              Accident Details
+            </h1>
+            <p className="text-sm text-[#5A6B85] mt-1">
+              Review and update investigation information
+            </p>
+          </div>
+          {/* Back */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-[#D6DEEB] text-white text-sm bg-[#0B214A] hover:opacity-90"
+            >
+              Back to Assigned Accidents
+            </button>
+          </div>
         </div>
 
         <div className="mx-auto max-w-4xl space-y-6">
@@ -123,13 +153,15 @@ export default function AccidentDetails() {
           <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold">{accident.trackingId ?? 'Accident'}</h2>
+                <h2 className="text-xl font-semibold">
+                  {accident.trackingId ?? 'Accident'}
+                </h2>
                 <p className="text-sm text-[#5A6B85]">Accident details</p>
               </div>
               <StatusPill status={accident.status} />
             </div>
           </div>
-        {/* Optional banner from updates */}
+          {/* Optional banner from updates */}
           {banner && (
             <div
               className={`rounded-xl px-4 py-3 text-sm ${
@@ -141,139 +173,151 @@ export default function AccidentDetails() {
               {banner.message}
             </div>
           )}
-        {/* Overview */}
-        <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
-          <h3 className="mb-4 text-lg font-semibold">Overview</h3>
-          <LabelRow label="Type">
-            {accident.accidentType?.replaceAll('_', ' ')}
-          </LabelRow>
-          <LabelRow label="Emergency">
-            {accident.isEmergency ? 'Yes' : 'No'}
-          </LabelRow>
-          <LabelRow label="Location">{accident.locationText}</LabelRow>
-          <LabelRow label="Coordinates">
-            {accident.geo?.lat && accident.geo?.lng
-              ? `${accident.geo.lat}, ${accident.geo.lng}`
-              : '—'}
-          </LabelRow>
-          <LabelRow label="NIC">{accident.nic || '—'}</LabelRow>
-          <LabelRow label="Assigned Officer">
-            {accident.assignedOfficer
-              ? (accident.assignedOfficer.name || accident.assignedOfficer.officerId || String(accident.assignedOfficer))
-              : '—'}
-          </LabelRow>
-          <LabelRow label="Reported at">
-            {accident.createdAt && !isNaN(new Date(accident.createdAt))
-              ? new Date(accident.createdAt).toLocaleString()
-              : '—'}
-          </LabelRow>
-          <LabelRow label="Last updated">
-            {accident.updatedAt && !isNaN(new Date(accident.updatedAt))
-              ? new Date(accident.updatedAt).toLocaleString()
-              : '—'}
-          </LabelRow>
-        </div>
-        {/* Victim */}
-        <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
-          <h3 className="mb-4 text-lg font-semibold">Victim</h3>
-          <LabelRow label="Full Name">{accident.victim?.fullName}</LabelRow>
-          <LabelRow label="Phone">{accident.victim?.phone}</LabelRow>
-          <LabelRow label="Email">{accident.victim?.email}</LabelRow>
-          <LabelRow label="Address">{accident.victim?.address}</LabelRow>
-          <LabelRow label="Insurance Company">
-            {accident.victim?.insuranceCompany}
-          </LabelRow>
-          <LabelRow label="Policy No.">
-            {accident.victim?.insurancePolicyNo}
-          </LabelRow>
-          <LabelRow label="Insurance Ref">
-            {accident.victim?.insuranceRefNo ?? '—'}
-          </LabelRow>
-        </div>
-        {/* Vehicle */}
-        <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
-          <h3 className="mb-4 text-lg font-semibold">Vehicle</h3>
-          <LabelRow label="Plate No.">{accident.vehicle?.plateNo}</LabelRow>
-          <LabelRow label="Make">{accident.vehicle?.make}</LabelRow>
-          <LabelRow label="Model">{accident.vehicle?.model}</LabelRow>
-          <LabelRow label="Color">{accident.vehicle?.color}</LabelRow>
-          <LabelRow label="Owner NIC">{accident.vehicle?.ownerNIC}</LabelRow>
-        </div>
-        {/* Evidence */}
-        <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
-          <h3 className="mb-4 text-lg font-semibold">Evidence</h3>
-          {Array.isArray(evidence) && evidence.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-              {evidence.map((ev, i) => (
-                <div
-                  key={i}
-                  className="overflow-hidden rounded-xl border border-slate-200"
-                >
-                  {typeof ev === 'string' && ev.startsWith('data:video') ? (
-                    <video
-                      src={ev}
-                      controls
-                      className="h-40 w-full object-cover"
-                    />
-                  ) : (
-                    <img
-                      src={ev}
-                      alt={`evidence-${i}`}
-                      className="h-40 w-full object-cover"
-                    />
-                  )}
-                </div>
-              ))}
+          {/* Overview */}
+          <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
+            <h3 className="mb-4 text-lg font-semibold">Overview</h3>
+            <LabelRow label="Type">
+              {accident.accidentType?.replaceAll('_', ' ')}
+            </LabelRow>
+            <LabelRow label="Emergency">
+              {accident.isEmergency ? 'Yes' : 'No'}
+            </LabelRow>
+            <LabelRow label="Location">{accident.locationText}</LabelRow>
+            <LabelRow label="Coordinates">
+              {accident.geo?.lat && accident.geo?.lng
+                ? `${accident.geo.lat}, ${accident.geo.lng}`
+                : '—'}
+            </LabelRow>
+          {accident.geo?.lat && accident.geo?.lng && (
+            <div className="mt-4">
+              <MapContainer
+                center={[accident.geo.lat, accident.geo.lng]}
+                zoom={14}
+                style={{ height: '300px', width: '100%', borderRadius: '12px' }}
+                scrollWheelZoom={false}
+              >
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                <Marker position={[accident.geo.lat, accident.geo.lng]} />
+              </MapContainer>
             </div>
-          ) : (
-            <p className="text-sm text-slate-600">No evidence uploaded.</p>
           )}
-        </div>
-        {/* Existing notes */}
-        {Array.isArray(accident.investigationNotes) &&
-          accident.investigationNotes.length > 0 && (
-            <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
-              <h3 className="mb-4 text-lg font-semibold">Investigation Notes</h3>
-              <ul className="space-y-3">
-                {accident.investigationNotes.map((n, idx) => (
-                  <li
-                    key={n._id || idx}
-                    className="rounded-lg border border-[#EEF2F7] bg-[#F9FBFF] p-3"
+            <LabelRow label="NIC">{accident.nic || '—'}</LabelRow>
+            <LabelRow label="Assigned Officer">
+              {accident.assignedOfficer
+                ? accident.assignedOfficer.name ||
+                  accident.assignedOfficer.officerId ||
+                  String(accident.assignedOfficer)
+                : '—'}
+            </LabelRow>
+            <LabelRow label="Reported at">
+              {accident.createdAt && !isNaN(new Date(accident.createdAt))
+                ? new Date(accident.createdAt).toLocaleString()
+                : '—'}
+            </LabelRow>
+            <LabelRow label="Last updated">
+              {accident.updatedAt && !isNaN(new Date(accident.updatedAt))
+                ? new Date(accident.updatedAt).toLocaleString()
+                : '—'}
+            </LabelRow>
+          </div>
+          {/* Victim */}
+          <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
+            <h3 className="mb-4 text-lg font-semibold">Victim</h3>
+            <LabelRow label="Full Name">{accident.victim?.fullName}</LabelRow>
+            <LabelRow label="Phone">{accident.victim?.phone}</LabelRow>
+            <LabelRow label="Email">{accident.victim?.email}</LabelRow>
+            <LabelRow label="Address">{accident.victim?.address}</LabelRow>
+            <LabelRow label="Insurance Company">
+              {accident.victim?.insuranceCompany}
+            </LabelRow>
+            <LabelRow label="Policy No.">
+              {accident.victim?.insurancePolicyNo}
+            </LabelRow>
+            <LabelRow label="Insurance Ref">
+              {accident.victim?.insuranceRefNo ?? '—'}
+            </LabelRow>
+          </div>
+          {/* Vehicle */}
+          <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
+            <h3 className="mb-4 text-lg font-semibold">Vehicle</h3>
+            <LabelRow label="Plate No.">{accident.vehicle?.plateNo}</LabelRow>
+            <LabelRow label="Make">{accident.vehicle?.make}</LabelRow>
+            <LabelRow label="Model">{accident.vehicle?.model}</LabelRow>
+            <LabelRow label="Color">{accident.vehicle?.color}</LabelRow>
+            <LabelRow label="Owner NIC">{accident.vehicle?.ownerNIC}</LabelRow>
+          </div>
+          {/* Evidence */}
+          <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
+            <h3 className="mb-4 text-lg font-semibold">Evidence</h3>
+            {Array.isArray(evidence) && evidence.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                {evidence.map((ev, i) => (
+                  <div
+                    key={i}
+                    className="overflow-hidden rounded-xl border border-slate-200"
                   >
-                    <div className="text-sm text-slate-900">{n.note}</div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {n.addedBy ? `By ${n.addedBy} • ` : ''}
-                      {n.createdAt
-                        ? new Date(n.createdAt).toLocaleString()
-                        : ''}
-                    </div>
-                  </li>
+                    {typeof ev === 'string' && ev.startsWith('data:video') ? (
+                      <video
+                        src={ev}
+                        controls
+                        className="h-40 w-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={ev}
+                        alt={`evidence-${i}`}
+                        className="h-40 w-full object-cover"
+                      />
+                    )}
+                  </div>
                 ))}
-              </ul>
-            </div>
-          )}
-        {/* Update / Add note panel */}
-        <AccidentUpdatePanel
-          accident={accident}
-          onUpdated={(updated) => {
-            setAccident(updated);
-            setBanner({ type: 'success', message: 'Updated successfully.' });
-            setTimeout(() => setBanner(null), 2500);
-          }}
-        />
-        {/* Back */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-[#D6DEEB] text-sm hover:bg-[#F5F7FB]"
-          >
-            ← Back
-          </button>
-        </div>
-        {/* Delete Accident */}
-        <div className="flex justify-center">
-          <DeleteAccident accidentId={accident._id} />
-        </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600">No evidence uploaded.</p>
+            )}
+          </div>
+          {/* Existing notes */}
+          {Array.isArray(accident.investigationNotes) &&
+            accident.investigationNotes.length > 0 && (
+              <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
+                <h3 className="mb-4 text-lg font-semibold">
+                  Investigation Notes
+                </h3>
+                <ul className="space-y-3">
+                  {accident.investigationNotes.map((n, idx) => (
+                    <li
+                      key={n._id || idx}
+                      className="rounded-lg border border-[#EEF2F7] bg-[#F9FBFF] p-3"
+                    >
+                      <div className="text-sm text-slate-900">{n.note}</div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {n.addedBy ? `By ${n.addedBy} • ` : ''}
+                        {n.createdAt
+                          ? new Date(n.createdAt).toLocaleString()
+                          : ''}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          {/* Update / Add note panel */}
+          <AccidentUpdatePanel
+            accident={accident}
+            onUpdated={(updated) => {
+              setAccident(updated);
+              setBanner({ type: 'success', message: 'Updated successfully.' });
+              setTimeout(() => setBanner(null), 2500);
+            }}
+          />
+
+          {/* Delete Accident */}
+          <div className="flex justify-center">
+            <DeleteAccident accidentId={accident._id} />
+          </div>
         </div>
       </div>
     </div>

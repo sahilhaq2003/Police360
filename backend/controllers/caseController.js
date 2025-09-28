@@ -5,19 +5,40 @@ const mongoose = require('mongoose');
 // POST /api/cases - submit a new criminal complaint
 exports.createCase = async (req, res) => {
   try {
-    const { complainant, complaintDetails, attachments } = req.body;
+    const {
+      complainant,
+      complaintDetails,
+      attachments,
+      idInfo,
+      priority,
+      estimatedLoss,
+      additionalInfo,
+    } = req.body;
+
     if (!complainant?.name || !complaintDetails?.typeOfComplaint) {
       return res.status(400).json({ message: 'Complainant name and type of complaint are required' });
     }
+
+    // generate a short single-use random token for the creator to edit once without logging in
+    const makeToken = () => Math.random().toString(36).slice(2, 10);
+    const editToken = makeToken();
 
     const doc = await Case.create({
       complainant,
       complaintDetails,
       attachments: attachments || [],
+      idInfo: idInfo || {},
+      priority: priority || 'MEDIUM',
+      estimatedLoss: estimatedLoss || '',
+      additionalInfo: additionalInfo || {},
       createdBy: req.user?.id || null,
+      editToken,
     });
 
-    res.status(201).json({ success: true, data: doc });
+    // Return the edit token in response so the client can allow the creator to make one unauthenticated edit
+    const out = doc.toObject ? doc.toObject() : doc;
+    out.editToken = editToken;
+    res.status(201).json({ success: true, id: doc._id, data: out, editToken });
   } catch (err) {
     console.error('createCase error', err);
     res.status(500).json({ message: 'Failed to create case' });
@@ -27,7 +48,7 @@ exports.createCase = async (req, res) => {
 // GET /api/cases - list (supports query param assignedOfficer, status, unassigned)
 exports.listCases = async (req, res) => {
   try {
-    const { assignedOfficer, status, unassigned, q } = req.query;
+    const { assignedOfficer, status, unassigned, q, page = 1, pageSize = 50 } = req.query;
     const filter = {};
     if (assignedOfficer) filter.assignedOfficer = assignedOfficer;
     if (status) filter.status = status;
@@ -54,8 +75,20 @@ exports.listCases = async (req, res) => {
       filter.$or = ors;
     }
 
-    const list = await Case.find(filter).populate('assignedOfficer', 'name officerId email role').sort({ createdAt: -1 });
-    res.json({ success: true, data: list });
+    const p = Math.max(1, parseInt(page, 10) || 1);
+    const ps = Math.min(200, Math.max(1, parseInt(pageSize, 10) || 50));
+    const skip = (p - 1) * ps;
+
+    const [list, total] = await Promise.all([
+      Case.find(filter)
+        .select('complainant complaintDetails status assignedOfficer createdAt')
+        .populate('assignedOfficer', 'name officerId email role')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(ps),
+      Case.countDocuments(filter),
+    ]);
+    res.json({ success: true, data: list, page: p, pageSize: ps, total });
   } catch (err) {
     console.error('listCases error', err);
     res.status(500).json({ message: 'Failed to list cases' });
@@ -140,5 +173,114 @@ exports.closeCase = async (req, res) => {
   } catch (err) {
     console.error('closeCase error', err);
     res.status(500).json({ message: 'Failed to close case' });
+  }
+};
+
+// PUT /api/cases/:id - update complaint (before assignment or by Admin/IT)
+exports.updateCase = async (req, res) => {
+  try {
+    console.log('[CASE] updateCase called', { params: req.params, bodyKeys: Object.keys(req.body || {}) });
+    const { id } = req.params;
+
+    const doc = await Case.findById(id);
+    if (!doc) return res.status(404).json({ message: 'Case not found' });
+
+    // Allow update if:
+    // - authenticated user with Admin/IT role, OR
+    // - case is NEW and creator has provided the single-use edit token in X-Edit-Token header
+    let allowed = false;
+    if (req.user && (req.user.role === 'Admin' || req.user.role === 'IT Officer')) allowed = true;
+
+    // If not allowed yet, check for X-Edit-Token header for unauthenticated creator edit
+    if (!allowed && (!req.user || !req.user.id)) {
+      const provided = req.headers['x-edit-token'] || req.headers['x-edit-token'.toLowerCase()];
+      if (provided && doc.editToken && !doc.editTokenUsed && doc.status === 'NEW' && provided === doc.editToken) {
+        allowed = true;
+        // mark token used later after successful save
+        req._usedEditToken = true;
+      }
+    }
+
+    if (!allowed) {
+      return res.status(403).json({ message: 'You are not allowed to update this complaint' });
+    }
+
+    // Update allowed fields
+    const {
+      complainant,
+      complaintDetails,
+      attachments,
+      idInfo,
+      priority,
+      estimatedLoss,
+      additionalInfo,
+    } = req.body;
+
+    if (complainant) doc.complainant = complainant;
+    if (complaintDetails) doc.complaintDetails = complaintDetails;
+    if (attachments) doc.attachments = attachments;
+    if (idInfo) doc.idInfo = idInfo;
+    if (priority) doc.priority = priority;
+    if (estimatedLoss) doc.estimatedLoss = estimatedLoss;
+    if (additionalInfo) doc.additionalInfo = additionalInfo;
+
+    await doc.save();
+    // if update permitted by edit token, mark it used and clear the token
+    if (req._usedEditToken) {
+      doc.editTokenUsed = true;
+      doc.editToken = null;
+      await doc.save();
+    }
+    res.json({ success: true, data: doc });
+  } catch (err) {
+    console.error('updateCase error', err);
+    res.status(500).json({ message: 'Failed to update case' });
+  }
+};
+
+
+// (Duplicate earlier deleteCase removed - keep the permissive deleteCase below)
+
+// DELETE /api/cases/:id - delete a case (Admin / IT or owner)
+exports.deleteCase = async (req, res) => {
+  try {
+    const doc = await Case.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: 'Case not found' });
+
+    const uid = req.user?.id;
+    const role = req.user?.role;
+    // allow Admin, IT Officer, or the user who created the case to delete
+    if (role !== 'Admin' && role !== 'IT Officer' && (!doc.createdBy || doc.createdBy.toString() !== uid)) {
+      return res.status(403).json({ message: 'Not authorized to delete this case' });
+    }
+
+    await doc.deleteOne();
+    res.json({ success: true, message: 'Case deleted' });
+  } catch (err) {
+    console.error('deleteCase error', err);
+    res.status(500).json({ message: 'Failed to delete case' });
+  }
+};
+
+exports.createCase = async (req, res) => {
+  try {
+    const doc = await Case.create({
+      complainant: req.body.complainant,
+      complaintDetails: req.body.complaintDetails,
+      attachments: req.body.attachments || [],
+      idInfo: req.body.idInfo || {},
+      priority: req.body.priority || "MEDIUM",
+      estimatedLoss: req.body.estimatedLoss || "",
+      additionalInfo: req.body.additionalInfo || {},
+      createdBy: req.user?.id || null,
+    });
+
+    res.status(201).json({
+      success: true,
+      id: doc._id,   // ✅ send back the new case ID
+      data: doc
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to create case" });
   }
 };

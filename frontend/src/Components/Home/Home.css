@@ -608,3 +608,13 @@ footer {
 .goog-te-banner-frame.skiptranslate {
   display: none !important;
 }
+
+/* Complaint Progress button override */
+.complaint-progress-btn {
+  background-color: #16a34a; /* ✅ Tailwind green-600 */
+  color: white;
+}
+
+.complaint-progress-btn:hover {
+  background-color: #15803d; /* ✅ Tailwind green-700 */
+}
