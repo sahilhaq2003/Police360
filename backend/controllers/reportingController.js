@@ -186,7 +186,7 @@ const getReportingStats = async (req, res) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -217,4 +217,63 @@ const getReportingStats = async (req, res) => {
   }
 };
 
-module.exports = { createReporting, getReportings, getReportingById, updateReporting, deleteReporting, getReportingStats };
+// Get reports assigned to current officer
+const getMyReports = async (req, res) => {
+  try {
+    const officerId = req.user?.id;
+    if (!officerId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const reports = await Reporting.find({ assignedOfficer: officerId })
+      .populate('assignedOfficer', 'name officerId email')
+      .sort({ submittedAt: -1 });
+
+    res.json(reports);
+  } catch (err) {
+    console.error('Error fetching my reports:', err);
+    res.status(500).json({ message: 'Error fetching reports', error: err.message });
+  }
+};
+
+// Assign officer to report
+const assignOfficer = async (req, res) => {
+  try {
+    const { officerId } = req.body;
+    const reportId = req.params.id;
+
+    if (!officerId) {
+      return res.status(400).json({ message: 'Officer ID is required' });
+    }
+
+    const report = await Reporting.findByIdAndUpdate(
+      reportId,
+      { assignedOfficer: officerId, status: 'In Progress' },
+      { new: true }
+    ).populate('assignedOfficer', 'name officerId email');
+
+    if (!report) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Officer assigned successfully',
+      data: report
+    });
+  } catch (err) {
+    console.error('Error assigning officer:', err);
+    res.status(500).json({ message: 'Error assigning officer', error: err.message });
+  }
+};
+
+module.exports = { 
+  createReporting, 
+  getReportings, 
+  getReportingById, 
+  updateReporting, 
+  deleteReporting, 
+  getReportingStats,
+  getMyReports,
+  assignOfficer
+};
