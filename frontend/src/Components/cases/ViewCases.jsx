@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const ViewCases = () => {
   const navigate = useNavigate();
@@ -25,7 +27,7 @@ const ViewCases = () => {
       
       // Filter cases based on status
       const ongoing = casesList.filter(case_ => 
-        case_.status === 'NEW' || case_.status === 'ASSIGNED' || case_.status === 'IN_PROGRESS'
+        case_.status === 'NEW' || case_.status === 'ASSIGNED' || case_.status === 'IN_PROGRESS' || case_.status === 'PENDING_CLOSE'
       );
       const closed = casesList.filter(case_ => case_.status === 'CLOSED');
       
@@ -81,6 +83,56 @@ const ViewCases = () => {
     }
   };
 
+  // Export PDF function
+  const exportPDF = () => {
+    const casesToExport = activeTab === 'ongoing' ? filteredOngoingCases : filteredClosedCases;
+    
+    if (!casesToExport || casesToExport.length === 0) {
+      alert('No cases available to export.');
+      return;
+    }
+
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(`${activeTab === 'ongoing' ? 'Ongoing' : 'Closed'} Cases Report`, 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 25);
+
+         const tableColumn = [
+           'Case ID',
+           'Complainant',
+           'Type',
+           'Location',
+           'Status',
+           'Assigned Officer',
+           'Urgency',
+           'Department',
+           'Created Date'
+         ];
+    
+         const tableRows = casesToExport.map((case_) => [
+           case_.caseId || case_._id,
+           case_.complainant?.name || 'Unknown',
+           case_.complaintDetails?.typeOfComplaint || 'N/A',
+           case_.complaintDetails?.location || 'N/A',
+           case_.status || 'N/A',
+           case_.assignedOfficer ? (case_.assignedOfficer.name || 'Unknown') : 'Not Assigned',
+           case_.itOfficerDetails?.urgencyLevel || 'N/A',
+           case_.itOfficerDetails?.assignedDepartment || 'N/A',
+           new Date(case_.createdAt).toLocaleDateString()
+         ]);
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 35,
+      styles: { fontSize: 8 },
+      headStyles: { fontSize: 8, fillColor: [11, 33, 74] }
+    });
+
+    doc.save(`${activeTab}-cases-report.pdf`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
@@ -124,6 +176,12 @@ const ViewCases = () => {
                 className="w-full px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 placeholder-slate-400 focus:border-[#0B214A] focus:ring-2 focus:ring-[#0B214A]/20"
               />
             </div>
+            <button
+              onClick={exportPDF}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
+            >
+              📄 Export PDF
+            </button>
           </div>
           
           {/* Toggle Buttons */}
@@ -239,6 +297,22 @@ const ViewCases = () => {
                               {case_.resourceAllocation.firearms.length} Firearms
                             </span>
                           )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Close Request Info */}
+                    {case_.status === 'PENDING_CLOSE' && case_.closeRequest && (
+                      <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            Close Request Pending
+                          </span>
+                        </div>
+                        <div className="text-xs text-orange-700">
+                          <p><strong>Requested by:</strong> {case_.closeRequest.requestedBy?.name || 'Unknown'}</p>
+                          <p><strong>Reason:</strong> {case_.closeRequest.reason}</p>
+                          <p><strong>Date:</strong> {new Date(case_.closeRequest.requestedAt).toLocaleDateString()}</p>
                         </div>
                       </div>
                     )}
