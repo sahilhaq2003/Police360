@@ -47,6 +47,7 @@ import ViewCases from './Components/cases/ViewCases';
 import ITCaseDetails from './Components/cases/ITCaseDetails';
 import ItCasesPanel from './Components/cases/ItCasesPanel';
 import OfficerCases from './Components/cases/OfficerCases';
+import OfficerCaseDetails from './Components/cases/OfficerCaseDetails';
 
 import Criminal from './Components/CriminalManage/Criminal';
 import CriminalProfile from './Components/CriminalManage/CriminalProfile';
@@ -106,6 +107,8 @@ function App() {
 
         <Route path="/officer/calendar" element={<OfficerCalendar />} />
         <Route path="/officer/request" element={<OfficerRequest />} />
+        <Route path="/officer/reports" element={<OfficerCases />} />
+        <Route path="/officer/case-details/:id" element={<OfficerCaseDetails />} />
         <Route path="/admin/requests" element={<ViewRequests />} />
         <Route
           path="/itOfficer/ItOfficerDashboard"

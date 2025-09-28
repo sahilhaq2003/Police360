@@ -49,8 +49,20 @@ const ITCaseSchema = new mongoose.Schema({
   },
   
   // Case status and assignment
-  status: { type: String, enum: ['NEW', 'ASSIGNED', 'IN_PROGRESS', 'CLOSED'], default: 'NEW' },
+  status: { type: String, enum: ['NEW', 'ASSIGNED', 'IN_PROGRESS', 'CLOSED', 'DECLINED', 'PENDING_CLOSE'], default: 'NEW' },
   assignedOfficer: { type: mongoose.Schema.Types.ObjectId, ref: 'Officer', default: null },
+  declineReason: { type: String, trim: true },
+  declinedAt: { type: Date },
+  closeRequest: {
+    requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Officer' },
+    requestedAt: { type: Date },
+    reason: { type: String, trim: true },
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Officer' },
+    approvedAt: { type: Date },
+    declinedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Officer' },
+    declinedAt: { type: Date },
+    declineReason: { type: String, trim: true }
+  },
   
   investigationNotes: [
     {

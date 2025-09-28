@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 import { useNavigate, useParams } from "react-router-dom";
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const complaintTypes = ["eCrime", "Tourist Police", "Police Report Inquiry", "File Complaint", "Criminal Status of Financial Cases", "Other"];
 const idTypes = ["National ID", "Passport", "Driver's License", "Voter ID", "Other"];
@@ -21,6 +23,8 @@ export default function ITCaseDetails() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [closeNotes, setCloseNotes] = useState("");
+  const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
 
   useEffect(() => {
     fetchCaseDetails();
@@ -124,12 +128,66 @@ export default function ITCaseDetails() {
     }
   };
 
+  const handleApproveClose = async () => {
+    setSaving(true);
+    setBanner(null);
+
+    try {
+      const res = await axiosInstance.post(`/it-cases/${id}/approve-close`);
+      if (res.data.success) {
+        setBanner({ type: "success", message: "Close request approved successfully!" });
+        fetchCaseDetails(); // Refresh to show updated status
+      } else {
+        setBanner({ type: "error", message: "Failed to approve close request" });
+      }
+    } catch (err) {
+      console.error('Approve close error:', err);
+      setBanner({
+        type: "error",
+        message: err?.response?.data?.message || "Failed to approve close request"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeclineClose = async () => {
+    if (!declineReason.trim()) {
+      setBanner({ type: "error", message: "Please provide a reason for declining the close request" });
+      return;
+    }
+
+    setSaving(true);
+    setBanner(null);
+
+    try {
+      const res = await axiosInstance.post(`/it-cases/${id}/decline-close`, { reason: declineReason.trim() });
+      if (res.data.success) {
+        setBanner({ type: "success", message: "Close request declined successfully!" });
+        setShowDeclineConfirm(false);
+        setDeclineReason("");
+        fetchCaseDetails(); // Refresh to show updated status
+      } else {
+        setBanner({ type: "error", message: "Failed to decline close request" });
+      }
+    } catch (err) {
+      console.error('Decline close error:', err);
+      setBanner({
+        type: "error",
+        message: err?.response?.data?.message || "Failed to decline close request"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'NEW': return 'bg-blue-100 text-blue-800';
       case 'ASSIGNED': return 'bg-yellow-100 text-yellow-800';
       case 'IN_PROGRESS': return 'bg-orange-100 text-orange-800';
       case 'CLOSED': return 'bg-green-100 text-green-800';
+      case 'PENDING_CLOSE': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -141,6 +199,115 @@ export default function ITCaseDetails() {
       case 'HIGH': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Export PDF function
+  const exportPDF = () => {
+    if (!caseData) return;
+
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('IT Case Report', 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Case ID: ${caseData.caseId}`, 14, 25);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 35);
+
+    // Case Summary
+    autoTable(doc, {
+      head: [['Field', 'Value']],
+      body: [
+        ['Case ID', caseData.caseId || 'N/A'],
+        ['Status', caseData.status || 'N/A'],
+        ['Priority', caseData.priority || 'N/A'],
+        ['Lead Officer', caseData.assignedOfficer ? (caseData.assignedOfficer.name || 'Unknown') : 'Not Assigned'],
+        ['Officer ID', caseData.assignedOfficer?.officerId || 'N/A'],
+        ['Officer Department', caseData.assignedOfficer?.department || 'N/A'],
+        ['Urgency Level', caseData.itOfficerDetails?.urgencyLevel || 'N/A'],
+        ['Assigned Department', caseData.itOfficerDetails?.assignedDepartment || 'N/A'],
+        ['Created Date', caseData.createdAt ? new Date(caseData.createdAt).toLocaleDateString() : 'N/A'],
+        ['Last Updated', caseData.updatedAt ? new Date(caseData.updatedAt).toLocaleDateString() : 'N/A']
+      ],
+      startY: 45,
+      styles: { fontSize: 9 },
+      headStyles: { fontSize: 9, fillColor: [11, 33, 74] }
+    });
+
+    // Complainant Information
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.text('Complainant Information', 14, 15);
+    
+    autoTable(doc, {
+      head: [['Field', 'Value']],
+      body: [
+        ['Name', caseData.complainant?.name || 'N/A'],
+        ['Phone', caseData.complainant?.phone || 'N/A'],
+        ['Email', caseData.complainant?.email || 'N/A'],
+        ['Address', caseData.complainant?.address || 'N/A']
+      ],
+      startY: 25,
+      styles: { fontSize: 9 },
+      headStyles: { fontSize: 9, fillColor: [11, 33, 74] }
+    });
+
+    // Complaint Details
+    doc.setFontSize(14);
+    doc.text('Complaint Details', 14, 70);
+    
+    autoTable(doc, {
+      head: [['Field', 'Value']],
+      body: [
+        ['Type of Complaint', caseData.complaintDetails?.typeOfComplaint || 'N/A'],
+        ['Incident Date', caseData.complaintDetails?.incidentDate ? new Date(caseData.complaintDetails.incidentDate).toLocaleDateString() : 'N/A'],
+        ['Location', caseData.complaintDetails?.location || 'N/A'],
+        ['Description', caseData.complaintDetails?.description || 'N/A']
+      ],
+      startY: 80,
+      styles: { fontSize: 9 },
+      headStyles: { fontSize: 9, fillColor: [11, 33, 74] }
+    });
+
+    // IT Officer Analysis
+    if (caseData.itOfficerDetails) {
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.text('IT Officer Analysis', 14, 15);
+      
+      autoTable(doc, {
+        head: [['Field', 'Value']],
+        body: [
+          ['Case Analysis', caseData.itOfficerDetails.caseAnalysis || 'N/A'],
+          ['Technical Details', caseData.itOfficerDetails.technicalDetails || 'N/A'],
+          ['Recommended Actions', caseData.itOfficerDetails.recommendedActions || 'N/A']
+        ],
+        startY: 25,
+        styles: { fontSize: 9 },
+        headStyles: { fontSize: 9, fillColor: [11, 33, 74] }
+      });
+    }
+
+    // Investigation Notes
+    if (caseData.investigationNotes && caseData.investigationNotes.length > 0) {
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.text('Investigation Notes', 14, 15);
+      
+      const notesData = caseData.investigationNotes.map(note => [
+        note.note || 'N/A',
+        typeof note.author === 'object' ? note.author.name : 'Unknown',
+        note.createdAt ? new Date(note.createdAt).toLocaleDateString() : 'N/A'
+      ]);
+      
+      autoTable(doc, {
+        head: [['Note', 'Author', 'Date']],
+        body: notesData,
+        startY: 25,
+        styles: { fontSize: 8 },
+        headStyles: { fontSize: 8, fillColor: [11, 33, 74] }
+      });
+    }
+
+    doc.save(`case-${caseData.caseId}-report.pdf`);
   };
 
   if (loading) {
@@ -218,12 +385,36 @@ export default function ITCaseDetails() {
             {!editing ? (
               <>
                 <button
+                  onClick={exportPDF}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                >
+                  📄 Export PDF
+                </button>
+                <button
                   onClick={() => setEditing(true)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
                   Edit Case
                 </button>
-                {caseData.status !== 'CLOSED' && (
+                {caseData.status === 'PENDING_CLOSE' && (
+                  <>
+                    <button
+                      onClick={handleApproveClose}
+                      disabled={saving}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition"
+                    >
+                      {saving ? "Approving..." : "Approve Close Request"}
+                    </button>
+                    <button
+                      onClick={() => setShowDeclineConfirm(true)}
+                      disabled={saving}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition"
+                    >
+                      Decline Close Request
+                    </button>
+                  </>
+                )}
+                {caseData.status !== 'CLOSED' && caseData.status !== 'PENDING_CLOSE' && (
                   <button
                     onClick={() => setShowCloseConfirm(true)}
                     className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition"
@@ -424,6 +615,35 @@ export default function ITCaseDetails() {
               </div>
             </section>
 
+            {/* Lead Officer Assignment */}
+            <section>
+              <h3 className="text-lg font-semibold text-slate-700 mb-4">Lead Officer Assignment</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">Assigned Officer</label>
+                  <div className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-gray-50 text-slate-700">
+                    {caseData.assignedOfficer ? (
+                      <div>
+                        <div className="font-medium">{caseData.assignedOfficer.name || 'Unknown Officer'}</div>
+                        <div className="text-xs text-slate-500">
+                          ID: {caseData.assignedOfficer.officerId || 'N/A'} | 
+                          Department: {caseData.assignedOfficer.department || 'N/A'}
+                        </div>
+                      </div>
+                    ) : (
+                      'No officer assigned'
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">Assignment Status</label>
+                  <div className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-gray-50 text-slate-700">
+                    {caseData.assignedOfficer ? 'Officer Assigned' : 'Pending Assignment'}
+                  </div>
+                </div>
+              </div>
+            </section>
+
             {/* Additional Information */}
             <section>
               <h3 className="text-lg font-semibold text-slate-700 mb-4">Additional Information</h3>
@@ -494,6 +714,68 @@ export default function ITCaseDetails() {
                       </div>
                     </div>
                   )}
+                </div>
+              </section>
+            )}
+
+            {/* Close Request Information */}
+            {caseData.status === 'PENDING_CLOSE' && caseData.closeRequest && (
+              <section>
+                <h3 className="text-lg font-semibold text-slate-700 mb-4">Close Request Information</h3>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-sm font-medium text-orange-800">Requested by:</span>
+                      <p className="text-sm text-orange-700">{caseData.closeRequest.requestedBy?.name || 'Unknown Officer'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-orange-800">Requested on:</span>
+                      <p className="text-sm text-orange-700">{new Date(caseData.closeRequest.requestedAt).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-orange-800">Reason:</span>
+                      <p className="text-sm text-orange-700">{caseData.closeRequest.reason}</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Previous Close Request History */}
+            {caseData.closeRequest && (caseData.closeRequest.declinedBy || caseData.closeRequest.approvedBy) && (
+              <section>
+                <h3 className="text-lg font-semibold text-slate-700 mb-4">Close Request History</h3>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="space-y-2">
+                    {caseData.closeRequest.declinedBy && (
+                      <>
+                        <div>
+                          <span className="text-sm font-medium text-red-800">Declined by:</span>
+                          <p className="text-sm text-red-700">{caseData.closeRequest.declinedBy?.name || 'Unknown Officer'}</p>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-red-800">Declined on:</span>
+                          <p className="text-sm text-red-700">{new Date(caseData.closeRequest.declinedAt).toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-red-800">Decline reason:</span>
+                          <p className="text-sm text-red-700">{caseData.closeRequest.declineReason}</p>
+                        </div>
+                      </>
+                    )}
+                    {caseData.closeRequest.approvedBy && (
+                      <>
+                        <div>
+                          <span className="text-sm font-medium text-green-800">Approved by:</span>
+                          <p className="text-sm text-green-700">{caseData.closeRequest.approvedBy?.name || 'Unknown Officer'}</p>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-green-800">Approved on:</span>
+                          <p className="text-sm text-green-700">{new Date(caseData.closeRequest.approvedAt).toLocaleString()}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </section>
             )}
@@ -581,6 +863,44 @@ export default function ITCaseDetails() {
                 className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
               >
                 {saving ? "Closing..." : "Close Case"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Decline Close Request Confirmation Modal */}
+      {showDeclineConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Decline Close Request</h3>
+            <p className="text-gray-600 mb-4">
+              Please provide a reason for declining this close request. The case will be returned to the assigned officer.
+            </p>
+            <textarea
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+              placeholder="Enter reason for declining the close request..."
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] mb-6"
+              required
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowDeclineConfirm(false);
+                  setDeclineReason("");
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeclineClose}
+                disabled={saving || !declineReason.trim()}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {saving ? "Declining..." : "Decline Request"}
               </button>
             </div>
           </div>

@@ -78,6 +78,22 @@ const OfficerDashboard = () => {
         });
         setStats(stat);
 
+        // load accidents assigned to me
+        const myId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+        if (myId) {
+          const [accRes, caseRes, itCaseRes] = await Promise.all([
+            axiosInstance.get('/accidents', { params: { page: 1, limit: 50, assignedToMe: 'true' } }),
+            axiosInstance.get('/cases', { params: { assignedOfficer: myId } }),
+            axiosInstance.get('/it-cases', { params: { assignedOfficer: myId, pageSize: 50 } }),
+          ]);
+          const items = accRes.data?.items || accRes.data || [];
+          setMyAccidents(items);
+          const regularCases = caseRes.data?.data || [];
+          const itCases = itCaseRes.data?.data || [];
+          setMyCases([...regularCases, ...itCases]);
+        }
+
+
         // Process accidents data
         const accidentsData = accRes.data?.items || accRes.data || [];
         console.log('Fetched accidents:', accidentsData.length);
@@ -87,6 +103,7 @@ const OfficerDashboard = () => {
         const casesData = caseRes.data?.data || caseRes.data || [];
         console.log('Fetched cases:', casesData.length);
         setMyCases(casesData);
+
 
       } catch (err) {
         console.error('Dashboard data fetch error:', err);
@@ -189,6 +206,41 @@ const OfficerDashboard = () => {
             </div>
           </div>
         </div>
+
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ActionCard
+            icon={<ShieldCheck className="h-10 w-10" />}
+            title="Suspect Manage"
+            desc="Create and manage suspect records."
+            onClick={() => navigate('/SuspectManage/SuspectManage')}
+          />
+        <ActionCard
+            icon={<ShieldCheck className="h-10 w-10" />}
+            title="Criminal Manage"
+            desc="Create and manage criminal records."
+            onClick={() => navigate('/CriminalManage/CriminalManage')}
+          />
+          <ActionCard
+            icon={<ClipboardCheck className="h-10 w-10" />}
+            title="Assigned Cases"
+            desc="View all your assigned cases and investigations."
+            onClick={() => navigate('/officer/reports')}
+          />
+          <button
+            onClick={() => navigate('/officer/assign-accidents')}
+            className="bg-white border border-[#E4E9F2] rounded-2xl p-6 text-left shadow hover:shadow-lg transition hover:-translate-y-0.5"
+          >
+            <div className="mb-3 text-[#00296B]"><BookMarked className="h-10 w-10" /></div>
+            <div className="text-lg font-semibold">Assigned Accidents</div>
+            <div className="text-sm text-[#5A6B85] mt-1">View and assign accidents to officers</div>
+            <div className="mt-4 space-y-2">
+              {loading ? (
+                <SkeletonRow />
+              ) : myAccidents.length === 0 ? (
+                <div className="text-sm text-[#5A6B85]">
+                  No accidents assigned to you. Click to view all accidents and assign them.
+
           </div>
         
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -203,6 +255,7 @@ const OfficerDashboard = () => {
                     <div className={stat.textColor}>{stat.icon}</div>
                   </div>
                   <TrendingUp className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-gray-600">{stat.label}</p>
@@ -212,11 +265,33 @@ const OfficerDashboard = () => {
                     ) : (
                       stat.value
                     )}
+
+                  </div>
+                ))
+              )}
+              {/* (Assigned criminal cases moved to its own card below) */}
+            </div>
+          </button>
+          <ActionCard
+            icon={<CalendarDays className="h-10 w-10" />}
+            title="Duty Schedule"
+            desc="Check upcoming shifts and duty allocations."
+            onClick={() => navigate('/officer/calendar')}
+          />
+          <ActionCard
+            icon={<FileText className="h-10 w-10" />}
+            title="Request Chief"
+            desc="Create requests and track their status."
+            onClick={() => navigate('/officer/request')}
+          />
+          
+
                   </p>
                 </div>
               </div>
             </div>
           ))}
+
         </div>
 
          {/* Main Content Grid */}

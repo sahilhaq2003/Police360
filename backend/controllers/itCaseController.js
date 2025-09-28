@@ -15,6 +15,7 @@ exports.createITCase = async (req, res) => {
       additionalInfo,
       itOfficerDetails,
       resourceAllocation,
+      assignedOfficer,
     } = req.body;
 
     if (!complainant?.name || !complaintDetails?.typeOfComplaint) {
@@ -67,6 +68,7 @@ exports.createITCase = async (req, res) => {
       additionalInfo: additionalInfo || {},
       itOfficerDetails: itOfficerDetails || {},
       resourceAllocation: resourceAllocation || { supportOfficers: [], vehicles: [], firearms: [] },
+      assignedOfficer: assignedOfficer || null,
       createdBy: req.user?.id || null,
       editToken,
     });
@@ -107,10 +109,11 @@ exports.createITCase = async (req, res) => {
 // GET /api/it-cases - list IT cases
 exports.listITCases = async (req, res) => {
   try {
-    const { status, q, page = 1, pageSize = 50 } = req.query;
+    const { status, q, page = 1, pageSize = 50, assignedOfficer } = req.query;
     const filter = {};
     
     if (status) filter.status = status;
+    if (assignedOfficer) filter.assignedOfficer = assignedOfficer;
     if (q) {
       filter.$or = [
         { caseId: { $regex: q, $options: 'i' } },
@@ -123,9 +126,13 @@ exports.listITCases = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(pageSize);
     
     const cases = await ITCase.find(filter)
-      .populate('assignedOfficer', 'name officerId department')
-      .populate('createdBy', 'name officerId department')
-      .populate('resourceAllocation.supportOfficers', 'name officerId department')
+      .populate([
+        { path: 'assignedOfficer', select: 'name officerId department' },
+        { path: 'createdBy', select: 'name officerId department' },
+        { path: 'resourceAllocation.supportOfficers', select: 'name officerId department' },
+        { path: 'closeRequest.requestedBy', select: 'name officerId department' },
+        { path: 'closeRequest.approvedBy', select: 'name officerId department' }
+      ])
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(pageSize));
@@ -148,16 +155,72 @@ exports.listITCases = async (req, res) => {
   }
 };
 
+// POST /api/it-cases/:id/accept - accept an IT case
+exports.acceptITCase = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const case_ = await ITCase.findByIdAndUpdate(
+      id,
+      { status: 'IN_PROGRESS' },
+      { new: true }
+    ).populate('assignedOfficer', 'name officerId department');
+    
+    if (!case_) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+    
+    res.json({ success: true, data: case_ });
+  } catch (err) {
+    console.error('acceptITCase error:', err);
+    res.status(500).json({ message: 'Failed to accept case' });
+  }
+};
+
+// POST /api/it-cases/:id/decline - decline an IT case
+exports.declineITCase = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'Decline reason is required' });
+    }
+    
+    const case_ = await ITCase.findByIdAndUpdate(
+      id,
+      { 
+        status: 'DECLINED',
+        declineReason: reason.trim(),
+        declinedAt: new Date()
+      },
+      { new: true }
+    ).populate('assignedOfficer', 'name officerId department');
+    
+    if (!case_) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+    
+    res.json({ success: true, data: case_ });
+  } catch (err) {
+    console.error('declineITCase error:', err);
+    res.status(500).json({ message: 'Failed to decline case' });
+  }
+};
+
 // GET /api/it-cases/:id - get single IT case
 exports.getITCase = async (req, res) => {
   try {
     const { id } = req.params;
     
     const case_ = await ITCase.findById(id)
-      .populate('assignedOfficer', 'name officerId department')
-      .populate('createdBy', 'name officerId department')
-      .populate('resourceAllocation.supportOfficers', 'name officerId department')
-      .populate('investigationNotes.author', 'name officerId');
+      .populate([
+        { path: 'assignedOfficer', select: 'name officerId department' },
+        { path: 'createdBy', select: 'name officerId department' },
+        { path: 'resourceAllocation.supportOfficers', select: 'name officerId department' },
+        { path: 'investigationNotes.author', select: 'name officerId' },
+        { path: 'closeRequest.requestedBy', select: 'name officerId department' },
+        { path: 'closeRequest.approvedBy', select: 'name officerId department' }
+      ]);
 
     if (!case_) {
       return res.status(404).json({ message: 'IT case not found' });
@@ -263,6 +326,146 @@ exports.updateITCase = async (req, res) => {
     }
     
     res.status(500).json({ message: 'Failed to update IT case' });
+  }
+};
+
+// POST /api/it-cases/:id/notes - assigned officer adds a note
+exports.addNote = async (req, res) => {
+  try {
+    const { note } = req.body;
+    if (!note || !note.trim()) return res.status(400).json({ message: 'Note is required' });
+
+    const case_ = await ITCase.findById(req.params.id);
+    if (!case_) return res.status(404).json({ message: 'IT case not found' });
+
+    // only assigned officer or IT/Admin can add note
+    const uid = req.user?.id;
+    if (case_.assignedOfficer && case_.assignedOfficer.toString() !== uid && req.user?.role !== 'IT Officer' && req.user?.role !== 'Admin') {
+      return res.status(403).json({ message: 'Not authorized to add note' });
+    }
+
+    case_.investigationNotes.push({ author: req.user?.id, note: note.trim() });
+    if (case_.status === 'ASSIGNED') case_.status = 'IN_PROGRESS';
+    await case_.save();
+
+    const populated = await case_.populate('investigationNotes.author', 'name officerId email');
+    res.status(201).json({ success: true, data: populated });
+  } catch (err) {
+    console.error('addNote error', err);
+    res.status(500).json({ message: 'Failed to add note' });
+  }
+};
+
+// POST /api/it-cases/:id/request-close - officer requests to close case
+exports.requestCloseITCase = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const case_ = await ITCase.findById(id);
+    if (!case_) {
+      return res.status(404).json({ message: 'IT case not found' });
+    }
+
+    // Check if officer is assigned to this case
+    const uid = req.user?.id;
+    if (case_.assignedOfficer && case_.assignedOfficer.toString() !== uid) {
+      return res.status(403).json({ message: 'Not authorized to request closure' });
+    }
+
+    // Update case with close request
+    case_.status = 'PENDING_CLOSE';
+    case_.closeRequest = {
+      requestedBy: req.user?.id,
+      requestedAt: new Date(),
+      reason: reason || 'Case investigation completed'
+    };
+
+    await case_.save();
+
+    const populated = await case_.populate([
+      { path: 'assignedOfficer', select: 'name officerId department' },
+      { path: 'closeRequest.requestedBy', select: 'name officerId department' }
+    ]);
+
+    res.json({ success: true, data: populated, message: 'Close request submitted successfully' });
+  } catch (err) {
+    console.error('requestCloseITCase error:', err);
+    res.status(500).json({ message: 'Failed to submit close request' });
+  }
+};
+
+// POST /api/it-cases/:id/approve-close - IT officer approves close request
+exports.approveCloseITCase = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const case_ = await ITCase.findById(id);
+    if (!case_) {
+      return res.status(404).json({ message: 'IT case not found' });
+    }
+
+    if (case_.status !== 'PENDING_CLOSE') {
+      return res.status(400).json({ message: 'No pending close request found' });
+    }
+
+    // Update case to closed
+    case_.status = 'CLOSED';
+    case_.closeRequest.approvedBy = req.user?.id;
+    case_.closeRequest.approvedAt = new Date();
+
+    await case_.save();
+
+    const populated = await case_.populate([
+      { path: 'assignedOfficer', select: 'name officerId department' },
+      { path: 'closeRequest.requestedBy', select: 'name officerId department' },
+      { path: 'closeRequest.approvedBy', select: 'name officerId department' }
+    ]);
+
+    res.json({ success: true, data: populated, message: 'Case closed successfully' });
+  } catch (err) {
+    console.error('approveCloseITCase error:', err);
+    res.status(500).json({ message: 'Failed to approve close request' });
+  }
+};
+
+// POST /api/it-cases/:id/decline-close - IT officer declines close request
+exports.declineCloseITCase = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'Decline reason is required' });
+    }
+
+    const case_ = await ITCase.findById(id);
+    if (!case_) {
+      return res.status(404).json({ message: 'IT case not found' });
+    }
+
+    if (case_.status !== 'PENDING_CLOSE') {
+      return res.status(400).json({ message: 'No pending close request found' });
+    }
+
+    // Revert case to previous status (IN_PROGRESS) and add decline info
+    case_.status = 'IN_PROGRESS';
+    case_.closeRequest.declinedBy = req.user?.id;
+    case_.closeRequest.declinedAt = new Date();
+    case_.closeRequest.declineReason = reason.trim();
+
+    await case_.save();
+
+    const populated = await case_.populate([
+      { path: 'assignedOfficer', select: 'name officerId department' },
+      { path: 'closeRequest.requestedBy', select: 'name officerId department' },
+      { path: 'closeRequest.declinedBy', select: 'name officerId department' }
+    ]);
+
+    res.json({ success: true, data: populated, message: 'Close request declined successfully' });
+  } catch (err) {
+    console.error('declineCloseITCase error:', err);
+    res.status(500).json({ message: 'Failed to decline close request' });
   }
 };
 
