@@ -8,7 +8,7 @@ const RequestSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['Report Issue', 'Request Appointment'],
+    enum: ['Report Issue', 'Request Appointment', 'Equipment Request', 'Leave Request', 'Training Request', 'Other'],
     required: true,
     trim: true,
   },
@@ -37,6 +37,8 @@ const RequestSchema = new mongoose.Schema({
     }
   ],
   appointmentDate: { type: Date },
+  leaveStartDate: { type: Date },
+  leaveEndDate: { type: Date },
 }, { timestamps: { createdAt: true, updatedAt: true } });
 
 module.exports = mongoose.model('Request', RequestSchema);

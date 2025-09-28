@@ -32,13 +32,16 @@ const OfficerDashboard = () => {
         // load accidents assigned to me
         const myId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
         if (myId) {
-          const [accRes, caseRes] = await Promise.all([
+          const [accRes, caseRes, itCaseRes] = await Promise.all([
             axiosInstance.get('/accidents', { params: { page: 1, limit: 50, assignedToMe: 'true' } }),
             axiosInstance.get('/cases', { params: { assignedOfficer: myId } }),
+            axiosInstance.get('/it-cases', { params: { assignedOfficer: myId, pageSize: 50 } }),
           ]);
           const items = accRes.data?.items || accRes.data || [];
           setMyAccidents(items);
-          setMyCases(caseRes.data?.data || []);
+          const regularCases = caseRes.data?.data || [];
+          const itCases = itCaseRes.data?.data || [];
+          setMyCases([...regularCases, ...itCases]);
         }
       } catch (err) {
         // Surface server error details to help debugging (500s)
@@ -107,7 +110,7 @@ const OfficerDashboard = () => {
           <ActionCard
             icon={<ClipboardCheck className="h-10 w-10" />}
             title="Assigned Cases"
-            desc="View all your assigned complaint and accident reports."
+            desc="View all your assigned cases and investigations."
             onClick={() => navigate('/officer/reports')}
           />
           <button
@@ -141,33 +144,6 @@ const OfficerDashboard = () => {
                 ))
               )}
               {/* (Assigned criminal cases moved to its own card below) */}
-            </div>
-          </button>
-          {/* Assigned Cases card (separate from Assigned Accidents) */}
-          <button
-            onClick={() => navigate('/officer/cases')}
-            className="bg-white border border-[#E4E9F2] rounded-2xl p-6 text-left shadow hover:shadow-lg transition hover:-translate-y-0.5"
-          >
-            <div className="mb-3 text-[#00296B]"><BookMarked className="h-10 w-10" /></div>
-            <div className="text-lg font-semibold">Assigned Complaints</div>
-            <div className="text-sm text-[#5A6B85] mt-1">Complaints assigned to you. View details and add investigation notes.</div>
-            <div className="mt-4 space-y-2">
-              {loading ? (
-                <SkeletonRow />
-              ) : myCases.length === 0 ? (
-                <div className="text-sm text-[#5A6B85]">No assigned complaints yet.</div>
-              ) : (
-                myCases.slice(0, 5).map(c => (
-                  <div key={c._id} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] bg-[#F8FAFC]">
-                    <div className="text-sm font-medium">{c.complainant?.name} • {c.complaintDetails?.typeOfComplaint}</div>
-                    <div className="text-[11px] text-[#5A6B85]">{c.status} • {c.complaintDetails?.location}</div>
-                    <div className="text-[10px] text-[#5A6B85] mt-1">{new Date(c.createdAt).toLocaleString()}</div>
-                    <div className="mt-2">
-                      <button onClick={() => navigate(`/cases/${c._id}`)} className="px-2 py-1 text-xs bg-[#EEF2F7] rounded">View</button>
-                    </div>
-                  </div>
-                ))
-              )}
             </div>
           </button>
           <ActionCard

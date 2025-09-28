@@ -7,6 +7,7 @@ const {
   getAllRequests,
   updateRequestStatus,
   addReply,
+  deleteRequest,
 } = require('../controllers/requestController');
 
 // Officer: create request
@@ -23,6 +24,9 @@ router.put('/:id', protect, adminOrIt, updateRequestStatus);
 
 // Admin or IT: add reply
 router.post('/:id/replies', protect, adminOrIt, addReply);
+
+// Admin or IT: delete request
+router.delete('/:id', protect, adminOrIt, deleteRequest);
 
 module.exports = router;
 
