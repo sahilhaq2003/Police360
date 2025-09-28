@@ -52,7 +52,7 @@ function Home() {
           icon: '/images/2190967.png',
           title: 'eCrime',
           desc: 'This service allows applicants to file an e-crime complaint, whether the c.',
-          link: '/report-form',
+          link: '/apply/file-complaint',
         },
         {
           icon: '/images/893905.png',

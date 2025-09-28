@@ -12,6 +12,8 @@ const adminOrIt = (req, res, next) => {
 
 router.get('/', protect, scheduleController.listSchedules);
 router.post('/', protect, adminOrIt, scheduleController.upsertSchedule);
+router.put('/:id/remark', protect, scheduleController.updateScheduleRemark);
+router.put('/:id/reassign', protect, adminOrIt, scheduleController.reassignSchedule);
 router.delete('/:id', protect, adminOrIt, scheduleController.deleteSchedule);
 
 module.exports = router;
