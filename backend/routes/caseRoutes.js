@@ -9,6 +9,11 @@ const {
   assignOfficer,
   addNote,
   closeCase,
+  acceptCase,
+  declineCase,
+  requestCloseCase,
+  approveCloseCase,
+  declineCloseCase,
 } = require('../controllers/caseController');
 
 const auth = require('../middlewares/authMiddleware');
@@ -21,6 +26,11 @@ router.get('/:id', getCase);
 router.post('/:id/assign', auth.protect, auth.itOnly, assignOfficer);
 router.post('/:id/notes', auth.protect, addNote);
 router.post('/:id/close', auth.protect, closeCase);
+router.post('/:id/accept', auth.protect, acceptCase);
+router.post('/:id/decline', auth.protect, declineCase);
+router.post('/:id/request-close', auth.protect, requestCloseCase);
+router.post('/:id/approve-close', auth.protect, auth.itOnly, approveCloseCase);
+router.post('/:id/decline-close', auth.protect, auth.itOnly, declineCloseCase);
 router.put('/:id', auth.protect, updateCase);
 router.delete('/:id', auth.protect, deleteCase);
 
