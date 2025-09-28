@@ -181,4 +181,40 @@ const deleteReporting = async (req, res,next) => {
 };
 
 
-module.exports = { createReporting, getReportings, getReportingById, updateReporting, deleteReporting };
+// Get reporting statistics
+const getReportingStats = async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const [totalReports, todayReports, statusStats] = await Promise.all([
+      Reporting.countDocuments(),
+      Reporting.countDocuments({ submittedAt: { $gte: today, $lt: tomorrow } }),
+      Reporting.aggregate([
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 }
+          }
+        }
+      ])
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        totalReports,
+        todayReports,
+        statusStats
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching reporting stats:', err);
+    res.status(500).json({ message: 'Error fetching stats', error: err.message });
+  }
+};
+
+module.exports = { createReporting, getReportings, getReportingById, updateReporting, deleteReporting, getReportingStats };

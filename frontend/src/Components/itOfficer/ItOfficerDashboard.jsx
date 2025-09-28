@@ -63,7 +63,7 @@ const ItOfficerDashboard = () => {
           <div className="p-6 rounded-2xl bg-white border border-[#EEF2F7]">
             <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
             <div className="space-y-3">
-              <button onClick={() => navigate('/admin/officers')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">Manage Officers</button>
+              <button onClick={() => navigate('/admin/officers')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">View Officers</button>
               <button onClick={() => navigate('/itOfficer/schedules')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">Manage Duty Schedules</button>
               <button onClick={() => navigate('/accidents')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">View Accidents</button>
               <button onClick={() => navigate('/it/cases')} className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition">View Complaints</button>

@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { createReporting, getReportings, getReportingById,updateReporting,deleteReporting  } = require('../controllers/reportingController');
+const { createReporting, getReportings, getReportingById,updateReporting,deleteReporting, getReportingStats  } = require('../controllers/reportingController');
 
 // setup multer
 const storage = multer.diskStorage({
@@ -22,6 +22,7 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024, files: 5 
 
 // Routes
 router.get('/test', (req, res) => res.json({ message: 'Reporting routes working!' }));
+router.get('/stats', getReportingStats);
 router.post('/', upload.array('files', 5), createReporting);
 router.get('/', getReportings);
 router.get('/:id', getReportingById);

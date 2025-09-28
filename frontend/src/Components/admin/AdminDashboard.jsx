@@ -18,6 +18,7 @@ import {
   Ban,
   CarFront,
   ListChecks,
+  CalendarDays,
 } from 'lucide-react';
 
 const ACCIDENT_TYPE = 'Unknown Accident Report';
@@ -173,7 +174,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* MAIN ACTIONS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
           <ActionCard
             icon={<FileText className="h-10 w-10" />}
             title="View Reports"
@@ -197,6 +198,12 @@ const AdminDashboard = () => {
             title="Officer Requests"
             desc="Review and approve/deny officer requests."
             onClick={() => navigate('/admin/requests')}
+          />
+          <ActionCard
+            icon={<CalendarDays className="h-10 w-10" />}
+            title="Duty Schedules"
+            desc="View and search through all officer duty schedules."
+            onClick={() => navigate('/admin/schedules')}
           />
         </div>
 

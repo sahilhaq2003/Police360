@@ -19,6 +19,7 @@ import UpdateReport from './Components/Report/UpdateReport';
 
 import Officers from './Components/admin/officers';
 import OfficerProfile from './Components/admin/OfficerProfile';
+import AdminScheduleView from './Components/admin/AdminScheduleView';
 
 import OfficerDashboard from './Components/officer/officerDashboard';
 import AssignAccidents from './Components/officer/AssignAccidents';
@@ -71,8 +72,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/admin/register-officer" element={<RegisterOfficer />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/officers" element={<Officers />} />
         <Route path="/admin/officer/:id" element={<OfficerProfile />} />
+        <Route path="/admin/schedules" element={<AdminScheduleView />} />
   <Route path="/track/case" element={<ComplaintProgress />} />
   <Route path="/track/case/:id" element={<CaseDetailsPublic />} />
         <Route path="/about" element={<About />} />
