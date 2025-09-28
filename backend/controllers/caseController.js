@@ -13,6 +13,8 @@ exports.createCase = async (req, res) => {
       priority,
       estimatedLoss,
       additionalInfo,
+      itOfficerDetails,
+      resourceAllocation,
     } = req.body;
 
     if (!complainant?.name || !complaintDetails?.typeOfComplaint) {
@@ -23,7 +25,55 @@ exports.createCase = async (req, res) => {
     const makeToken = () => Math.random().toString(36).slice(2, 10);
     const editToken = makeToken();
 
+    // Determine if this is an IT Officer created case
+    // Check if user is IT Officer or if itOfficerDetails has meaningful content
+    const isITCase = req.user?.role === 'IT Officer' || (
+      itOfficerDetails && (
+        itOfficerDetails.caseAnalysis || 
+        itOfficerDetails.technicalDetails || 
+        itOfficerDetails.recommendedActions ||
+        itOfficerDetails.assignedDepartment ||
+        (itOfficerDetails.urgencyLevel && itOfficerDetails.urgencyLevel !== 'MEDIUM') ||
+        itOfficerDetails.followUpRequired
+      )
+    );
+
+    // Generate case ID if this is an IT Officer created case
+    let caseId = null;
+    if (isITCase) {
+      const year = new Date().getFullYear();
+      let isUnique = false;
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      while (!isUnique && attempts < maxAttempts) {
+        const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        caseId = `CASE-${year}-${randomNum}`;
+        
+        // Check if this case ID already exists
+        const existingCase = await Case.findOne({ caseId });
+        if (!existingCase) {
+          isUnique = true;
+        }
+        attempts++;
+      }
+      
+      if (!isUnique) {
+        throw new Error('Unable to generate unique case ID after multiple attempts');
+      }
+    }
+
+    console.log('Creating case with:', { 
+      isITCase, 
+      caseId, 
+      type: isITCase ? 'CASE' : 'COMPLAINT',
+      userRole: req.user?.role,
+      hasItOfficerDetails: !!itOfficerDetails
+    });
+
     const doc = await Case.create({
+      caseId,
+      type: isITCase ? 'CASE' : 'COMPLAINT',
       complainant,
       complaintDetails,
       attachments: attachments || [],
@@ -31,6 +81,8 @@ exports.createCase = async (req, res) => {
       priority: priority || 'MEDIUM',
       estimatedLoss: estimatedLoss || '',
       additionalInfo: additionalInfo || {},
+      itOfficerDetails: itOfficerDetails || {},
+      resourceAllocation: resourceAllocation || { supportOfficers: [], vehicles: [], firearms: [] },
       createdBy: req.user?.id || null,
       editToken,
     });
@@ -40,8 +92,31 @@ exports.createCase = async (req, res) => {
     out.editToken = editToken;
     res.status(201).json({ success: true, id: doc._id, data: out, editToken });
   } catch (err) {
-    console.error('createCase error', err);
-    res.status(500).json({ message: 'Failed to create case' });
+    console.error('createCase error:', err);
+    console.error('Error details:', {
+      name: err.name,
+      message: err.message,
+      code: err.code,
+      stack: err.stack
+    });
+    
+    // Handle specific MongoDB errors
+    if (err.code === 11000) {
+      return res.status(400).json({ message: 'Case ID already exists. Please try again.' });
+    }
+    
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map(e => e.message);
+      console.error('Validation errors:', errors);
+      return res.status(400).json({ message: `Validation error: ${errors.join(', ')}` });
+    }
+    
+    // Handle case ID generation errors
+    if (err.message.includes('Unable to generate unique case ID')) {
+      return res.status(500).json({ message: 'Unable to generate unique case ID. Please try again.' });
+    }
+    
+    res.status(500).json({ message: 'Failed to create case. Please try again.' });
   }
 };
 

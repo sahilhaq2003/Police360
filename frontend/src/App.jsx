@@ -41,6 +41,9 @@ import ComplaintProgress from './Components/cases/ComplaintProgress';
 
 
 import FileComplaint from './Components/cases/FileComplaint';
+import CreateCase from './Components/cases/CreateCase';
+import ViewCases from './Components/cases/ViewCases';
+import ITCaseDetails from './Components/cases/ITCaseDetails';
 import ItCasesPanel from './Components/cases/ItCasesPanel';
 import OfficerCases from './Components/cases/OfficerCases';
 
@@ -108,6 +111,9 @@ function App() {
         <Route path="/itOfficer/schedules" element={<ItDutySchedules />} />
         <Route path="/CriminalManage/Criminal" element={<Criminal />} />
         <Route path="/apply/file-complaint" element={<FileComplaint />} />
+        <Route path="/create-case" element={<CreateCase />} />
+        <Route path="/it/view-cases" element={<ViewCases />} />
+        <Route path="/it/case-details/:id" element={<ITCaseDetails />} />
         <Route path="/it/cases" element={<ItCasesPanel />} />
         <Route path="/officer/cases" element={<OfficerCases />} />
         <Route path="/cases/:id" element={<CaseDetails />} />
