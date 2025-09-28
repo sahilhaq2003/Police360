@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import { getMediaUrl } from '../../utils/mediaUrl';
-import { ArrowLeft, Pencil, Save, X, Loader2, ImagePlus } from 'lucide-react';
+import { ArrowLeft, Pencil, Save, X, Loader2, ImagePlus, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 function normalizeForForm(data) {
   return {
@@ -191,6 +193,83 @@ const OfficerProfile = () => {
     }
   };
 
+  const generatePDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Add header
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Officer Profile Report', 20, 30);
+      
+      // Add officer photo if available
+      if (formData?.photo) {
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 60;
+            canvas.height = 60;
+            ctx.drawImage(img, 0, 0, 60, 60);
+            const imgData = canvas.toDataURL('image/jpeg');
+            doc.addImage(imgData, 'JPEG', 20, 45, 30, 30);
+          };
+          img.src = getMediaUrl(formData.photo);
+        } catch (err) {
+          console.log('Could not load officer photo for PDF');
+        }
+      }
+      
+      // Add officer details
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(formData?.name || 'N/A', 20, 90);
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Officer ID: ${formData?.officerId || 'N/A'}`, 20, 100);
+      doc.text(`Status: ${officer.isActive ? 'Active' : 'Inactive'}`, 20, 110);
+      doc.text(`Role: ${formData?.role || 'N/A'}`, 20, 120);
+      
+      // Add contact information
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Contact Information', 20, 140);
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Email: ${formData?.email || 'N/A'}`, 20, 150);
+      doc.text(`Contact Number: ${formData?.contactNumber || 'N/A'}`, 20, 160);
+      doc.text(`Station: ${formData?.station || 'N/A'}`, 20, 170);
+      doc.text(`Username: ${formData?.username || 'N/A'}`, 20, 180);
+      
+      // Add account information
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Account Information', 20, 200);
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Created: ${officer.createdAt ? new Date(officer.createdAt).toLocaleString() : 'N/A'}`, 20, 210);
+      doc.text(`Last Updated: ${officer.updatedAt ? new Date(officer.updatedAt).toLocaleString() : 'N/A'}`, 20, 220);
+      
+      // Add footer
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'italic');
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, doc.internal.pageSize.height - 20);
+      
+      // Save the PDF
+      const fileName = `Officer_Profile_${formData?.officerId || 'Unknown'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      setError('Failed to generate PDF. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-[#0B214A]">
@@ -222,6 +301,12 @@ const OfficerProfile = () => {
 
           {isAdmin && (
             <div className="flex items-center gap-2">
+              <button
+                onClick={generatePDF}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+              >
+                <Download className="w-4 h-4" /> Download PDF
+              </button>
               {!editMode ? (
                 <>
                   <button onClick={startEdit} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#00296B] text-white hover:opacity-90">
