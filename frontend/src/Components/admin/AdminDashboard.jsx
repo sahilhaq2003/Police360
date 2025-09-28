@@ -18,6 +18,12 @@ import {
   Ban,
   CarFront,
   ListChecks,
+  CalendarDays,
+  Activity,
+  TrendingUp,
+  Clock,
+  Badge,
+  AlertTriangle,
 } from 'lucide-react';
 
 const ACCIDENT_TYPE = 'Unknown Accident Report';
@@ -148,14 +154,51 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
       <AdminHeader />
-      <div className="max-w-6xl mx-auto px-4 py-10">
-        {/* Greeting */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-extrabold tracking-tight">Welcome back, Chief</h2>
-          <p className="text-sm text-[#5A6B85] mt-1">Manage officers, review reports, and keep the system running smoothly.</p>
+      
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
+              <ShieldCheck className="h-8 w-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold">Chief Command Center</h1>
+              <p className="text-blue-100 mt-2">Welcome back, Chief</p>
+              <div className="flex items-center gap-4 mt-2 text-sm">
+                <span className="flex items-center gap-1">
+                  <Badge className="h-4 w-4" />
+                  Administrative Control
+                </span>
+                <span className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  System Management
+                </span>
+              </div>
+            </div>
+          </div>
+        
+          {/* Status Bar */}
+          <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>System Online</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>{new Date().toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              <span>Active Officers: {kpis.activeCount}</span>
+            </div>
+          </div>
         </div>
+        </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-8">
 
         {/* Error */}
         {error && (
@@ -164,154 +207,274 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* KPIs: Officers */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <KpiCard icon={<Users className="w-5 h-5" />} label="Active Officers" value={loading ? '—' : kpis.activeCount} />
-          <KpiCard icon={<UserCheck className="w-5 h-5" />} label="Officers" value={loading ? '—' : kpis.officer} />
-          <KpiCard icon={<UserCog className="w-5 h-5" />} label="IT Officers" value={loading ? '—' : kpis.it} />
-          <KpiCard icon={<ShieldCheck className="w-5 h-5" />} label="Admins" value={loading ? '—' : kpis.admin} />
-        </div>
-
-        {/* MAIN ACTIONS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <ActionCard
-            icon={<FileText className="h-10 w-10" />}
-            title="View Reports"
-            desc="Access complaints, accidents, and summarized analytics."
-            onClick={() => navigate('/admin/reports')}
-          />
-          <ActionCard
-            icon={<UserCheck className="h-10 w-10" />}
-            title="Manage Officers"
-            desc="View, edit, deactivate or delete officer accounts."
-            onClick={() => navigate('/admin/officers')}
-          />
-          <ActionCard
-            icon={<UserPlus className="h-10 w-10" />}
-            title="Register Officer"
-            desc="Onboard new officers with secure credentials."
-            onClick={() => navigate('/admin/register-officer')}
-          />
-          <ActionCard
-            icon={<ListChecks className="h-10 w-10" />}
-            title="Officer Requests"
-            desc="Review and approve/deny officer requests."
-            onClick={() => navigate('/admin/requests')}
-          />
-        </div>
-
-        {/* REPORTS STATS */}
-        <div className="bg-white rounded-2xl border border-[#E4E9F2] shadow p-6 mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-[#00296B]" />
-              <h3 className="text-lg font-semibold">Report Status Overview</h3>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200">
+            <div className="relative p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 rounded-lg bg-gray-100">
+                  <div className="text-gray-700"><Users className="h-6 w-6" /></div>
+                </div>
+                <TrendingUp className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-600">Active Officers</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {loading ? (
+                    <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+                  ) : (
+                    kpis.activeCount
+                  )}
+                </p>
+              </div>
             </div>
-            <span className="text-xs text-[#5A6B85]">
-              {loading ? 'Loading…' : `Total: ${reportStats.totalReports} • Today: ${reportStats.todayReports}`}
+          </div>
+
+          <div className="group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200">
+            <div className="relative p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 rounded-lg bg-gray-100">
+                  <div className="text-gray-700"><UserCheck className="h-6 w-6" /></div>
+                </div>
+                <TrendingUp className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-600">Field Officers</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {loading ? (
+                    <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+                  ) : (
+                    kpis.officer
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200">
+            <div className="relative p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 rounded-lg bg-gray-100">
+                  <div className="text-gray-700"><UserCog className="h-6 w-6" /></div>
+                </div>
+                <TrendingUp className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-600">IT Specialists</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {loading ? (
+                    <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+                  ) : (
+                    kpis.it
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200">
+            <div className="relative p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 rounded-lg bg-gray-100">
+                  <div className="text-gray-700"><ShieldCheck className="h-6 w-6" /></div>
+                </div>
+                <TrendingUp className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-600">Command Staff</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {loading ? (
+                    <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+                  ) : (
+                    kpis.admin
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Professional Dashboard Layout */}
+        <div className="space-y-8">
+          {/* Primary Operations Section */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-900 to-blue-800 px-8 py-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                    <BarChart3 className="h-7 w-7" />
+                    Administrative Operations Center
+                  </h2>
+                  <p className="text-blue-100 mt-2">Access critical police systems and administrative tools</p>
+                </div>
+                <div className="hidden md:flex items-center gap-4 text-sm text-blue-100">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span>System Online</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span>{new Date().toLocaleTimeString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <ActionCard
+                  icon={<FileText className="h-7 w-7" />}
+                  title="View Reports"
+                  description="Access complaints, accidents, and summarized analytics"
+                  onClick={() => navigate('/admin/reports')}
+                  color="blue"
+                  priority="high"
+                />
+                <ActionCard
+                  icon={<UserCheck className="h-7 w-7" />}
+                  title="Manage Officers"
+                  description="View, edit, deactivate or delete officer accounts"
+                  onClick={() => navigate('/admin/officers')}
+                  color="green"
+                  priority="high"
+                />
+                <ActionCard
+                  icon={<UserPlus className="h-7 w-7" />}
+                  title="Register Officer"
+                  description="Onboard new officers with secure credentials"
+                  onClick={() => navigate('/admin/register-officer')}
+                  color="purple"
+                  priority="high"
+                />
+                <ActionCard
+                  icon={<ListChecks className="h-7 w-7" />}
+                  title="Officer Requests"
+                  description="Review and approve/deny officer requests"
+                  onClick={() => navigate('/admin/requests')}
+                  color="orange"
+                  priority="medium"
+                />
+                <ActionCard
+                  icon={<CalendarDays className="h-7 w-7" />}
+                  title="Duty Schedules"
+                  description="View and search through all officer duty schedules"
+                  onClick={() => navigate('/admin/schedules')}
+                  color="yellow"
+                  priority="medium"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Report Status Overview */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gray-800 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Report Status Overview
+                </h3>
+                <span className="bg-gray-700 text-white text-xs px-2 py-1 rounded-full">
+                  {loading ? 'Loading…' : `Total: ${reportStats.totalReports} • Today: ${reportStats.todayReports}`}
+                </span>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="bg-gray-50 rounded-lg p-4 text-center">
+                  <Clock4 className="w-6 h-6 text-gray-600 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-gray-900">{loading ? '—' : reportStats.byStatus['Pending']}</div>
+                  <div className="text-sm text-gray-600">Pending</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 text-center">
+                  <ClipboardCheck className="w-6 h-6 text-gray-600 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-gray-900">{loading ? '—' : reportStats.byStatus['Under Review']}</div>
+                  <div className="text-sm text-gray-600">Under Review</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 text-center">
+                  <FileText className="w-6 h-6 text-gray-600 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-gray-900">{loading ? '—' : reportStats.byStatus['In Progress']}</div>
+                  <div className="text-sm text-gray-600">In Progress</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 text-center">
+                  <CheckCircle2 className="w-6 h-6 text-gray-600 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-gray-900">{loading ? '—' : reportStats.byStatus['Completed']}</div>
+                  <div className="text-sm text-gray-600">Completed</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 text-center">
+                  <Ban className="w-6 h-6 text-gray-600 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-gray-900">{loading ? '—' : reportStats.byStatus['Rejected']}</div>
+                  <div className="text-sm text-gray-600">Rejected</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Reports Overview */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Normal Reports */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="bg-gray-800 px-6 py-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <ListChecks className="h-5 w-5" />
+                  Recent Reports
+                </h3>
+              </div>
+              <div className="p-6">
+                <div className="space-y-3">
+                  {loading ? (
+                    <SkeletonRow />
+                  ) : normalReports.length ? (
+                    normalReports.slice(0, 6).map(r => (
+                      <ReportRow key={r._id} r={r} onOpen={() => navigate(`/admin/reports/${r._id}`)} />
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <ListChecks className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-gray-500">No normal reports found</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Accident Reports */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="bg-gray-800 px-6 py-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <CarFront className="h-5 w-5" />
+                  Recent Accident Reports
+                </h3>
+              </div>
+              <div className="p-6">
+                <div className="space-y-3">
+                  {loading ? (
+                    <SkeletonRow />
+                  ) : recentAccidentReports.length ? (
+                    recentAccidentReports.slice(0, 6).map(r => (
+                      <ReportRow key={r._id} r={r} onOpen={() => navigate(`/admin/reports/${r._id}`)} accent />
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <CarFront className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-gray-500">No accident reports found</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-12 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm border border-gray-200">
+            <ShieldCheck className="h-4 w-4 text-blue-600" />
+            <span className="text-sm text-gray-600">
+              &copy; {new Date().getFullYear()} Police360 Chief Command Center - Administrative Operations
             </span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <ReportStatCard icon={<Clock4 className="w-4 h-4" />} label="Pending" value={loading ? '—' : reportStats.byStatus['Pending']} />
-            <ReportStatCard icon={<ClipboardCheck className="w-4 h-4" />} label="Under Review" value={loading ? '—' : reportStats.byStatus['Under Review']} />
-            <ReportStatCard icon={<FileText className="w-4 h-4" />} label="In Progress" value={loading ? '—' : reportStats.byStatus['In Progress']} />
-            <ReportStatCard icon={<CheckCircle2 className="w-4 h-4" />} label="Completed" value={loading ? '—' : reportStats.byStatus['Completed']} />
-            <ReportStatCard icon={<Ban className="w-4 h-4" />} label="Rejected" value={loading ? '—' : reportStats.byStatus['Rejected']} />
-          </div>
         </div>
-
-        {/* TWO COLUMNS: NORMAL vs ACCIDENT REPORTS */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-          {/* Normal Reports */}
-          <div className="bg-white rounded-2xl border border-[#E4E9F2] shadow p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <ListChecks className="w-5 h-5 text-[#00296B]" />
-              <h3 className="text-lg font-semibold">Recent Reports</h3>
-            </div>
-            <div className="space-y-3">
-              {loading ? (
-                <SkeletonRow />
-              ) : normalReports.length ? (
-                normalReports.slice(0, 8).map(r => (
-                  <ReportRow key={r._id} r={r} onOpen={() => navigate(`/admin/reports/${r._id}`)} />
-                ))
-              ) : (
-                <div className="text-sm text-[#5A6B85]">No normal reports found.</div>
-              )}
-            </div>
-          </div>
-
-          {/* Accident Reports */}
-          <div className="bg-white rounded-2xl border border-[#E4E9F2] shadow p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <CarFront className="w-5 h-5 text-[#C02020]" />
-              <h3 className="text-lg font-semibold">Recent Accident Reports</h3>
-            </div>
-            <div className="space-y-3">
-              {loading ? (
-                <SkeletonRow />
-              ) : recentAccidentReports.length ? (
-                recentAccidentReports.slice(0, 8).map(r => (
-                  <ReportRow key={r._id} r={r} onOpen={() => navigate(`/admin/reports/${r._id}`)} accent />
-                ))
-              ) : (
-                <div className="text-sm text-[#5A6B85]">No accident reports found.</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* OFFICERS ROW */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="col-span-1 lg:col-span-2 bg-white rounded-2xl border border-[#E4E9F2] shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-[#00296B]" />
-                <h3 className="text-lg font-semibold">Role Distribution</h3>
-              </div>
-              <span className="text-xs text-[#5A6B85]">{loading ? 'Loading…' : 'Live'}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <MiniStat label="Officers" value={loading ? '—' : kpis.officer} />
-              <MiniStat label="IT Officers" value={loading ? '—' : kpis.it} />
-              <MiniStat label="Admins" value={loading ? '—' : kpis.admin} />
-            </div>
-            <div className="mt-6 text-xs text-[#5A6B85]">Tip: Click “Manage Officers” to view details and trends.</div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-[#E4E9F2] shadow p-6">
-            <h3 className="text-lg font-semibold mb-4">Recently Added Officers</h3>
-            <div className="space-y-3">
-              {loading ? (
-                <SkeletonRow />
-              ) : recentOfficers.length ? (
-                recentOfficers.map((o) => (
-                  <button
-                    key={o._id}
-                    onClick={() => navigate(`/admin/officer/${o._id}`)}
-                    className="w-full text-left px-3 py-2 rounded-lg border border-[#EEF2F7] hover:bg-[#fefce8] transition flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="text-sm font-medium">{o.name}</div>
-                      <div className="text-[11px] text-[#5A6B85]">
-                        {o.role} • {o.officerId} • {new Date(o.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <span className={`text-[11px] font-semibold ${o.isActive ? 'text-green-700' : 'text-red-600'}`}>
-                      {o.isActive ? 'Active' : 'Deactivated'}
-                    </span>
-                  </button>
-                ))
-              ) : (
-                <div className="text-sm text-[#5A6B85]">No officers found.</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <p className="mt-12 text-center text-xs text-[#5A6B85]">
-          &copy; {new Date().getFullYear()} Police360 Admin Panel
-        </p>
       </div>
     </div>
   );
@@ -322,35 +485,35 @@ const AdminDashboard = () => {
 const ReportRow = ({ r, onOpen, accent = false }) => {
   const badgeClass =
     r.status === 'Completed'
-      ? 'bg-green-50 text-green-700 border border-green-200'
+      ? 'bg-gray-100 text-gray-700'
       : r.status === 'Rejected'
-      ? 'bg-red-50 text-red-700 border border-red-200'
+      ? 'bg-gray-100 text-gray-700'
       : r.status === 'In Progress'
-      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+      ? 'bg-gray-100 text-gray-700'
       : r.status === 'Under Review'
-      ? 'bg-amber-50 text-amber-700 border border-amber-200'
-      : 'bg-gray-50 text-gray-700 border border-gray-200';
+      ? 'bg-gray-100 text-gray-700'
+      : 'bg-gray-100 text-gray-700';
 
   return (
     <button
       onClick={onOpen}
-      className={`w-full text-left px-3 py-2 rounded-lg border border-[#EEF2F7] transition ${
-        accent ? 'hover:bg-[#fff1f2]' : 'hover:bg-[#eef6ff]'
-      }`}
+      className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer group"
     >
-      <div className="flex items-center justify-between">
-        <div className="min-w-0">
-          <div className="text-sm font-medium truncate">
+      <div className="flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-gray-900 group-hover:text-gray-800 transition-colors">
             {r.reportNumber || '—'} • {r.reportType}
           </div>
-          <div className="text-[11px] text-[#5A6B85] truncate">
-            {r.reporterName} • {new Date(r.submittedAt || r.createdAt).toLocaleString()}
+          <div className="text-xs text-gray-600 mt-1 truncate">
+            {r.reporterName} • {new Date(r.submittedAt || r.createdAt).toLocaleDateString()}
           </div>
-          <div className="text-[11px] text-[#5A6B85] truncate">
-            {r.incidentLocation} — {r.incidentDescription}
+          <div className="text-xs text-gray-500 mt-1 truncate">
+            {r.incidentLocation}
           </div>
         </div>
-        <span className={`text-[11px] font-semibold px-2 py-1 rounded-md ${badgeClass}`}>{r.status}</span>
+        <span className={`text-xs px-2 py-1 rounded-full ${badgeClass}`}>
+          {r.status}
+        </span>
       </div>
     </button>
   );
@@ -366,16 +529,31 @@ const KpiCard = ({ icon, label, value }) => (
   </div>
 );
 
-const ActionCard = ({ icon, title, desc, onClick }) => (
-  <button
-    onClick={onClick}
-    className="bg-white border border-[#E4E9F2] rounded-2xl p-6 text-left shadow hover:shadow-lg transition hover:-translate-y-0.5"
-  >
-    <div className="mb-3 text-[#00296B]">{icon}</div>
-    <div className="text-lg font-semibold">{title}</div>
-    <div className="text-sm text-[#5A6B85] mt-1">{desc}</div>
-  </button>
-);
+const ActionCard = ({ icon, title, description, onClick, color = "blue", priority = "medium" }) => {
+  const priorityClasses = {
+    high: "ring-2 ring-gray-300 shadow-lg",
+    medium: "ring-1 ring-gray-200 shadow-md",
+    low: "shadow-sm"
+  };
+
+  return (
+    <div
+      onClick={onClick}
+      className={`group relative overflow-hidden bg-white border border-gray-200 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-gray-300 ${priorityClasses[priority]}`}
+    >
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-gray-700">{icon}</div>
+          {priority === 'high' && (
+            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+          )}
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-gray-800 transition-colors">{title}</h3>
+        <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
+      </div>
+    </div>
+  );
+};
 
 const MiniStat = ({ label, value }) => (
   <div className="rounded-xl border border-[#EEF2F7] bg-[#FAFBFF] p-4">
@@ -395,10 +573,10 @@ const ReportStatCard = ({ icon, label, value }) => (
 );
 
 const SkeletonRow = () => (
-  <div className="animate-pulse space-y-2">
-    <div className="h-10 bg-[#EEF2F7] rounded-lg" />
-    <div className="h-10 bg-[#EEF2F7] rounded-lg" />
-    <div className="h-10 bg-[#EEF2F7] rounded-lg" />
+  <div className="animate-pulse space-y-3">
+    <div className="h-16 bg-gray-200 rounded-lg" />
+    <div className="h-16 bg-gray-200 rounded-lg" />
+    <div className="h-16 bg-gray-200 rounded-lg" />
   </div>
 );
 
