@@ -5,6 +5,11 @@ import Home from './Components/Home/Home';
 import Login from './Components/UserManage/Login';
 import RegisterOfficer from './Components/admin/RegisterOfficer';
 import AdminDashboard from './Components/admin/AdminDashboard';
+import About from './Components/About_us/About';
+import OpenData from './Components/Open_data/OpenData';
+import ApplicationStatus from './Components/ApplicationStatus/ApplicationStatus';
+import Information from './Components/Information/Information';
+import Media from './Components/Media/Media';
 
 import ReportForm from './Components/Report/ReportForm';
 import ReportSuccess from './Components/Report/ReportSuccess';
@@ -70,6 +75,13 @@ function App() {
         <Route path="/admin/officer/:id" element={<OfficerProfile />} />
   <Route path="/track/case" element={<ComplaintProgress />} />
   <Route path="/track/case/:id" element={<CaseDetailsPublic />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/open-data" element={<OpenData />} />
+        <Route path="/application-status" element={<ApplicationStatus />} />
+  <Route path="/complaint-progress/:id" element={<ComplaintProgress />} />
+  <Route path="/accident-progress/:id" element={<TrackAccident />} />
+  <Route path="/information" element={<Information />} />
+        <Route path="/media" element={<Media />} />
 
         <Route path="/report-form" element={<ReportForm />} />
   <Route path="/report-success" element={<ReportSuccess />} />

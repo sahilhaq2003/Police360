@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { ArrowLeft } from 'lucide-react';
+import Nav from '../Nav/Nav';
+import accbg from '../../assets/accbg.png';
 
 function StatusPill({ status }) {
   const map = {
@@ -28,7 +28,6 @@ export default function InsuranceLookup() {
   const [loading, setLoading] = useState(false);
   const [accident, setAccident] = useState(null);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -119,24 +118,30 @@ export default function InsuranceLookup() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div
+      className="min-h-screen relative bg-gradient-to-br from-slate-100 via-slate-50 to-white py-10 px-4 absolute inset-0 bg-cover"
+      style={{ backgroundImage: `url(${accbg})` }}
+      aria-hidden
+    >
+      <div>
+        <Nav />
+        <br />
+        <br />
+        <br />
+        <br />
+      </div>
       <div className="mx-auto max-w-3xl space-y-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0B214A] text-white text-sm font-medium shadow hover:opacity-90 transition"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
-
         {/* Search Box */}
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-xl font-semibold text-[#0B214A]">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-[#0B214A]">
             Insurance Lookup
           </h1>
+          <br />
           <p className="text-sm text-[#0B214A]/70">
             Enter the insurance company and reference number to view the
             accident.
           </p>
+          <br />
 
           <form onSubmit={onSubmit} className="mt-4 grid gap-3 sm:grid-cols-3">
             <input
@@ -198,6 +203,7 @@ export default function InsuranceLookup() {
                 </div>
                 <div className="rounded-lg border border-slate-200 p-3">
                   <span className="text-xs text-[#0B214A]/70">Status</span>
+                  <br />
                   <StatusPill status={accident.status} />
                 </div>
                 <div className="rounded-lg border border-slate-200 p-3">

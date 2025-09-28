@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import AdditionalDetails from './additionalDetails';
 import BasicDetails from './basicDetails';
-import { ArrowLeft } from 'lucide-react';
+import Nav from '../Nav/Nav';
+import accbg from '../../assets/accbg.png';
 
 export default function AccidentForm() {
-  const navigate = useNavigate();
-
   const [form, setForm] = useState({
     accidentType: 'ROAD_ACCIDENT',
     isEmergency: true,
@@ -151,16 +149,17 @@ export default function AccidentForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-white py-10 px-4">
-      {/* Back button ABOVE the form */}
-      <div className="max-w-5xl mx-auto mb-6">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-white bg-[#0B214A] text-white text-sm font-medium shadow hover:opacity-90 transition"
-        >
-          <ArrowLeft size={18} />
-          Back to Home
-        </button>
+    <div
+      className="min-h-screen relative bg-gradient-to-br from-slate-100 via-slate-50 to-white py-10 px-4 absolute inset-0 bg-cover bg-center"
+      style={{ backgroundImage: `url(${accbg})` }}
+      aria-hidden
+    >
+      <div>
+        <Nav />
+        <br />
+        <br />
+        <br />
+        <br />
       </div>
 
       {/* Form Card */}
