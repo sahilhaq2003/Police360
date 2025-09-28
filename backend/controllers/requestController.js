@@ -3,17 +3,30 @@ const Request = require('../models/Request');
 // POST /requests - Officer creates a request
 const createRequest = async (req, res) => {
   try {
-    const { type, subject, description } = req.body;
+    const { type, subject, description, appointmentDate, leaveStartDate, leaveEndDate } = req.body;
     if (!type || !subject || !description) {
       return res.status(400).json({ message: 'type, subject and description are required' });
     }
 
-    const request = await Request.create({
+    const requestData = {
       officerId: req.user.id,
       type,
       subject,
       description,
-    });
+    };
+
+    // Add appointment date for appointment requests
+    if (type === 'Request Appointment' && appointmentDate) {
+      requestData.appointmentDate = appointmentDate;
+    }
+
+    // Add leave dates for leave requests
+    if (type === 'Leave Request') {
+      if (leaveStartDate) requestData.leaveStartDate = leaveStartDate;
+      if (leaveEndDate) requestData.leaveEndDate = leaveEndDate;
+    }
+
+    const request = await Request.create(requestData);
 
     res.status(201).json({ success: true, data: request });
   } catch (err) {
@@ -87,12 +100,29 @@ const addReply = async (req, res) => {
   }
 };
 
+// DELETE /requests/:id - Admin deletes a request
+const deleteRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const request = await Request.findByIdAndDelete(id);
+    
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+    
+    res.status(200).json({ success: true, message: 'Request deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete request' });
+  }
+};
+
 module.exports = {
   createRequest,
   getMyRequests,
   getAllRequests,
   updateRequestStatus,
   addReply,
+  deleteRequest,
 };
 
 
