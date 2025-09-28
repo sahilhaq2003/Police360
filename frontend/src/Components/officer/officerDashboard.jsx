@@ -279,11 +279,12 @@ const OfficerDashboard = () => {
 
           {/* Assigned Accidents */}
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gray-800 px-4 py-3">
+            <div className="bg-gray-800 px-6 py-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <CarFront className="h-5 w-5" />
                 Assigned Accidents
               </h3>
+              <p className="text-gray-300 text-xs mt-1">Traffic incident investigations</p>
             </div>
             <div className="p-4">
               <div className="space-y-3">
@@ -322,13 +323,14 @@ const OfficerDashboard = () => {
             </div>
           </div>
 
-          {/* Assigned Complaints */}
+          {/* Assigned Cases */}
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gray-800 px-4 py-3">
+            <div className="bg-gray-800 px-6 py-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
-                Assigned Complaints
+                Assigned Cases
               </h3>
+              <p className="text-gray-300 text-xs mt-1">Criminal case investigations</p>
             </div>
             <div className="p-4">
               <div className="space-y-3">
@@ -337,7 +339,7 @@ const OfficerDashboard = () => {
                 ) : myCases.length === 0 ? (
                   <div className="text-center py-4">
                     <AlertTriangle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">No complaints assigned</p>
+                    <p className="text-sm text-gray-600">No cases assigned</p>
                     <button
                       onClick={() => navigate('/officer/cases')}
                       className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
