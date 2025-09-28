@@ -519,3 +519,7 @@ export default function CriminalManage() {
     </div>
   );
 }
+
+
+
+
