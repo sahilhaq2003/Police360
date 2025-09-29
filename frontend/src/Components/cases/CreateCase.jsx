@@ -60,6 +60,118 @@ export default function CreateCase() {
   const [complaintSearch, setComplaintSearch] = useState("");
   const [showComplaintDropdown, setShowComplaintDropdown] = useState(false);
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [showResourceAllocation, setShowResourceAllocation] = useState(false);
+
+  // Police departments dropdown options
+  const policeDepartments = [
+    "Criminal Investigation Department (CID)",
+    "Fraud Investigation Unit", 
+    "Cybercrime Unit",
+    "Traffic Police",
+    "Patrol Division",
+    "Detective Division",
+    "Major Crimes Unit",
+    "Financial Crimes Unit",
+    "Drug Enforcement Unit",
+    "Domestic Violence Unit",
+    "Community Relations Department",
+    "Internal Affairs",
+    "Emergency Response Unit",
+    "Special Operations Unit"
+  ];
+
+  // Validation functions
+  const validatePhoneNumber = (phone) => {
+    if (!phone) return '';
+    if (!phone.startsWith('07')) {
+      return 'Phone number must start with 07';
+    }
+    if (phone.length !== 10) {
+      return 'Phone number must have exactly 10 characters';
+    }
+    if (!/^\d+$/.test(phone)) {
+      return 'Phone number must contain only digits';
+    }
+    return '';
+  };
+
+  const validateEmail = (email) => {
+    if (!email) return '';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return 'Please enter a valid email address';
+    }
+    return '';
+  };
+
+  const validateIncidentDate = (date) => {
+    if (!date) return '';
+    const incidentDate = new Date(date);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+    
+    if (incidentDate > today) {
+      return 'Incident date cannot be in the future';
+    }
+    return '';
+  };
+
+  const validateFollowUpDate = (date) => {
+    if (!date) return '';
+    const followUpDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    
+    if (followUpDate <= today) {
+      return 'Follow-up date must be in the future';
+    }
+    return '';
+  };
+
+  // Get today's date for max/min validation
+  const getTodayString = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  const getTomorrowString = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  };
+
+  // Helper function to clear validation errors
+  const clearValidationError = (field) => {
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    });
+  };
+
+  // Enhanced onChange function with validation
+  function onChangeWithValidation(path, value, validator = null) {
+    setForm((prev) => {
+      const keys = path.split(".");
+      const copy = JSON.parse(JSON.stringify(prev));
+      let cur = copy;
+      for (let i = 0; i < keys.length - 1; i++) cur = cur[keys[i]];
+      cur[keys[keys.length - 1]] = value;
+      return copy;
+    });
+
+    // Clear validation error when user changes field
+    clearValidationError(path);
+
+    // Run validator if provided
+    if (validator) {
+      const error = validator(value);
+      if (error) {
+        setValidationErrors(prev => ({ ...prev, [path]: error }));
+      }
+    }
+  }
 
   // Fetch data on component mount
   useEffect(() => {
@@ -126,6 +238,10 @@ export default function CreateCase() {
   const handleComplaintSelection = (complaintId) => {
     setSelectedComplaintId(complaintId);
     setShowComplaintDropdown(false);
+    
+    // Clear validation error when complaint is selected
+    clearValidationError('complaintSelection');
+    
     if (complaintId) {
       const selectedComplaint = complaints.find(c => c._id === complaintId);
       if (selectedComplaint) {
@@ -187,6 +303,22 @@ export default function CreateCase() {
 
   function handleFile(e) {
     const files = Array.from(e.target.files);
+    
+    // Validate file types
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', // Images
+      'application/pdf' // PDFs
+    ];
+    
+    const invalidFiles = files.filter(file => !allowedTypes.includes(file.type));
+    if (invalidFiles.length > 0) {
+      setBanner({ 
+        type: "error", 
+        message: `Only images (JPEG, PNG, GIF, WEBP) and PDF files are allowed. Invalid files: ${invalidFiles.map(f => f.name).join(', ')}` 
+      });
+      return;
+    }
+    
     Promise.all(
       files.map(
         (f) =>
@@ -244,6 +376,13 @@ export default function CreateCase() {
     setBanner(null);
 
     // Basic validation
+    if (!selectedComplaintId) {
+      setBanner({ type: "error", message: "Please select a related complaint." });
+      setLoading(false);
+      setValidationErrors(prev => ({ ...prev, 'complaintSelection': 'Please select a complaint from the dropdown' }));
+      return;
+    }
+
     if (!form.complainant.name.trim()) {
       setBanner({ type: "error", message: "Complainant name is required." });
       setLoading(false);
@@ -417,7 +556,7 @@ export default function CreateCase() {
             {/* Section: Complaint Selection */}
             <section>
               <h3 className="text-lg font-semibold text-slate-700 mb-3">
-                Select Related Complaint (Optional)
+                Select Related Complaint *
               </h3>
               <div className="relative dropdown-container">
                 <input
@@ -427,9 +566,12 @@ export default function CreateCase() {
                     setComplaintSearch(e.target.value);
                     setShowComplaintDropdown(true);
                   }}
-                  onFocus={() => setShowComplaintDropdown(true)}
-                  placeholder="Search complaints by ID, name, or type..."
-                  className={`${inputField} pr-10`}
+                  onFocus={() => {
+                    setShowComplaintDropdown(true);
+                    clearValidationError('complaintSelection');
+                  }}
+                  placeholder="Click to search and select a complaint *"
+                  className={`${inputField} pr-10 ${validationErrors['complaintSelection'] ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''}`}
                 />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                   <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -437,9 +579,9 @@ export default function CreateCase() {
                   </svg>
                 </div>
                 
-                {showComplaintDropdown && complaintSearch && (
+                {showComplaintDropdown && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {filteredComplaints.length > 0 ? (
+                    {complaintSearch && filteredComplaints.length > 0 ? (
                       filteredComplaints.map((complaint) => (
                         <div
                           key={complaint._id}
@@ -451,12 +593,28 @@ export default function CreateCase() {
                           <div className="text-xs text-slate-500">{complaint.complaintDetails?.typeOfComplaint}</div>
                         </div>
                       ))
-                    ) : (
+                    ) : complaintSearch ? (
                       <div className="px-4 py-3 text-slate-500 text-sm">No complaints found</div>
+                    ) : (
+                      complaints.map((complaint) => (
+                        <div
+                          key={complaint._id}
+                          onClick={() => handleComplaintSelection(complaint._id)}
+                          className="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-b-0"
+                        >
+                          <div className="font-medium text-slate-900">{complaint._id}</div>
+                          <div className="text-sm text-slate-600">{complaint.complainant?.name}</div>
+                          <div className="text-xs text-slate-500">{complaint.complaintDetails?.typeOfComplaint}</div>
+                        </div>
+                      ))
                     )}
                   </div>
                 )}
               </div>
+              
+              {validationErrors['complaintSelection'] && (
+                <p className="text-red-600 text-xs mt-1">{validationErrors['complaintSelection']}</p>
+              )}
               
               {selectedComplaintId && (
                 <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
@@ -484,19 +642,29 @@ export default function CreateCase() {
                   placeholder="Address"
                   className={inputField}
                 />
-                <input
-                  value={form.complainant.phone}
-                  onChange={(e) => onChange("complainant.phone", e.target.value)}
-                  placeholder="Phone Number"
-                  className={inputField}
-                />
-                <input
-                  type="email"
-                  value={form.complainant.email}
-                  onChange={(e) => onChange("complainant.email", e.target.value)}
-                  placeholder="Email Address"
-                  className={inputField}
-                />
+                <div>
+                  <input
+                    value={form.complainant.phone}
+                    onChange={(e) => onChangeWithValidation("complainant.phone", e.target.value, validatePhoneNumber)}
+                    placeholder="Phone Number (07xxxxxxxx)"
+                    className={`${inputField} ${validationErrors['complainant.phone'] ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''}`}
+                  />
+                  {validationErrors['complainant.phone'] && (
+                    <p className="text-red-600 text-xs mt-1">{validationErrors['complainant.phone']}</p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    value={form.complainant.email}
+                    onChange={(e) => onChangeWithValidation("complainant.email", e.target.value, validateEmail)}
+                    placeholder="Email Address"
+                    className={`${inputField} ${validationErrors['complainant.email'] ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''}`}
+                  />
+                  {validationErrors['complainant.email'] && (
+                    <p className="text-red-600 text-xs mt-1">{validationErrors['complainant.email']}</p>
+                  )}
+                </div>
               </div>
             </section>
 
@@ -521,14 +689,20 @@ export default function CreateCase() {
                     </option>
                   ))}
                 </select>
-                <input
-                  type="date"
-                  value={form.complaintDetails.incidentDate}
-                  onChange={(e) =>
-                    onChange("complaintDetails.incidentDate", e.target.value)
-                  }
-                  className={inputField}
-                />
+                <div>
+                  <input
+                    type="date"
+                    value={form.complaintDetails.incidentDate}
+                    onChange={(e) =>
+                      onChangeWithValidation("complaintDetails.incidentDate", e.target.value, validateIncidentDate)
+                    }
+                    max={getTodayString()}
+                    className={`${inputField} ${validationErrors['complaintDetails.incidentDate'] ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''}`}
+                  />
+                  {validationErrors['complaintDetails.incidentDate'] && (
+                    <p className="text-red-600 text-xs mt-1">{validationErrors['complaintDetails.incidentDate']}</p>
+                  )}
+                </div>
                 <input
                   value={form.complaintDetails.location}
                   onChange={(e) =>
@@ -545,7 +719,16 @@ export default function CreateCase() {
                   placeholder="Complaint Description"
                   className={`${inputField} h-28`}
                 />
-                <input type="file" multiple onChange={handleFile} />
+                <div>
+                  <input 
+                    type="file" 
+                    multiple 
+                    onChange={handleFile}
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Accepted formats: Images (JPEG, PNG, GIF, WEBP) and PDF files</p>
+                </div>
               </div>
             </section>
 
@@ -594,14 +777,20 @@ export default function CreateCase() {
                       </option>
                     ))}
                   </select>
-                  <input
+                  <select
                     value={form.itOfficerDetails.assignedDepartment}
                     onChange={(e) =>
                       onChange("itOfficerDetails.assignedDepartment", e.target.value)
                     }
-                    placeholder="Assigned Department"
                     className={inputField}
-                  />
+                  >
+                    <option value="">Select Department</option>
+                    {policeDepartments.map((dept) => (
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex items-center gap-4">
                   <label className="flex items-center gap-2">
@@ -615,14 +804,20 @@ export default function CreateCase() {
                     <span className="text-sm text-slate-700">Follow-up Required</span>
                   </label>
                   {form.itOfficerDetails.followUpRequired && (
-                    <input
-                      type="date"
-                      value={form.itOfficerDetails.followUpDate}
-                      onChange={(e) =>
-                        onChange("itOfficerDetails.followUpDate", e.target.value)
-                      }
-                      className={inputField}
-                    />
+                    <div>
+                      <input
+                        type="date"
+                        value={form.itOfficerDetails.followUpDate}
+                        onChange={(e) =>
+                          onChangeWithValidation("itOfficerDetails.followUpDate", e.target.value, validateFollowUpDate)
+                        }
+                        min={getTomorrowString()}
+                        className={`${inputField} ${validationErrors['itOfficerDetails.followUpDate'] ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''}`}
+                      />
+                      {validationErrors['itOfficerDetails.followUpDate'] && (
+                        <p className="text-red-600 text-xs mt-1">{validationErrors['itOfficerDetails.followUpDate']}</p>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -663,9 +858,20 @@ export default function CreateCase() {
 
             {/* Section: Resource Allocation */}
             <section>
-              <h3 className="text-lg font-semibold text-slate-700 mb-3">
-                Resource Allocation
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold text-slate-700">
+                  Resource Allocation
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowResourceAllocation(!showResourceAllocation)}
+                  className="text-sm text-[#0B214A] hover:text-[#0A1E42] font-medium"
+                >
+                  {showResourceAllocation ? 'Hide' : 'Show'} Resource Allocation
+                </button>
+              </div>
+              
+              {showResourceAllocation && (
               <div className="space-y-6">
                 {/* Support Officers */}
                 <div>
@@ -787,6 +993,7 @@ export default function CreateCase() {
                   </div>
                 </div>
               </div>
+              )}
             </section>
 
             {/* Section: Additional Information (Optional) */}
