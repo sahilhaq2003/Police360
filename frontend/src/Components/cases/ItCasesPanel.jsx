@@ -2,13 +2,12 @@ import React, { useEffect, useState } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const ItCasesPanel = () => {
   const [cases, setCases] = useState([]);
-  const [officers, setOfficers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [assigningId, setAssigningId] = useState(null);
-  const [selectedOfficerId, setSelectedOfficerId] = useState('');
   const [onlyUnassigned, setOnlyUnassigned] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -46,16 +45,9 @@ const ItCasesPanel = () => {
         params.q = debouncedSearch;
       }
 
-      const [casesRes, offRes] = await Promise.all([
-        axiosInstance.get('/cases', { params: { ...params, page: 1, pageSize: 50 } }),
-        axiosInstance.get('/officers', { params: { role: 'Officer', pageSize: 100, lite: 'true' } }),
-      ]);
-
+      const casesRes = await axiosInstance.get('/cases', { params: { ...params, page: 1, pageSize: 50 } });
       const casesList = casesRes.data?.data || casesRes.data || [];
-      const offList = offRes.data?.data || offRes.data || offRes.data?.items || [];
-
       setCases(Array.isArray(casesList) ? casesList : []);
-      setOfficers(Array.isArray(offList) ? offList : []);
     } catch (e) {
       const isTimeout = e?.code === 'ECONNABORTED';
       console.error('Failed loading cases or officers', e);
@@ -67,35 +59,41 @@ const ItCasesPanel = () => {
     }
   };
 
-  const startAssign = (c) => {
-    setAssigningId(c._id);
-    setSelectedOfficerId('');
-  };
-
-  const cancelAssign = () => {
-    setAssigningId(null);
-    setSelectedOfficerId('');
-  };
-
-  const confirmAssign = async (c) => {
-    if (!selectedOfficerId) return alert('Please select an officer');
-    try {
-      const res = await axiosInstance.post(`/cases/${c._id}/assign`, { officerId: selectedOfficerId });
-      const updated = res.data?.data || res.data;
-      // update the case in-place so the Assigned Officer column shows immediately
-      setCases(prev => prev.map(item => item._id === c._id ? updated : item));
-      setAssigningId(null);
-      setSelectedOfficerId('');
-      alert('Assigned successfully');
-    } catch (err) {
-      console.error('Assign failed', err);
-      alert(err?.response?.data?.message || 'Failed to assign');
-    }
-  };
 
   if (loading) {
     return <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]"><PoliceHeader /><div className="max-w-7xl mx-auto px-4 py-10">Loading…</div></div>;
   }
+
+  const exportExcelCase = () => {
+    try {
+      if (!cases || cases.length === 0) {
+        alert('No cases to export');
+        return;
+      }
+
+      const rows = cases.map((item) => ({
+        'Case ID': item._id || '',
+        'Complainant': item.complainant?.name || '',
+        'Type': item.complaintDetails?.typeOfComplaint || '',
+        'Status': item.status || '',
+        'Location': item.complaintDetails?.location || '',
+        'Assigned Officer': item.assignedOfficer ? (item.assignedOfficer.name || item.assignedOfficer.officerId) : 'Unassigned',
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Cases');
+
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/octet-stream' });
+      const filename = `cases-${new Date().toISOString().slice(0,10)}.xlsx`;
+      saveAs(blob, filename);
+    } catch (e) {
+      console.error('exportExcelCase error', e);
+      alert('Failed to generate Excel file');
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
@@ -106,7 +104,8 @@ const ItCasesPanel = () => {
             <h1 className="text-4xl font-extrabold tracking-tight">Complaints</h1>
             <p className="text-sm text-[#5A6B85] mt-1">Submitted criminal complaints — assign officers and view details</p>
           </div>
-          <div className="absolute right-0 top-0">
+          <div className="absolute right-0 top-0 flex gap-2">
+            <button onClick={() => navigate('/create-case')} className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-[#0B214A] text-white text-sm hover:bg-[#0A1E42]">+ Create Cases</button>
             <button onClick={() => navigate('/itOfficer/ItOfficerDashboard')} className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">← Back</button>
           </div>
         </div>
@@ -121,6 +120,14 @@ const ItCasesPanel = () => {
               </select>
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={searchField === 'ALL' ? 'Search id, complainant, type, location...' : (searchField === 'ID' ? 'Enter complaint ID...' : (searchField === 'NAME' ? 'Search by complainant name...' : 'Search by complaint type...'))} className="border p-2 rounded-md text-sm w-72" />
               {search && <button onClick={() => { setSearch(''); setDebouncedSearch(''); }} className="text-sm text-slate-500">Clear</button>}
+              {/* Export Excel */}
+                <button
+                  onClick={exportExcelCase}
+                  className="bg-green-600 text-white px-3 py-1 rounded"
+                  title="Download Excel"
+                >
+                  Export Excel
+                </button>
             </div>
           <div className="flex items-center gap-2 text-sm">
             <label className="flex items-center gap-2">
@@ -158,20 +165,6 @@ const ItCasesPanel = () => {
                     <td className="px-4 py-3 align-middle">
                       <div className="flex items-center gap-2">
                         <button onClick={() => navigate(`/cases/${c._id}`)} className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[#D6DEEB] text-xs hover:bg-[#F5F7FB]">View</button>
-                        {assigningId === c._id ? (
-                          <div className="flex items-center gap-2">
-                            <select className="px-2 py-1 rounded-lg border border-[#D6DEEB] bg-white text-xs" value={selectedOfficerId} onChange={(e) => setSelectedOfficerId(e.target.value)}>
-                              <option value="">Select officer…</option>
-                              {officers.map(o => (
-                                <option key={o._id} value={o._id}>{o.name || o.officerId || o.email}</option>
-                              ))}
-                            </select>
-                            <button onClick={() => confirmAssign(c)} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#0B214A] text-white text-xs">Save</button>
-                            <button onClick={cancelAssign} className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[#D6DEEB] text-xs">Cancel</button>
-                          </div>
-                        ) : (
-                          <button onClick={() => startAssign(c)} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#0B214A] text-white text-xs">Assign</button>
-                        )}
                       </div>
                     </td>
                   </tr>

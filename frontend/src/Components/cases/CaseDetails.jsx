@@ -1,8 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { use, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
 import { Link } from "react-router-dom";
+
+// Export utilities
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 function LabelRow({ label, children }) {
   return (
@@ -135,6 +139,54 @@ export default function CaseDetails() {
       setBanner({ type: 'error', message: err?.response?.data?.message || 'Failed to delete' });
       setTimeout(() => setBanner(null), 2500);
     }
+  };
+
+  //Export functions (PDF)
+  const exportPDF = () => {
+    if (!c) return;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('Case Details', 14, 16);
+
+    const tableColumn = ['Field', 'Value'];
+    const rows = [
+      ['ID', c._id || '—'],
+      ['Complainant', c.complainant?.name || '—'],
+      ['Type', c.complaintDetails?.typeOfComplaint || '—'],
+      ['Location', c.complaintDetails?.location || '—'],
+      ['Reported At', c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'],
+      ['Status', c.status || '—'],
+      ['Assigned Officer', c.assignedOfficer?.name || c.assignedOfficer?.officerId || '—'],
+      ['Notes Count', Array.isArray(c.investigationNotes) ? String(c.investigationNotes.length) : '0'],
+      ['Attachments', attachments.length ? String(attachments.length) : '0'],
+      ['ID Type', c.idInfo?.idType || '—'],
+      ['ID Value', c.idInfo?.idValue || '—'],
+      ['Priority', c.priority || '—'],
+      ['Estimated Loss', c.estimatedLoss || '—'],
+      ['Description', c.complaintDetails?.description || '—'],
+      ['Last Updated', c.updatedAt ? new Date(c.updatedAt).toLocaleString() : '—'],
+    ];
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: rows,
+      startY: 24,
+    });
+
+    // If investigation notes exist, add them as a second table
+    if (Array.isArray(c.investigationNotes) && c.investigationNotes.length > 0) {
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.text('Investigation Notes', 14, 16);
+      const notesRows = c.investigationNotes.map((n, i) => [String(i + 1), n.note || '']);
+      autoTable(doc, {
+        head: [['#', 'Note']],
+        body: notesRows,
+        startY: 24,
+      });
+    }
+
+    doc.save(`case-${c._id || 'export'}.pdf`);
   };
 
   return (
@@ -288,57 +340,42 @@ export default function CaseDetails() {
 
           <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
             <h3 className="mb-4 text-lg font-semibold">Add Note / Actions</h3>
-            <textarea value={noteText} onChange={e => setNoteText(e.target.value)} className="border p-2 w-full" placeholder="Add investigation note" />
-            <div className="mt-3 flex gap-2">
-  {/* Add Note */}
-  <button
-    onClick={addNote}
-    className="bg-blue-600 text-white px-3 py-1 rounded"
-  >
-    Add Note
-  </button>
+            <textarea value={noteText} onChange={e => setNoteText(e.target.value)} className="border p-3 w-full rounded-md" placeholder="Add investigation note" />
 
-  {/* Close Case */}
-  <button
-    onClick={closeCase}
-    className="bg-green-600 text-white px-3 py-1 rounded"
-  >
-    Mark as Closed
-  </button>
+            <div className="mt-4 flex items-start justify-between gap-4">
+              {/* Left side: Add Note + Mark as Closed */}
+              <div className="flex items-center gap-3">
+                <button onClick={addNote} className="bg-blue-600 shadow hover:opacity-90 transition text-white px-4 py-2 rounded-md">Add Note</button>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
+            <div className="mt-4 flex items-start justify-between gap-4">
+              {/* Mark as Closed */}
+              <div className="flex items-center gap-3">
+                <button onClick={closeCase} className="bg-green-600 shadow hover:opacity-90 transition text-white px-4 py-2 rounded-md">Mark as Closed</button>
+              </div>
 
-  {/* Update Complaint (Edit) */}
-  <Link
-    to={`/cases/update/${c._id}`}
-    className="bg-indigo-600 text-white px-3 py-1 rounded inline-flex items-center"
-  >
-    Update
-  </Link>
+              {/* Right side: Update / Delete / Back */}
+              <div className="flex items-center gap-3">
+              {/* Export buttons */}
+                <button onClick={exportPDF} className="bg-rose-700 shadow hover:opacity-90 transition text-white px-4 py-2 rounded-md">Export PDF</button>
+                <Link to={`/cases/update/${c._id}`} className="bg-indigo-600 shadow hover:opacity-90 transition text-white px-4 py-2 rounded-md inline-flex items-center">Update</Link>
 
-  <button
-  onClick={async () => {
-    if (!window.confirm("Are you sure you want to delete this complaint?")) return;
-    try {
-      await axiosInstance.delete(`/cases/${c._id}`);
-      alert("Deleted successfully");
-      navigate("/it/cases"); // go back to cases list
-    } catch (err) {
-      alert(err?.response?.data?.message || "Failed to delete");
-    }
-  }}
-  className="bg-rose-600 text-white px-3 py-1 rounded"
->
-  Delete
-</button>
+                <button onClick={async () => {
+                    if (!window.confirm("Are you sure you want to delete this complaint?")) return;
+                    try {
+                      await axiosInstance.delete(`/cases/${c._id}`);
+                      alert("Deleted successfully");
+                      navigate("/it/cases"); // go back to cases list
+                    } catch (err) {
+                      alert(err?.response?.data?.message || "Failed to delete");
+                    }
+                  }} className="bg-rose-600 shadow hover:opacity-90 transition text-white px-4 py-2 rounded-md">Delete</button>
 
-  {/* Back */}
-  <button
-    onClick={() => navigate(-1)}
-    className="px-3 py-1 rounded border"
-  >
-    Back
-  </button>
-</div>
-
+                <button onClick={() => navigate(-1)} className="px-4 py-2 rounded-md border shadow hover:opacity-90 transition">Back</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

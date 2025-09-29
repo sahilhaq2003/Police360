@@ -294,6 +294,94 @@ export default function CriminalRecord() {
       return;
     }
 
+    // Validate NIC number format
+    if (form.nic.length !== 12) {
+      alert('NIC number must be exactly 12 digits');
+      return;
+    }
+
+    // Validate Criminal ID format
+    if (form.criminalId.length !== 6) {
+      alert('Criminal ID must be exactly 6 digits');
+      return;
+    }
+
+    // Validate name length
+    if (form.name.length < 2) {
+      alert('Name must be at least 2 characters long');
+      return;
+    }
+
+    // Validate address length
+    if (form.address.length < 10) {
+      alert('Address must be at least 10 characters long');
+      return;
+    }
+
+    // Validate height and weight ranges
+    if (form.height && Number(form.height) > 250) {
+      alert('Height must be maximum 250 cm');
+      return;
+    }
+
+    if (form.weight && Number(form.weight) > 250) {
+      alert('Weight must be maximum 250 kg');
+      return;
+    }
+
+    // Validate DOB if provided
+    if (form.dob.d && form.dob.m && form.dob.y) {
+      const day = Number(form.dob.d);
+      const month = Number(form.dob.m);
+      const year = Number(form.dob.y);
+      const currentYear = new Date().getFullYear();
+      const age = currentYear - year;
+      
+      const date = new Date(year, month - 1, day);
+      const isValidDate = date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year;
+      
+      if (!isValidDate) {
+        alert('Please enter a valid date of birth');
+        return;
+      }
+      
+      if (age < 0 || age > 120) {
+        alert('Age must be between 0-120 years');
+        return;
+      }
+    }
+
+    // Validate status-specific fields
+    if (form.criminalStatus === 'wanted' && form.rewardPrice) {
+      const reward = Number(form.rewardPrice);
+      if (reward < 0 || reward > 10000000) {
+        alert('Reward price must be between 0 - 10,000,000 LKR');
+        return;
+      }
+    }
+
+    if (form.criminalStatus === 'in prison' && form.prisonDays) {
+      const days = Number(form.prisonDays);
+      if (days < 1 || days > 36500) {
+        alert('Prison time must be between 1-36,500 days (100 years)');
+        return;
+      }
+    }
+
+    if (form.criminalStatus === 'arrested' && form.arrestDate) {
+      if (new Date(form.arrestDate) > new Date()) {
+        alert('Arrest date cannot be in the future');
+        return;
+      }
+    }
+
+    if (form.criminalStatus === 'released' && form.releaseDate) {
+      if (new Date(form.releaseDate) > new Date()) {
+        alert('Release date cannot be in the future');
+        return;
+      }
+    }
+
     // Prepare DOB structure to match model
     const dobData = {};
     if (form.dob.d && form.dob.m && form.dob.y) {
@@ -309,15 +397,25 @@ export default function CriminalRecord() {
     }));
 
     // Upload photo and fingerprint files if new files were selected (they are stored in state)
-    const uploadedPhotoPath = photoFile ? await uploadFile(photoFile) : (photoUrl || undefined);
+    let uploadedPhotoPath = undefined;
+    if (photoFile) {
+      // Only upload if there's a new file to upload
+      uploadedPhotoPath = await uploadFile(photoFile);
+    } else if (photoUrl && !photoUrl.startsWith('blob:')) {
+      // Keep existing photo URL if it's not a blob (which means it's already uploaded)
+      uploadedPhotoPath = photoUrl;
+    }
 
     const fingerprintsData = [];
     for (const p of prints) {
       if (p && p._file) {
+        // Only upload if there's a new file to upload
         const uploaded = await uploadFile(p._file);
-        if (uploaded) fingerprintsData.push({ name: p.name || p._file.name, url: uploaded });
-      } else if (p && p.name && p.url) {
-        // existing server path or preview url
+        if (uploaded) {
+          fingerprintsData.push({ name: p.name || p._file.name, url: uploaded });
+        }
+      } else if (p && p.name && p.url && !p.url.startsWith('blob:')) {
+        // Keep existing fingerprint if it's not a blob (which means it's already uploaded)
         fingerprintsData.push({ name: p.name, url: p.url });
       }
     }
@@ -359,8 +457,8 @@ export default function CriminalRecord() {
       
       // Arrays
       arrests: arrestsData,
-      photo: uploadedPhotoPath || photoUrl || undefined,
-      fingerprints: fingerprintsData,
+      photo: uploadedPhotoPath || undefined,
+      fingerprints: fingerprintsData.length > 0 ? fingerprintsData : undefined,
     };
 
     try {
@@ -496,36 +594,71 @@ export default function CriminalRecord() {
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">NIC Number</label>
                 <input
                   value={form.nic}
-                  onChange={(e) => update("nic", e.target.value)}
-                  placeholder=""
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                    if (value.length <= 12) {
+                      update("nic", value);
+                    }
+                  }}
+                  placeholder="123456789012"
+                  maxLength={12}
                   className="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
                 />
+                {form.nic && form.nic.length !== 12 && (
+                  <p className="text-xs text-red-500 mt-1">NIC must be exactly 12 digits</p>
+                )}
               </div>
             </div>
             {/* Name */}
-            <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Full Name</label>
+            <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Full Name *</label>
             <input
               value={form.name}
-              onChange={(e) => update("name", e.target.value)}
-              placeholder=""
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^a-zA-Z\s]/g, ''); // Only letters and spaces
+                if (value.length <= 50) {
+                  update("name", value);
+                }
+              }}
+              placeholder="Enter full name"
+              maxLength={50}
               className="mb-3 block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
             />
+            {form.name && form.name.length < 2 && (
+              <p className="text-xs text-red-500 mb-3">Name must be at least 2 characters long</p>
+            )}
 
             {/* Aliases */}
             <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Aliases</label>
             <input
               value={form.aliases}
-              onChange={(e) => update("aliases", e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^a-zA-Z\s,]/g, ''); // Only letters, spaces, and commas
+                if (value.length <= 100) {
+                  update("aliases", value);
+                }
+              }}
+              placeholder="Enter aliases separated by commas"
+              maxLength={100}
               className="mb-3 block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
             />
 
             {/* Address */}
-            <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Address</label>
+            <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Address *</label>
             <input
               value={form.address}
-              onChange={(e) => update("address", e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^a-zA-Z0-9\s,.\-/]/g, ''); // Allow letters, numbers, spaces, commas, periods, hyphens, and forward slashes
+                if (value.length <= 200) {
+                  update("address", value);
+                }
+              }}
+              placeholder="Enter full address"
+              maxLength={200}
               className="mb-3 block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
             />
+            {form.address && form.address.length < 10 && (
+              <p className="text-xs text-red-500 mb-3">Address must be at least 10 characters long</p>
+            )}
 
             {/* Two columns */}
             <div className="grid grid-cols-2 gap-4">
@@ -577,37 +710,49 @@ export default function CriminalRecord() {
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Height (cm)</label>
                 <input
                   type="number"
-                  min={50}
+                  min={0}
                   max={250}
                   step={1}
-                  placeholder="50 - 250"
+                  placeholder="Enter height in cm"
                   value={form.height}
                   onChange={(e) => {
                     const raw = Number(e.target.value);
-                    if (Number.isNaN(raw)) { update("height", ""); return; }
-                    const clamped = Math.max(Math.min(250, raw));
+                    if (Number.isNaN(raw)) { 
+                      update("height", ""); 
+                      return; 
+                    }
+                    const clamped = Math.min(250, raw);
                     update("height", String(clamped));
                   }}
                   className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 />
+                {form.height && Number(form.height) > 250 && (
+                  <p className="text-xs text-red-500 mt-1">Height must be maximum 250 cm</p>
+                )}
               </div>
               <div>
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Weight (kg)</label>
                 <input
                   type="number"
-                  min={20}
+                  min={0}
                   max={250}
                   step={1}
-                  placeholder="20 - 250"
+                  placeholder="Enter weight in kg"
                   value={form.weight}
                   onChange={(e) => {
                     const raw = Number(e.target.value);
-                    if (Number.isNaN(raw)) { update("weight", ""); return; }
-                    const clamped = Math.max(Math.min(250, raw));
+                    if (Number.isNaN(raw)) { 
+                      update("weight", ""); 
+                      return; 
+                    }
+                    const clamped = Math.min(250, raw);
                     update("weight", String(clamped));
                   }}
                   className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 />
+                {form.weight && Number(form.weight) > 250 && (
+                  <p className="text-xs text-red-500 mt-1">Weight must be maximum 250 kg</p>
+                )}
               </div>
 
               <div>
@@ -703,12 +848,21 @@ export default function CriminalRecord() {
                 <input
                   type="number"
                   min={0}
+                  max={10000000}
                   step={1}
                   placeholder="Enter reward amount"
                   value={form.rewardPrice}
-                  onChange={(e) => update("rewardPrice", e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    if (value === '' || (Number(value) >= 0 && Number(value) <= 10000000)) {
+                      update("rewardPrice", value);
+                    }
+                  }}
                   className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 />
+                {form.rewardPrice && Number(form.rewardPrice) > 10000000 && (
+                  <p className="text-xs text-red-500 mt-1">Reward must be maximum 10,000,000 LKR</p>
+                )}
               </div>
             )}
 
@@ -717,10 +871,14 @@ export default function CriminalRecord() {
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Arrest Date</label>
                 <input
                   type="date"
+                  max={new Date().toISOString().split('T')[0]}
                   value={form.arrestDate}
                   onChange={(e) => update("arrestDate", e.target.value)}
                   className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 />
+                {form.arrestDate && new Date(form.arrestDate) > new Date() && (
+                  <p className="text-xs text-red-500 mt-1">Arrest date cannot be in the future</p>
+                )}
               </div>
             )}
 
@@ -730,12 +888,21 @@ export default function CriminalRecord() {
                 <input
                   type="number"
                   min={1}
+                  max={36500}
                   step={1}
-                  placeholder="Enter days"
+                  placeholder="Enter days (max: 100 years)"
                   value={form.prisonDays}
-                  onChange={(e) => update("prisonDays", e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    if (value === '' || (Number(value) >= 1 && Number(value) <= 36500)) {
+                      update("prisonDays", value);
+                    }
+                  }}
                   className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 />
+                {form.prisonDays && (Number(form.prisonDays) < 1 || Number(form.prisonDays) > 36500) && (
+                  <p className="text-xs text-red-500 mt-1">Prison time must be between 1-36,500 days (100 years)</p>
+                )}
               </div>
             )}
 
@@ -744,36 +911,81 @@ export default function CriminalRecord() {
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Release Date</label>
                 <input
                   type="date"
+                  max={new Date().toISOString().split('T')[0]}
                   value={form.releaseDate}
                   onChange={(e) => update("releaseDate", e.target.value)}
                   className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 />
+                {form.releaseDate && new Date(form.releaseDate) > new Date() && (
+                  <p className="text-xs text-red-500 mt-1">Release date cannot be in the future</p>
+                )}
               </div>
             )}
 
             {/* DOB */}
             <div className="mt-3">
-              <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">DOB</label>
+              <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Date of Birth</label>
               <div className="flex items-center gap-2">
                 <input
                   placeholder="DD"
+                  maxLength={2}
                   value={form.dob.d}
-                  onChange={(e) => update("dob", { ...form.dob, d: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ''); // Only digits
+                    if (value.length <= 2 && (value === '' || (Number(value) >= 1 && Number(value) <= 31))) {
+                      update("dob", { ...form.dob, d: value });
+                    }
+                  }}
                   className="h-9 w-12 rounded border border-gray-300 px-2 text-center text-sm"
                 />
                 <input
                   placeholder="MM"
+                  maxLength={2}
                   value={form.dob.m}
-                  onChange={(e) => update("dob", { ...form.dob, m: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ''); // Only digits
+                    if (value.length <= 2 && (value === '' || (Number(value) >= 1 && Number(value) <= 12))) {
+                      update("dob", { ...form.dob, m: value });
+                    }
+                  }}
                   className="h-9 w-12 rounded border border-gray-300 px-2 text-center text-sm"
                 />
                 <input
                   placeholder="YYYY"
+                  maxLength={4}
                   value={form.dob.y}
-                  onChange={(e) => update("dob", { ...form.dob, y: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ''); // Only digits
+                    if (value.length <= 4) {
+                      // Allow typing any 4-digit year, validation happens on blur or form submission
+                      update("dob", { ...form.dob, y: value });
+                    }
+                  }}
                   className="h-9 w-16 rounded border border-gray-300 px-2 text-center text-sm"
                 />
               </div>
+              {(() => {
+                const { d, m, y } = form.dob;
+                if (d && m && y) {
+                  const day = Number(d);
+                  const month = Number(m);
+                  const year = Number(y);
+                  const currentYear = new Date().getFullYear();
+                  const age = currentYear - year;
+                  
+                  // Check if date is valid
+                  const date = new Date(year, month - 1, day);
+                  const isValidDate = date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year;
+                  
+                  if (!isValidDate) {
+                    return <p className="text-xs text-red-500 mt-1">Please enter a valid date</p>;
+                  }
+                  if (age < 0 || age > 120) {
+                    return <p className="text-xs text-red-500 mt-1">Age must be between 0-120 years</p>;
+                  }
+                }
+                return null;
+              })()}
             </div>
           </div>
           
@@ -792,7 +1004,7 @@ export default function CriminalRecord() {
                 onClick={() => photoInputRef.current?.click()}
                 className="mt-2 w-40 rounded border border-gray-400 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
               >
-                Upload Photo
+                Upload Photo (Optional)
               </button>
               <input
                 type="file"
@@ -824,7 +1036,7 @@ export default function CriminalRecord() {
           {/* Fingerprints */}
           <div className="col-span-12 lg:col-span-7">
             <div className="mb-2 border-b border-gray-300 pb-1 text-[12px] font-semibold uppercase tracking-wide text-gray-700">
-              Fingerprints
+              Fingerprints (Optional)
             </div>
 
           <div className="grid grid-cols-3 gap-4">
@@ -844,7 +1056,7 @@ export default function CriminalRecord() {
                   onClick={() => choosePrint(i)}
                   className="w-full rounded border border-gray-400 bg-white px-2 py-1 text-xs hover:bg-gray-50"
                 >
-                  {p.url ? "Replace" : "Upload"}
+                  {p.url ? "Replace" : "Upload (Optional)"}
                 </button>
                 <input
                   type="file"
@@ -985,7 +1197,7 @@ export default function CriminalRecord() {
             className="rounded bg-[#0B214A] px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
           >
             {isEditing ? 'Update' : 'Save'}
-          </button>
+      </button>
           <button
             onClick={onCancel}
             className="rounded border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

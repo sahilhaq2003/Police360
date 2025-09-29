@@ -5,6 +5,11 @@ import Home from './Components/Home/Home';
 import Login from './Components/UserManage/Login';
 import RegisterOfficer from './Components/admin/RegisterOfficer';
 import AdminDashboard from './Components/admin/AdminDashboard';
+import About from './Components/About_us/About';
+import OpenData from './Components/Open_data/OpenData';
+import ApplicationStatus from './Components/ApplicationStatus/ApplicationStatus';
+import Information from './Components/Information/Information';
+import Media from './Components/Media/Media';
 
 import ReportForm from './Components/Report/ReportForm';
 import ReportSuccess from './Components/Report/ReportSuccess';
@@ -14,6 +19,7 @@ import UpdateReport from './Components/Report/UpdateReport';
 
 import Officers from './Components/admin/officers';
 import OfficerProfile from './Components/admin/OfficerProfile';
+import AdminScheduleView from './Components/admin/AdminScheduleView';
 
 import OfficerDashboard from './Components/officer/officerDashboard';
 import AssignAccidents from './Components/officer/AssignAccidents';
@@ -36,8 +42,12 @@ import ComplaintProgress from './Components/cases/ComplaintProgress';
 
 
 import FileComplaint from './Components/cases/FileComplaint';
+import CreateCase from './Components/cases/CreateCase';
+import ViewCases from './Components/cases/ViewCases';
+import ITCaseDetails from './Components/cases/ITCaseDetails';
 import ItCasesPanel from './Components/cases/ItCasesPanel';
 import OfficerCases from './Components/cases/OfficerCases';
+import OfficerCaseDetails from './Components/cases/OfficerCaseDetails';
 
 import Criminal from './Components/CriminalManage/Criminal';
 import CriminalProfile from './Components/CriminalManage/CriminalProfile';
@@ -63,10 +73,19 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/admin/register-officer" element={<RegisterOfficer />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/officers" element={<Officers />} />
         <Route path="/admin/officer/:id" element={<OfficerProfile />} />
+        <Route path="/admin/schedules" element={<AdminScheduleView />} />
   <Route path="/track/case" element={<ComplaintProgress />} />
   <Route path="/track/case/:id" element={<CaseDetailsPublic />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/open-data" element={<OpenData />} />
+        <Route path="/application-status" element={<ApplicationStatus />} />
+  <Route path="/complaint-progress/:id" element={<ComplaintProgress />} />
+  <Route path="/accident-progress/:id" element={<TrackAccident />} />
+  <Route path="/information" element={<Information />} />
+        <Route path="/media" element={<Media />} />
 
         <Route path="/report-form" element={<ReportForm />} />
   <Route path="/report-success" element={<ReportSuccess />} />
@@ -88,6 +107,8 @@ function App() {
 
         <Route path="/officer/calendar" element={<OfficerCalendar />} />
         <Route path="/officer/request" element={<OfficerRequest />} />
+        <Route path="/officer/reports" element={<OfficerCases />} />
+        <Route path="/officer/case-details/:id" element={<OfficerCaseDetails />} />
         <Route path="/admin/requests" element={<ViewRequests />} />
         <Route
           path="/itOfficer/ItOfficerDashboard"
@@ -96,6 +117,9 @@ function App() {
         <Route path="/itOfficer/schedules" element={<ItDutySchedules />} />
         <Route path="/CriminalManage/Criminal" element={<Criminal />} />
         <Route path="/apply/file-complaint" element={<FileComplaint />} />
+        <Route path="/create-case" element={<CreateCase />} />
+        <Route path="/it/view-cases" element={<ViewCases />} />
+        <Route path="/it/case-details/:id" element={<ITCaseDetails />} />
         <Route path="/it/cases" element={<ItCasesPanel />} />
         <Route path="/officer/cases" element={<OfficerCases />} />
         <Route path="/cases/:id" element={<CaseDetails />} />
