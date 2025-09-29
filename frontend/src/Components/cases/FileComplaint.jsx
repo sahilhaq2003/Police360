@@ -37,9 +37,74 @@ export default function FileComplaint() {
 
   const [banner, setBanner] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
 
   // prevent selecting future dates for incidentDate
   const today = new Date().toISOString().slice(0, 10);
+
+  // Validation functions
+  const validatePhoneNumber = (phone) => {
+    if (!phone) return '';
+    if (!phone.startsWith('07')) {
+      return 'Phone number must start with 07';
+    }
+    if (phone.length !== 10) {
+      return 'Phone number must have exactly 10 characters';
+    }
+    if (!/^\d+$/.test(phone)) {
+      return 'Phone number must contain only digits';
+    }
+    return '';
+  };
+
+  const validateEmail = (email) => {
+    if (!email) return '';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return 'Please enter a valid email address';
+    }
+    return '';
+  };
+
+  const validateEstimatedLoss = (amount) => {
+    if (!amount) return '';
+    if (!/^\d+$/.test(amount)) {
+      return 'Estimated loss must contain only numbers';
+    }
+    return '';
+  };
+
+  // Helper function to clear validation errors
+  const clearValidationError = (field) => {
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    });
+  };
+
+  // Enhanced onChange function with validation
+  function onChangeWithValidation(path, value, validator = null) {
+    const keys = path.split(".");
+    setForm((prev) => {
+      const copy = JSON.parse(JSON.stringify(prev));
+      let cur = copy;
+      for (let i = 0; i < keys.length - 1; i++) cur = cur[keys[i]];
+      cur[keys[keys.length - 1]] = value;
+      return copy;
+    });
+
+    // Clear validation error when user changes field
+    clearValidationError(path);
+
+    // Run validator if provided
+    if (validator) {
+      const error = validator(value);
+      if (error) {
+        setValidationErrors(prev => ({ ...prev, [path]: error }));
+      }
+    }
+  }
 
   function onChange(path, value) {
     const keys = path.split(".");
@@ -286,18 +351,29 @@ export default function FileComplaint() {
                 placeholder="Full Name"
                 className={inputField}
               />
-              <input
-                value={form.complainant.phone}
-                onChange={(e) => onChange("complainant.phone", e.target.value)}
-                placeholder="Phone"
-                className={inputField}
-              />
-              <input
-                value={form.complainant.email}
-                onChange={(e) => onChange("complainant.email", e.target.value)}
-                placeholder="Email"
-                className={inputField}
-              />
+              <div>
+                <input
+                  value={form.complainant.phone}
+                  onChange={(e) => onChangeWithValidation("complainant.phone", e.target.value, validatePhoneNumber)}
+                  placeholder="Phone (07xxxxxxxx)"
+                  className={`${inputField} ${validationErrors['complainant.phone'] ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''}`}
+                />
+                {validationErrors['complainant.phone'] && (
+                  <p className="text-red-600 text-xs mt-1">{validationErrors['complainant.phone']}</p>
+                )}
+              </div>
+              <div>
+                <input
+                  value={form.complainant.email}
+                  onChange={(e) => onChangeWithValidation("complainant.email", e.target.value, validateEmail)}
+                  placeholder="Email (must contain @ symbol)"
+                  className={`${inputField} ${validationErrors['complainant.email'] ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''}`}
+                />
+                <p className="text-xs text-gray-500 mt-1">💡 Hint: Make sure to include @ symbol in your email address</p>
+                {validationErrors['complainant.email'] && (
+                  <p className="text-red-600 text-xs mt-1">{validationErrors['complainant.email']}</p>
+                )}
+              </div>
               <input
                 value={form.complainant.address}
                 onChange={(e) => onChange("complainant.address", e.target.value)}
@@ -333,12 +409,17 @@ export default function FileComplaint() {
                   </option>
                 ))}
               </select>
-              <input
-                value={form.estimatedLoss}
-                onChange={(e) => onChange("estimatedLoss", e.target.value)}
-                placeholder="Estimated loss - Rs.0 (optional)"
-                className={inputField}
-              />
+              <div>
+                <input
+                  value={form.estimatedLoss}
+                  onChange={(e) => onChangeWithValidation("estimatedLoss", e.target.value, validateEstimatedLoss)}
+                  placeholder="Estimated loss - Rs.0 (numbers only)"
+                  className={`${inputField} ${validationErrors['estimatedLoss'] ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''}`}
+                />
+                {validationErrors['estimatedLoss'] && (
+                  <p className="text-red-600 text-xs mt-1">{validationErrors['estimatedLoss']}</p>
+                )}
+              </div>
             </div>
           </section>
 
@@ -446,19 +527,33 @@ export default function FileComplaint() {
                     placeholder="Name"
                     className={inputField}
                   />
-                  <input
-                    value={w.phone}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setForm((prev) => {
-                        const copy = JSON.parse(JSON.stringify(prev));
-                        copy.additionalInfo.witnesses[idx].phone = val;
-                        return copy;
-                      });
-                    }}
-                    placeholder="Phone"
-                    className={inputField}
-                  />
+                  <div>
+                    <input
+                      value={w.phone}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        // Clear validation error
+                        clearValidationError(`witness_${idx}_phone`);
+                        
+                        setForm((prev) => {
+                          const copy = JSON.parse(JSON.stringify(prev));
+                          copy.additionalInfo.witnesses[idx].phone = val;
+                          return copy;
+                        });
+                        
+                        // Validate phone number
+                        const error = validatePhoneNumber(val);
+                        if (error) {
+                          setValidationErrors(prev => ({ ...prev, [`witness_${idx}_phone`]: error }));
+                        }
+                      }}
+                      placeholder="Phone (07xxxxxxxx)"
+                      className={`${inputField} ${validationErrors[`witness_${idx}_phone`] ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''}`}
+                    />
+                    {validationErrors[`witness_${idx}_phone`] && (
+                      <p className="text-red-600 text-xs mt-1">{validationErrors[`witness_${idx}_phone`]}</p>
+                    )}
+                  </div>
                   <input
                     value={w.id}
                     onChange={(e) => {
@@ -474,13 +569,16 @@ export default function FileComplaint() {
                   />
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      // Clear validation error for this witness before removing
+                      clearValidationError(`witness_${idx}_phone`);
+                      
                       setForm((prev) => {
                         const copy = JSON.parse(JSON.stringify(prev));
                         copy.additionalInfo.witnesses.splice(idx, 1);
                         return copy;
-                      })
-                    }
+                      });
+                    }}
                     className="text-sm text-rose-600 hover:underline"
                   >
                     Remove
