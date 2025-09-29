@@ -95,12 +95,12 @@ export default function ComplaintProgress() {
             value={complaintId}
             onChange={(e) => setComplaintId(e.target.value)}
             placeholder="Enter Complaint ID"
-            className="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+            className="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#0B214A] outline-none bg-white"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow"
+            className="w-full sm:w-auto bg-[#0B214A] text-white px-6 py-3 rounded-lg hover:bg-[#0B114C] disabled:opacity-50 shadow"
           >
             {loading ? "Searching..." : "Search"}
           </button>
