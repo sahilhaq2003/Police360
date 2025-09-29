@@ -18,7 +18,8 @@ import {
   Users,
   TrendingUp,
   Calendar,
-  MapPin
+  MapPin,
+  ArrowLeft
 } from "lucide-react";
 
 export default function SuspectManage() {
@@ -136,10 +137,16 @@ export default function SuspectManage() {
             <h1 className="text-4xl font-bold text-[#0B214A] mb-2">Suspect Management</h1>
             <p className="text-gray-600">Manage suspected persons and custody status</p>
           </div>
-          <button onClick={() => navigate('/SuspectManage/Suspect')} className="flex items-center gap-2 bg-[#0B214A] text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-            <Plus className="h-5 w-5" />
-            Add New Suspect
-          </button>
+          <div className="flex flex-col gap-2">
+            <button onClick={() => navigate('/SuspectManage/Suspect')} className="flex items-center gap-2 bg-[#0B214A] text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+              <Plus className="h-5 w-5" />
+              Add New Suspect
+            </button>
+            <button onClick={() => navigate('/officer/officerDashboard')} className="flex items-center gap-2 bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">

@@ -15,6 +15,7 @@ exports.createCase = async (req, res) => {
       additionalInfo,
       itOfficerDetails,
       resourceAllocation,
+      assignedOfficer,
     } = req.body;
 
     if (!complainant?.name || !complaintDetails?.typeOfComplaint) {
@@ -83,6 +84,7 @@ exports.createCase = async (req, res) => {
       additionalInfo: additionalInfo || {},
       itOfficerDetails: itOfficerDetails || {},
       resourceAllocation: resourceAllocation || { supportOfficers: [], vehicles: [], firearms: [] },
+      assignedOfficer: assignedOfficer || null,
       createdBy: req.user?.id || null,
       editToken,
     });
@@ -117,6 +119,58 @@ exports.createCase = async (req, res) => {
     }
     
     res.status(500).json({ message: 'Failed to create case. Please try again.' });
+  }
+};
+
+// POST /api/cases/:id/accept - accept a case
+exports.acceptCase = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const case_ = await Case.findByIdAndUpdate(
+      id,
+      { status: 'IN_PROGRESS' },
+      { new: true }
+    ).populate('assignedOfficer', 'name officerId department');
+    
+    if (!case_) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+    
+    res.json({ success: true, data: case_ });
+  } catch (err) {
+    console.error('acceptCase error:', err);
+    res.status(500).json({ message: 'Failed to accept case' });
+  }
+};
+
+// POST /api/cases/:id/decline - decline a case
+exports.declineCase = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'Decline reason is required' });
+    }
+    
+    const case_ = await Case.findByIdAndUpdate(
+      id,
+      { 
+        status: 'DECLINED',
+        declineReason: reason.trim(),
+        declinedAt: new Date()
+      },
+      { new: true }
+    ).populate('assignedOfficer', 'name officerId department');
+    
+    if (!case_) {
+      return res.status(404).json({ message: 'Case not found' });
+    }
+    
+    res.json({ success: true, data: case_ });
+  } catch (err) {
+    console.error('declineCase error:', err);
+    res.status(500).json({ message: 'Failed to decline case' });
   }
 };
 
@@ -232,7 +286,114 @@ exports.addNote = async (req, res) => {
   }
 };
 
-// POST /api/cases/:id/close - assigned officer marks closed
+// POST /api/cases/:id/request-close - officer requests to close case
+exports.requestCloseCase = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const doc = await Case.findById(id);
+    if (!doc) return res.status(404).json({ message: 'Case not found' });
+
+    // Check if officer is assigned to this case
+    const uid = req.user?.id;
+    if (doc.assignedOfficer && doc.assignedOfficer.toString() !== uid) {
+      return res.status(403).json({ message: 'Not authorized to request closure' });
+    }
+
+    // Update case with close request
+    doc.status = 'PENDING_CLOSE';
+    doc.closeRequest = {
+      requestedBy: req.user?.id,
+      requestedAt: new Date(),
+      reason: reason || 'Case investigation completed'
+    };
+
+    await doc.save();
+
+    const populated = await doc.populate([
+      { path: 'assignedOfficer', select: 'name officerId department' },
+      { path: 'closeRequest.requestedBy', select: 'name officerId department' }
+    ]);
+
+    res.json({ success: true, data: populated, message: 'Close request submitted successfully' });
+  } catch (err) {
+    console.error('requestCloseCase error', err);
+    res.status(500).json({ message: 'Failed to submit close request' });
+  }
+};
+
+// POST /api/cases/:id/approve-close - IT officer approves close request
+exports.approveCloseCase = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const doc = await Case.findById(id);
+    if (!doc) return res.status(404).json({ message: 'Case not found' });
+
+    if (doc.status !== 'PENDING_CLOSE') {
+      return res.status(400).json({ message: 'No pending close request found' });
+    }
+
+    // Update case to closed
+    doc.status = 'CLOSED';
+    doc.closeRequest.approvedBy = req.user?.id;
+    doc.closeRequest.approvedAt = new Date();
+
+    await doc.save();
+
+    const populated = await doc.populate([
+      { path: 'assignedOfficer', select: 'name officerId department' },
+      { path: 'closeRequest.requestedBy', select: 'name officerId department' },
+      { path: 'closeRequest.approvedBy', select: 'name officerId department' }
+    ]);
+
+    res.json({ success: true, data: populated, message: 'Case closed successfully' });
+  } catch (err) {
+    console.error('approveCloseCase error', err);
+    res.status(500).json({ message: 'Failed to approve close request' });
+  }
+};
+
+// POST /api/cases/:id/decline-close - IT officer declines close request
+exports.declineCloseCase = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'Decline reason is required' });
+    }
+
+    const doc = await Case.findById(id);
+    if (!doc) return res.status(404).json({ message: 'Case not found' });
+
+    if (doc.status !== 'PENDING_CLOSE') {
+      return res.status(400).json({ message: 'No pending close request found' });
+    }
+
+    // Revert case to previous status (IN_PROGRESS) and add decline info
+    doc.status = 'IN_PROGRESS';
+    doc.closeRequest.declinedBy = req.user?.id;
+    doc.closeRequest.declinedAt = new Date();
+    doc.closeRequest.declineReason = reason.trim();
+
+    await doc.save();
+
+    const populated = await doc.populate([
+      { path: 'assignedOfficer', select: 'name officerId department' },
+      { path: 'closeRequest.requestedBy', select: 'name officerId department' },
+      { path: 'closeRequest.declinedBy', select: 'name officerId department' }
+    ]);
+
+    res.json({ success: true, data: populated, message: 'Close request declined successfully' });
+  } catch (err) {
+    console.error('declineCloseCase error', err);
+    res.status(500).json({ message: 'Failed to decline close request' });
+  }
+};
+
+// POST /api/cases/:id/close - assigned officer marks closed (legacy)
 exports.closeCase = async (req, res) => {
   try {
     const doc = await Case.findById(req.params.id);
