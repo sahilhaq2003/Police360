@@ -354,8 +354,8 @@ export default function CriminalRecord() {
     // Validate status-specific fields
     if (form.criminalStatus === 'wanted' && form.rewardPrice) {
       const reward = Number(form.rewardPrice);
-      if (reward < 1000 || reward > 10000000) {
-        alert('Reward price must be between 1,000 - 10,000,000 LKR');
+      if (reward < 0 || reward > 10000000) {
+        alert('Reward price must be between 0 - 10,000,000 LKR');
         return;
       }
     }
@@ -647,7 +647,7 @@ export default function CriminalRecord() {
             <input
               value={form.address}
               onChange={(e) => {
-                const value = e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, ''); // Allow letters, numbers, spaces, commas, periods, hyphens
+                const value = e.target.value.replace(/[^a-zA-Z0-9\s,.\-\/]/g, ''); // Allow letters, numbers, spaces, commas, periods, hyphens, and forward slashes
                 if (value.length <= 200) {
                   update("address", value);
                 }
@@ -847,21 +847,21 @@ export default function CriminalRecord() {
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Reward Price (LKR)</label>
                 <input
                   type="number"
-                  min={1000}
+                  min={0}
                   max={10000000}
-                  step={1000}
-                  placeholder="Enter reward amount (min: 1,000 LKR)"
+                  step={1}
+                  placeholder="Enter reward amount"
                   value={form.rewardPrice}
                   onChange={(e) => {
                     const value = e.target.value.replace(/\D/g, '');
-                    if (value === '' || (Number(value) >= 1000 && Number(value) <= 10000000)) {
+                    if (value === '' || (Number(value) >= 0 && Number(value) <= 10000000)) {
                       update("rewardPrice", value);
                     }
                   }}
                   className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 />
-                {form.rewardPrice && (Number(form.rewardPrice) < 1000 || Number(form.rewardPrice) > 10000000) && (
-                  <p className="text-xs text-red-500 mt-1">Reward must be between 1,000 - 10,000,000 LKR</p>
+                {form.rewardPrice && Number(form.rewardPrice) > 10000000 && (
+                  <p className="text-xs text-red-500 mt-1">Reward must be maximum 10,000,000 LKR</p>
                 )}
               </div>
             )}

@@ -66,6 +66,14 @@ const addCriminal = async (req, res) => {
             });
         }
 
+        // Address format validation - allow letters, numbers, spaces, commas, periods, hyphens, and forward slashes
+        if (!/^[a-zA-Z0-9\s,.\-\/]+$/.test(address)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Address can only contain letters, numbers, spaces, commas, periods, hyphens, and forward slashes'
+            });
+        }
+
         // Gender validation
         if (!['male', 'female'].includes(gender.toLowerCase())) {
             return res.status(400).json({
@@ -107,10 +115,10 @@ const addCriminal = async (req, res) => {
         // Status-specific validations
         if (criminalStatus === 'wanted' && rewardPrice !== undefined && rewardPrice !== null && rewardPrice !== '') {
             const rewardNum = Number(rewardPrice);
-            if (isNaN(rewardNum) || rewardNum < 1000 || rewardNum > 10000000) {
+            if (isNaN(rewardNum) || rewardNum < 0 || rewardNum > 10000000) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Reward price must be between 1,000 - 10,000,000 LKR'
+                    message: 'Reward price must be between 0 - 10,000,000 LKR'
                 });
             }
         }
@@ -315,6 +323,14 @@ const updateCriminal = async (req, res) => {
             });
         }
 
+        // Address format validation - allow letters, numbers, spaces, commas, periods, hyphens, and forward slashes
+        if (address && !/^[a-zA-Z0-9\s,.\-\/]+$/.test(address)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Address can only contain letters, numbers, spaces, commas, periods, hyphens, and forward slashes'
+            });
+        }
+
         // Gender validation
         if (gender && !['male', 'female'].includes(gender.toLowerCase())) {
             return res.status(400).json({
@@ -356,10 +372,10 @@ const updateCriminal = async (req, res) => {
         // Status-specific validations
         if (criminalStatus === 'wanted' && rewardPrice !== undefined && rewardPrice !== null && rewardPrice !== '') {
             const rewardNum = Number(rewardPrice);
-            if (isNaN(rewardNum) || rewardNum < 1000 || rewardNum > 10000000) {
+            if (isNaN(rewardNum) || rewardNum < 0 || rewardNum > 10000000) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Reward price must be between 1,000 - 10,000,000 LKR'
+                    message: 'Reward price must be between 0 - 10,000,000 LKR'
                 });
             }
         }

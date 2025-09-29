@@ -58,7 +58,7 @@ export default function ApplicationStatus() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 font-medium text-white shadow hover:bg-indigo-700 transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#0B214A] px-6 py-3 font-medium text-white shadow hover:bg-[#0B114C] transition disabled:opacity-50"
             >
               {loading ? <Loader2 className="animate-spin" size={18} /> : <Search size={18} />} {loading ? "Opening..." : "Open Progress"}
             </button>
