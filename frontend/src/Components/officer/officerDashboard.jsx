@@ -1,7 +1,22 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FileText, ClipboardCheck, BookMarked, CalendarDays, ShieldCheck, LogOut
+  FileText, 
+  ClipboardCheck, 
+  BookMarked, 
+  CalendarDays, 
+  ShieldCheck, 
+  LogOut,
+  User,
+  CarFront,
+  AlertTriangle,
+  Clock,
+  Activity,
+  TrendingUp,
+  CheckCircle2,
+  BarChart3,
+  Users,
+  Badge
 } from 'lucide-react';
 import axiosInstance from '../../utils/axiosInstance';
 import { getMediaUrl } from '../../utils/mediaUrl';
@@ -20,38 +35,66 @@ const OfficerDashboard = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await axiosInstance.get('/reports/my');
-        setReports(res.data || []);
+        const myId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+        console.log('Fetching data for officer ID:', myId);
+        
+        // Fetch all data in parallel
+        const [reportsRes, accRes, caseRes] = await Promise.all([
+          axiosInstance.get('/reporting/my').catch(err => {
+            console.warn('Reports API not available:', err.message);
+            return { data: [] };
+          }),
+          axiosInstance.get('/accidents', { 
+            params: { 
+              page: 1, 
+              limit: 50, 
+              assignedToMe: 'true' 
+            } 
+          }).catch(err => {
+            console.warn('Accidents API error:', err.message);
+            return { data: { items: [] } };
+          }),
+          axiosInstance.get('/cases', { 
+            params: { 
+              assignedOfficer: myId,
+              page: 1,
+              pageSize: 50
+            } 
+          }).catch(err => {
+            console.warn('Cases API error:', err.message);
+            return { data: { data: [] } };
+          })
+        ]);
+
+        // Process reports data
+        const reportsData = reportsRes.data || [];
+        setReports(reportsData);
+        
         const stat = { assigned: 0, inProgress: 0, completed: 0 };
-        res.data.forEach(r => {
+        reportsData.forEach(r => {
           if (r.status === 'In Progress') stat.inProgress++;
           else if (r.status === 'Completed') stat.completed++;
           else stat.assigned++;
         });
         setStats(stat);
-        // load accidents assigned to me
-        const myId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
-        if (myId) {
-          const [accRes, caseRes, itCaseRes] = await Promise.all([
-            axiosInstance.get('/accidents', { params: { page: 1, limit: 50, assignedToMe: 'true' } }),
-            axiosInstance.get('/cases', { params: { assignedOfficer: myId } }),
-            axiosInstance.get('/it-cases', { params: { assignedOfficer: myId, pageSize: 50 } }),
-          ]);
-          const items = accRes.data?.items || accRes.data || [];
-          setMyAccidents(items);
-          const regularCases = caseRes.data?.data || [];
-          const itCases = itCaseRes.data?.data || [];
-          setMyCases([...regularCases, ...itCases]);
-        }
+
+        // Process accidents data
+        const accidentsData = accRes.data?.items || accRes.data || [];
+        console.log('Fetched accidents:', accidentsData.length);
+        setMyAccidents(accidentsData);
+
+        // Process cases data
+        const casesData = caseRes.data?.data || caseRes.data || [];
+        console.log('Fetched cases:', casesData.length);
+        setMyCases(casesData);
+
       } catch (err) {
-        // Surface server error details to help debugging (500s)
-        if (err?.response) {
-          console.error('Reports API error:', err.response.status, err.response.data);
-        } else if (err?.request) {
-          console.error('Reports API network error (no response):', err.request);
-        } else {
-          console.error('Reports API unexpected error:', err.message);
-        }
+        console.error('Dashboard data fetch error:', err);
+        // Set empty arrays on error to show empty states
+        setReports([]);
+        setMyAccidents([]);
+        setMyCases([]);
+        setStats({ assigned: 0, inProgress: 0, completed: 0 });
       } finally {
         setLoading(false);
       }
@@ -71,149 +114,302 @@ const OfficerDashboard = () => {
     loadMe();
   }, []);
 
-  const recentReports = useMemo(() => reports.slice(0, 5), [reports]);
+  const quickStats = useMemo(() => ([
+    { 
+      label: 'Assigned Cases', 
+      value: stats.assigned, 
+      icon: <ClipboardCheck className="h-6 w-6" />,
+      color: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50',
+      textColor: 'text-blue-600'
+    },
+    { 
+      label: 'In Progress', 
+      value: stats.inProgress, 
+      icon: <BookMarked className="h-6 w-6" />,
+      color: 'from-orange-500 to-orange-600',
+      bgColor: 'bg-orange-50',
+      textColor: 'text-orange-600'
+    },
+    { 
+      label: 'Completed', 
+      value: stats.completed, 
+      icon: <FileText className="h-6 w-6" />,
+      color: 'from-green-500 to-green-600',
+      bgColor: 'bg-green-50',
+      textColor: 'text-green-600'
+    },
+  ]), [stats]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
       <PoliceHeader />
-      <div className="max-w-6xl mx-auto px-4 py-10">
-      <div className="flex items-center gap-3">
-            {me?.photo ? (
-              <img src={getMediaUrl(me.photo)} alt={me.name} className="w-15 h-15 rounded-full object-cover border border-[#E4E9F2]" />
-            ) : (
-              <ShieldCheck className="w-6 h-6 text-[#00296B]" />
-            )}
-            <h2 className="text-3xl font-extrabold tracking-tight mb-4">Welcome, Officer</h2>           
+      
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
+              {me?.photo ? (
+                <img src={getMediaUrl(me.photo)} alt={me.name} className="w-8 h-8 rounded-full object-cover" />
+              ) : (
+                <ShieldCheck className="h-8 w-8" />
+              )}
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold">Officer Command Center</h1>
+              <p className="text-blue-100 mt-2">Welcome back, {me?.name || 'Officer'}</p>
+              <div className="flex items-center gap-4 mt-2 text-sm">
+                <span className="flex items-center gap-1">
+                  <Badge className="h-4 w-4" />
+                  {me?.officerId || 'ID: N/A'}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  {me?.station || 'Station: N/A'}
+                </span>
+              </div>
+            </div>
           </div>
         
-        <p className="text-sm text-[#5A6B85] mb-8">Here is your report summary and recent activity overview.</p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-          <KpiCard icon={<ClipboardCheck className="w-5 h-5" />} label="Assigned" value={stats.assigned} />
-          <KpiCard icon={<BookMarked className="w-5 h-5" />} label="In Progress" value={stats.inProgress} />
-          <KpiCard icon={<FileText className="w-5 h-5" />} label="Completed" value={stats.completed} />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ActionCard
-            icon={<ShieldCheck className="h-10 w-10" />}
-            title="Suspect Manage"
-            desc="Create and manage suspect records."
-            onClick={() => navigate('/SuspectManage/SuspectManage')}
-          />
-        <ActionCard
-            icon={<ShieldCheck className="h-10 w-10" />}
-            title="Criminal Manage"
-            desc="Create and manage criminal records."
-            onClick={() => navigate('/CriminalManage/CriminalManage')}
-          />
-          <ActionCard
-            icon={<ClipboardCheck className="h-10 w-10" />}
-            title="Assigned Cases"
-            desc="View all your assigned cases and investigations."
-            onClick={() => navigate('/officer/reports')}
-          />
-          <button
-            onClick={() => navigate('/officer/assign-accidents')}
-            className="bg-white border border-[#E4E9F2] rounded-2xl p-6 text-left shadow hover:shadow-lg transition hover:-translate-y-0.5"
-          >
-            <div className="mb-3 text-[#00296B]"><BookMarked className="h-10 w-10" /></div>
-            <div className="text-lg font-semibold">Assigned Accidents</div>
-            <div className="text-sm text-[#5A6B85] mt-1">View and assign accidents to officers</div>
-            <div className="mt-4 space-y-2">
-              {loading ? (
-                <SkeletonRow />
-              ) : myAccidents.length === 0 ? (
-                <div className="text-sm text-[#5A6B85]">
-                  No accidents assigned to you. Click to view all accidents and assign them.
-                </div>
-              ) : (
-                myAccidents.slice(0, 5).map((a) => (
-                  <div
-                    key={a._id}
-                    className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] bg-[#F8FAFC]"
-                  >
-                    <div className="text-sm font-medium">{a.trackingId} • {a.accidentType?.replaceAll('_', ' ')}</div>
-                    <div className="text-[11px] text-[#5A6B85]">{a.status} • {a.locationText}</div>
-                    {a.assignedOfficer && (
-                      <div className="text-[10px] text-[#5A6B85] mt-1">
-                        Assigned to: {a.assignedOfficer.name}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-              {/* (Assigned criminal cases moved to its own card below) */}
+          {/* Status Bar */}
+          <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>On Duty</span>
             </div>
-          </button>
-          <ActionCard
-            icon={<CalendarDays className="h-10 w-10" />}
-            title="Duty Schedule"
-            desc="Check upcoming shifts and duty allocations."
-            onClick={() => navigate('/officer/calendar')}
-          />
-          <ActionCard
-            icon={<FileText className="h-10 w-10" />}
-            title="Request Chief"
-            desc="Create requests and track their status."
-            onClick={() => navigate('/officer/request')}
-          />
-          
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>{new Date().toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              <span>Active Cases: {stats.assigned + stats.inProgress}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {quickStats.map((stat, idx) => (
+            <div key={idx} className="group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200">
+              <div className="relative p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-lg bg-gray-100">
+                    <div className="text-gray-700">{stat.icon}</div>
+                  </div>
+                  <TrendingUp className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {loading ? (
+                      <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+                    ) : (
+                      stat.value
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="mt-10">
-          <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-          <div className="space-y-3">
-            {loading ? <SkeletonRow /> : recentReports.length === 0 ? (
-              <p className="text-sm text-[#5A6B85]">No recent reports.</p>
-            ) : (
-              recentReports.map((r) => (
-                <button
-                  key={r._id}
-                  onClick={() => navigate(`/officer/reports/${r._id}`)}
-                  className="w-full text-left px-4 py-3 rounded-lg border border-[#EEF2F7] hover:bg-[#EEF6FF] transition"
-                >
-                  <div className="text-sm font-medium">{r.reportNumber} • {r.reportType}</div>
-                  <div className="text-[11px] text-[#5A6B85]">{r.status} • {new Date(r.createdAt).toLocaleString()}</div>
-                </button>
-              ))
-            )}
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Field Operations */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gray-800 px-6 py-4">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Field Operations
+              </h2>
+              <p className="text-gray-300 text-xs mt-1">Access operational tools</p>
+            </div>
+            
+            <div className="p-4">
+              <div className="space-y-3">
+                <ActionCard
+                  icon={<User className="h-5 w-5" />}
+                  title="Suspect Management"
+                  description="Manage suspect records"
+                  onClick={() => navigate('/SuspectManage/SuspectManage')}
+                  color="blue"
+                />
+                <ActionCard
+                  icon={<ShieldCheck className="h-5 w-5" />}
+                  title="Criminal Records"
+                  description="Manage case files"
+                  onClick={() => navigate('/CriminalManage/CriminalManage')}
+                  color="red"
+                />
+                <ActionCard
+                  icon={<ClipboardCheck className="h-5 w-5" />}
+                  title="Assigned Cases"
+                  description="View complaint reports"
+                  onClick={() => navigate('/officer/reports')}
+                  color="green"
+                />
+                <ActionCard
+                  icon={<CalendarDays className="h-5 w-5" />}
+                  title="Duty Schedule"
+                  description="Check shift assignments"
+                  onClick={() => navigate('/officer/calendar')}
+                  color="purple"
+                />
+                <ActionCard
+                  icon={<FileText className="h-5 w-5" />}
+                  title="Request Chief"
+                  description="Submit requests"
+                  onClick={() => navigate('/officer/request')}
+                  color="orange"
+                />
+                <ActionCard
+                  icon={<CarFront className="h-5 w-5" />}
+                  title="Traffic Incidents"
+                  description="Manage investigations"
+                  onClick={() => navigate('/officer/assign-accidents')}
+                  color="yellow"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Assigned Accidents */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gray-800 px-6 py-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <CarFront className="h-5 w-5" />
+                Assigned Accidents
+              </h3>
+              <p className="text-gray-300 text-xs mt-1">Traffic incident investigations</p>
+            </div>
+            <div className="p-4">
+              <div className="space-y-3">
+                {loading ? (
+                  <SkeletonRow />
+                ) : myAccidents.length === 0 ? (
+                  <div className="text-center py-4">
+                    <CarFront className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">No accidents assigned</p>
+                    <button 
+                      onClick={() => navigate('/officer/assign-accidents')}
+                      className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      View all accidents
+                    </button>
+                  </div>
+                ) : (
+                  myAccidents.slice(0, 3).map((a) => (
+                    <div
+                      key={a._id}
+                      className="p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => navigate('/officer/assign-accidents')}
+                    >
+                      <div className="text-sm font-medium text-gray-900">{a.trackingId}</div>
+                      <div className="text-xs text-gray-600 mt-1">{a.accidentType?.replaceAll('_', ' ')}</div>
+                      <div className="text-xs text-gray-500 mt-1">{a.status} • {a.locationText}</div>
+                      {a.assignedOfficer && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          Assigned to: {a.assignedOfficer.name}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Assigned Cases */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gray-800 px-6 py-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Assigned Cases
+              </h3>
+              <p className="text-gray-300 text-xs mt-1">Criminal case investigations</p>
+            </div>
+            <div className="p-4">
+              <div className="space-y-3">
+                {loading ? (
+                  <SkeletonRow />
+                ) : myCases.length === 0 ? (
+                  <div className="text-center py-4">
+                    <AlertTriangle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">No cases assigned</p>
+                    <button
+                      onClick={() => navigate('/officer/cases')}
+                      className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      View all cases
+                    </button>
+                  </div>
+                ) : (
+                  myCases.slice(0, 3).map(c => (
+                    <div
+                      key={c._id}
+                      className="p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/cases/${c._id}`)}
+                    >
+                      <div className="text-sm font-medium text-gray-900">{c.complainant?.name}</div>
+                      <div className="text-xs text-gray-600 mt-1">{c.complaintDetails?.typeOfComplaint}</div>
+                      <div className="text-xs text-gray-500 mt-1">{c.status} • {c.complaintDetails?.location}</div>
+                      <div className="text-xs text-blue-600 mt-1">
+                        {new Date(c.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        <p className="mt-12 text-center text-xs text-[#5A6B85]">
-          &copy; {new Date().getFullYear()} Police360 Officer Panel
-        </p>
+        {/* Footer */}
+        <div className="mt-12 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm border border-gray-200">
+            <ShieldCheck className="h-4 w-4 text-gray-600" />
+            <span className="text-sm text-gray-600">
+              &copy; {new Date().getFullYear()} Police360 Officer Command Center - Field Operations
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-const KpiCard = ({ icon, label, value }) => (
-  <div className="bg-white rounded-2xl border border-[#E4E9F2] shadow p-5 flex items-center justify-between">
-    <div>
-      <div className="text-sm text-[#5A6B85]">{label}</div>
-      <div className="text-2xl font-extrabold mt-1">{value}</div>
-    </div>
-    <div className="rounded-xl p-3 bg-[#F0F5FF] text-[#00296B]">{icon}</div>
-  </div>
-);
-
-const ActionCard = ({ icon, title, desc, onClick }) => (
-  <button
-    onClick={onClick}
-    className="bg-white border border-[#E4E9F2] rounded-2xl p-6 text-left shadow hover:shadow-lg transition hover:-translate-y-0.5"
-  >
-    <div className="mb-3 text-[#00296B]">{icon}</div>
-    <div className="text-lg font-semibold">{title}</div>
-    <div className="text-sm text-[#5A6B85] mt-1">{desc}</div>
-  </button>
-);
+// Action Card Component
+const ActionCard = ({ icon, title, description, onClick, color = "blue" }) => {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full text-left p-3 rounded-lg border border-gray-200 bg-white hover:shadow-md hover:bg-gray-50 transition-all duration-200 group"
+    >
+      <div className="flex items-start gap-2">
+        <div className="p-1.5 rounded-lg bg-gray-100 group-hover:bg-gray-200 transition-colors">
+          <div className="text-gray-700">{icon}</div>
+        </div>
+        <div className="flex-1">
+          <h3 className="font-medium text-sm text-gray-900 group-hover:text-gray-800 transition-colors">
+            {title}
+          </h3>
+          <p className="text-xs text-gray-600 mt-0.5">
+            {description}
+          </p>
+        </div>
+      </div>
+    </button>
+  );
+};
 
 const SkeletonRow = () => (
   <div className="animate-pulse space-y-2">
-    <div className="h-10 bg-[#EEF2F7] rounded-lg" />
-    <div className="h-10 bg-[#EEF2F7] rounded-lg" />
+    <div className="h-10 bg-gray-200 rounded-lg" />
+    <div className="h-10 bg-gray-200 rounded-lg" />
   </div>
 );
 
