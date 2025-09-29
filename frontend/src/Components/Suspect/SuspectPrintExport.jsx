@@ -1,7 +1,6 @@
 import React from 'react';
 import { getMediaUrl } from '../../utils/mediaUrl';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 const SuspectPrintExport = ({ suspect }) => {
   const formatDOB = (dob) => {
@@ -150,7 +149,7 @@ const SuspectPrintExport = ({ suspect }) => {
           const lines = doc.splitTextToSize(String(text), maxWidth);
           doc.text(lines, x, y);
           return y + (lines.length * fontSize * 0.4) + 5;
-        } catch (error) {
+        } catch {
           // Fallback for text that can't be split
           doc.text(String(text).substring(0, 50), x, y);
           return y + fontSize + 5;
@@ -209,7 +208,7 @@ const SuspectPrintExport = ({ suspect }) => {
       if (suspect.arrestDate && suspect.suspectStatus === 'arrested') {
         try {
           yPosition = addText(`Arrest Date: ${new Date(suspect.arrestDate).toLocaleDateString()}`, 20, yPosition);
-        } catch (error) {
+        } catch {
           yPosition = addText(`Arrest Date: ${suspect.arrestDate}`, 20, yPosition);
         }
       }
@@ -219,7 +218,7 @@ const SuspectPrintExport = ({ suspect }) => {
       if (suspect.releaseDate && suspect.suspectStatus === 'released') {
         try {
           yPosition = addText(`Release Date: ${new Date(suspect.releaseDate).toLocaleDateString()}`, 20, yPosition);
-        } catch (error) {
+        } catch {
           yPosition = addText(`Release Date: ${suspect.releaseDate}`, 20, yPosition);
         }
       }
@@ -260,7 +259,7 @@ const SuspectPrintExport = ({ suspect }) => {
       try {
         doc.text(`Record Created: ${suspect.createdAt ? new Date(suspect.createdAt).toLocaleString() : 'N/A'}`, 20, yPosition);
         doc.text(`Last Updated: ${suspect.updatedAt ? new Date(suspect.updatedAt).toLocaleString() : 'N/A'}`, 20, yPosition + 10);
-      } catch (error) {
+      } catch {
         doc.text(`Record Created: ${suspect.createdAt || 'N/A'}`, 20, yPosition);
         doc.text(`Last Updated: ${suspect.updatedAt || 'N/A'}`, 20, yPosition + 10);
       }

@@ -243,7 +243,7 @@ export default function CriminalPrintExport({ criminal }) {
           const lines = doc.splitTextToSize(String(text), maxWidth);
           doc.text(lines, x, y);
           return y + (lines.length * fontSize * 0.4) + 5;
-        } catch (error) {
+        } catch {
           // Fallback for text that can't be split
           doc.text(String(text).substring(0, 50), x, y);
           return y + fontSize + 5;
@@ -322,7 +322,7 @@ export default function CriminalPrintExport({ criminal }) {
       if (criminal.arrestDate && criminal.criminalStatus === 'arrested') {
         try {
           yPosition = addText(`Arrest Date: ${new Date(criminal.arrestDate).toLocaleDateString()}`, 20, yPosition);
-        } catch (error) {
+        } catch {
           yPosition = addText(`Arrest Date: ${criminal.arrestDate}`, 20, yPosition);
         }
       }
@@ -332,7 +332,7 @@ export default function CriminalPrintExport({ criminal }) {
       if (criminal.releaseDate && criminal.criminalStatus === 'released') {
         try {
           yPosition = addText(`Release Date: ${new Date(criminal.releaseDate).toLocaleDateString()}`, 20, yPosition);
-        } catch (error) {
+        } catch {
           yPosition = addText(`Release Date: ${criminal.releaseDate}`, 20, yPosition);
         }
       }
@@ -378,7 +378,7 @@ export default function CriminalPrintExport({ criminal }) {
           arrest.date ? (() => {
             try {
               return new Date(arrest.date).toLocaleDateString();
-            } catch (error) {
+            } catch {
               return String(arrest.date);
             }
           })() : 'N/A',
@@ -444,8 +444,8 @@ export default function CriminalPrintExport({ criminal }) {
       doc.setTextColor(128, 128, 128);
       try {
         doc.text(`Record Created: ${criminal.createdAt ? new Date(criminal.createdAt).toLocaleString() : 'N/A'}`, 20, yPosition);
-        doc.text(`Last Updated: ${criminal.updatedAt ? new Date(criminal.updatedAt).toLocaleString() : 'N/A'}`, 20, yPosition + 10);
-      } catch (error) {
+        doc.text(`Last Updated: ${criminal.updatedAt ? new Date(criminal.updatedAt).toLocaleDateString() : 'N/A'}`, 20, yPosition + 10);
+      } catch {
         doc.text(`Record Created: ${criminal.createdAt || 'N/A'}`, 20, yPosition);
         doc.text(`Last Updated: ${criminal.updatedAt || 'N/A'}`, 20, yPosition + 10);
       }
