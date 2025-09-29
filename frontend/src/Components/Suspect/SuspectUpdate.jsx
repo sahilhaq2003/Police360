@@ -377,7 +377,7 @@ export default function SuspectUpdate() {
             <input 
               value={form.address} 
               onChange={(e) => {
-                const value = e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, ''); // Allow letters, numbers, spaces, commas, periods, hyphens
+                const value = e.target.value.replace(/[^a-zA-Z0-9\s,.\-\/]/g, ''); // Allow letters, numbers, spaces, commas, periods, hyphens, and forward slashes
                 if (value.length <= 200) {
                   update('address', value);
                 }
