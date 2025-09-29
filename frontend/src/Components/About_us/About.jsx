@@ -3,6 +3,7 @@ import React from "react";
 import { ShieldCheck, Users, Target, Eye, BookOpen } from "lucide-react";
 import { motion } from "framer-motion";
 import Nav from "../Nav/Nav";
+import Footer from "../Footer/Footer";
 import hero from "../../assets/loginbg.jpg";
 
 export default function About() {
@@ -142,6 +143,8 @@ export default function About() {
         </section>
         </div>
       </div>
+      <br></br><br></br><br></br><br></br>
+      <Footer />
     </div>
   );
 }
