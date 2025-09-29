@@ -39,6 +39,9 @@ const ReportingSchema = new mongoose.Schema({
 
   isConfidential: { type: Boolean, default: false },
 
+  // Officer assignment
+  assignedOfficer: { type: mongoose.Schema.Types.ObjectId, ref: 'Officer' },
+
   reportNumber: { type: String, unique: true, sparse: true },
 
   submittedAt: { type: Date, default: Date.now },

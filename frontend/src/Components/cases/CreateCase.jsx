@@ -42,13 +42,16 @@ export default function CreateCase() {
       supportOfficers: [],
       vehicles: [],
       firearms: [],
-    }
+    },
+    // Officer assignment
+    assignedOfficer: ""
   });
 
   const [banner, setBanner] = useState(null);
   const [loading, setLoading] = useState(false);
   const [complaints, setComplaints] = useState([]);
   const [officers, setOfficers] = useState([]);
+  const [availableOfficers, setAvailableOfficers] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [firearms, setFirearms] = useState([]);
   const [selectedComplaintId, setSelectedComplaintId] = useState("");
@@ -95,6 +98,7 @@ export default function CreateCase() {
       const res = await axiosInstance.get('/officers', { params: { role: 'Officer', pageSize: 100 } });
       const officersList = res.data?.data || res.data || [];
       setOfficers(Array.isArray(officersList) ? officersList : []);
+      setAvailableOfficers(Array.isArray(officersList) ? officersList : []);
     } catch (error) {
       console.error('Failed to fetch officers:', error);
     }
@@ -273,7 +277,8 @@ export default function CreateCase() {
         estimatedLoss: form.estimatedLoss || "",
         additionalInfo: form.additionalInfo || { witnesses: [], suspects: [], evidence: [] },
         itOfficerDetails: form.itOfficerDetails || {},
-        resourceAllocation: form.resourceAllocation || { supportOfficers: [], vehicles: [], firearms: [] }
+        resourceAllocation: form.resourceAllocation || { supportOfficers: [], vehicles: [], firearms: [] },
+        assignedOfficer: form.assignedOfficer || ""
       };
       
       console.log('Submitting form data:', testForm);
@@ -340,7 +345,8 @@ export default function CreateCase() {
           supportOfficers: [],
           vehicles: [],
           firearms: [],
-        }
+        },
+        assignedOfficer: ""
       });
       setSelectedComplaintId("");
       setComplaintSearch("");
@@ -618,6 +624,39 @@ export default function CreateCase() {
                       className={inputField}
                     />
                   )}
+                </div>
+              </div>
+            </section>
+
+            {/* Section: Officer Assignment */}
+            <section>
+              <h3 className="text-lg font-semibold text-slate-700 mb-3">
+                Officer Assignment
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <select
+                  value={form.assignedOfficer}
+                  onChange={(e) => onChange("assignedOfficer", e.target.value)}
+                  className={inputField}
+                  required
+                >
+                  <option value="">Select Lead Officer *</option>
+                  {availableOfficers.map(officer => (
+                    <option key={officer._id} value={officer._id}>
+                      {officer.name || officer.officerId} - {officer.station || 'General'}
+                    </option>
+                  ))}
+                </select>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="font-medium text-blue-800">Lead Officer</span>
+                  </div>
+                  <p className="text-sm text-blue-700">
+                    The selected officer will be assigned as the lead officer for this case and will be responsible for managing the investigation.
+                  </p>
                 </div>
               </div>
             </section>

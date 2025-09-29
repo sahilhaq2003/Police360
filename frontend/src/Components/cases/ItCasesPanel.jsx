@@ -7,10 +7,7 @@ import { saveAs } from 'file-saver';
 
 const ItCasesPanel = () => {
   const [cases, setCases] = useState([]);
-  const [officers, setOfficers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [assigningId, setAssigningId] = useState(null);
-  const [selectedOfficerId, setSelectedOfficerId] = useState('');
   const [onlyUnassigned, setOnlyUnassigned] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -48,16 +45,9 @@ const ItCasesPanel = () => {
         params.q = debouncedSearch;
       }
 
-      const [casesRes, offRes] = await Promise.all([
-        axiosInstance.get('/cases', { params: { ...params, page: 1, pageSize: 50 } }),
-        axiosInstance.get('/officers', { params: { role: 'Officer', pageSize: 100, lite: 'true' } }),
-      ]);
-
+      const casesRes = await axiosInstance.get('/cases', { params: { ...params, page: 1, pageSize: 50 } });
       const casesList = casesRes.data?.data || casesRes.data || [];
-      const offList = offRes.data?.data || offRes.data || offRes.data?.items || [];
-
       setCases(Array.isArray(casesList) ? casesList : []);
-      setOfficers(Array.isArray(offList) ? offList : []);
     } catch (e) {
       const isTimeout = e?.code === 'ECONNABORTED';
       console.error('Failed loading cases or officers', e);
@@ -69,31 +59,6 @@ const ItCasesPanel = () => {
     }
   };
 
-  const startAssign = (c) => {
-    setAssigningId(c._id);
-    setSelectedOfficerId('');
-  };
-
-  const cancelAssign = () => {
-    setAssigningId(null);
-    setSelectedOfficerId('');
-  };
-
-  const confirmAssign = async (c) => {
-    if (!selectedOfficerId) return alert('Please select an officer');
-    try {
-      const res = await axiosInstance.post(`/cases/${c._id}/assign`, { officerId: selectedOfficerId });
-      const updated = res.data?.data || res.data;
-      // update the case in-place so the Assigned Officer column shows immediately
-      setCases(prev => prev.map(item => item._id === c._id ? updated : item));
-      setAssigningId(null);
-      setSelectedOfficerId('');
-      alert('Assigned successfully');
-    } catch (err) {
-      console.error('Assign failed', err);
-      alert(err?.response?.data?.message || 'Failed to assign');
-    }
-  };
 
   if (loading) {
     return <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]"><PoliceHeader /><div className="max-w-7xl mx-auto px-4 py-10">Loading…</div></div>;
@@ -200,20 +165,6 @@ const ItCasesPanel = () => {
                     <td className="px-4 py-3 align-middle">
                       <div className="flex items-center gap-2">
                         <button onClick={() => navigate(`/cases/${c._id}`)} className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[#D6DEEB] text-xs hover:bg-[#F5F7FB]">View</button>
-                        {assigningId === c._id ? (
-                          <div className="flex items-center gap-2">
-                            <select className="px-2 py-1 rounded-lg border border-[#D6DEEB] bg-white text-xs" value={selectedOfficerId} onChange={(e) => setSelectedOfficerId(e.target.value)}>
-                              <option value="">Select officer…</option>
-                              {officers.map(o => (
-                                <option key={o._id} value={o._id}>{o.name || o.officerId || o.email}</option>
-                              ))}
-                            </select>
-                            <button onClick={() => confirmAssign(c)} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#0B214A] text-white text-xs">Save</button>
-                            <button onClick={cancelAssign} className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[#D6DEEB] text-xs">Cancel</button>
-                          </div>
-                        ) : (
-                          <button onClick={() => startAssign(c)} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#0B214A] text-white text-xs">Assign</button>
-                        )}
                       </div>
                     </td>
                   </tr>

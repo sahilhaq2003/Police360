@@ -112,7 +112,7 @@ const OfficerRequest = () => {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-[#0B214A]">Officer Requests</h1>
-                <p className="text-sm text-[#5A6B85] mt-1">Submit requests and track their status with the administration</p>
+                <p className="text-sm text-[#5A6B85] mt-1">Submit requests and track their status with the Chief</p>
               </div>
             </div>
             <button 
@@ -137,7 +137,7 @@ const OfficerRequest = () => {
                   </div>
                   <h2 className="text-xl font-bold text-white">Create New Request</h2>
                 </div>
-                <p className="text-sm text-blue-100 mt-1">Submit your request to the administration team</p>
+                <p className="text-sm text-blue-100 mt-1">Submit your request to the Chief</p>
               </div>
 
               {/* Form Content */}
@@ -370,12 +370,12 @@ const OfficerRequest = () => {
                         </div>
                       )}
 
-                      {/* Admin Replies */}
+                      {/* Chief Replies */}
                       {Array.isArray(req.replies) && req.replies.length > 0 && (
                         <div className="mt-3 space-y-2">
                           <div className="text-xs font-medium text-[#6B7280] flex items-center gap-1">
                             <MessageSquare className="w-3 h-3" />
-                            Admin Replies ({req.replies.length})
+                            Chief Replies ({req.replies.length})
                           </div>
                           {req.replies.slice(0, 2).map((rep, idx) => (
                             <div key={idx} className="text-xs bg-[#F7FAFF] border border-[#E4E9F2] rounded-lg px-3 py-2">

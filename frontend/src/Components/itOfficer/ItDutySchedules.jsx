@@ -117,8 +117,13 @@ const ItDutySchedules = () => {
   };
 
   const remove = async (id) => {
-    await axiosInstance.delete(`/schedules/${id}`);
-    setItems((prev) => prev.filter((x) => x._id !== id));
+    try {
+      await axiosInstance.delete(`/schedules/${id}`);
+      setItems((prev) => prev.filter((x) => x._id !== id));
+    } catch (error) {
+      console.error('Error deleting schedule:', error);
+      alert('Failed to delete schedule. Please try again.');
+    }
   };
 
   const reassign = async (id) => {
@@ -662,7 +667,11 @@ const ItDutySchedules = () => {
                           </button>
                         )}
                         <button
-                          onClick={() => remove(it._id)}
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to delete this schedule?')) {
+                              remove(it._id);
+                            }
+                          }}
                           className="inline-flex items-center gap-1 px-3 py-1 bg-red-600 text-white text-xs rounded-md hover:bg-red-700 transition"
                         >
                           <Trash2 className="w-3 h-3" />
