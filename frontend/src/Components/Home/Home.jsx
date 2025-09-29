@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Nav from '../Nav/Nav';
 import './Home.css';
+import Footer from '../Footer/Footer';
 
 function Home() {
   const [activeService, setActiveService] = useState(null);
@@ -334,16 +335,8 @@ function Home() {
           </div>
         </div>
       )}
-
-      {/* Footer */}
-      <footer>
-        <p>© 2025 Police360 | Powered by Government IT Solutions</p>
-        <div className="social-icons">
-          <i className="fab fa-facebook-f" />
-          <i className="fab fa-twitter" />
-          <i className="fab fa-youtube" />
-        </div>
-      </footer>
+      <br></br>
+      <Footer />
     </div>
   );
 }

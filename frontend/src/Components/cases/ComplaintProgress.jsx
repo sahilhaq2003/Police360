@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axiosInstance from "../../utils/axiosInstance";
 import Nav from "../Nav/Nav";
 import hero from '../../assets/loginbg.jpg';
+import Footer from "../Footer/Footer";
 
 export default function ComplaintProgress() {
   const navigate = useNavigate();
@@ -180,6 +181,8 @@ export default function ComplaintProgress() {
         )}
         </div>
       </div>
+      <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+      <Footer />
     </div>
   );
 }

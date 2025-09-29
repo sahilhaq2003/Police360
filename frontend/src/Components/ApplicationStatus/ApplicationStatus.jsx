@@ -5,6 +5,7 @@ import { Search, ShieldCheck, Loader2, CheckCircle, XCircle } from "lucide-react
 import { useNavigate } from "react-router-dom";
 import Nav from "../Nav/Nav";
 import hero from "../../assets/loginbg.jpg";
+import Footer from "../Footer/Footer";
 
 export default function ApplicationStatus() {
   const [loading, setLoading] = useState(false);
@@ -78,6 +79,8 @@ export default function ApplicationStatus() {
           )}
         </div>
       </div>
+      <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+      <Footer />
     </div>
   );
 }
