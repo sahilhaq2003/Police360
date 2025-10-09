@@ -2,6 +2,9 @@ import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, User, MapPin, Phone, Mail, ShieldCheck } from "lucide-react";
+import Nav from '../Nav/Nav';
+import hero from '../../assets/loginbg.jpg';
+import Footer from "../Footer/Footer";
 
 function ReportForm() {
   const navigate = useNavigate();
@@ -68,6 +71,7 @@ function ReportForm() {
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4">
       <div className="mx-auto max-w-5xl">
+        <Nav /><br /><br />
         {/* Header */}
         <div className="mb-8 relative">
           <div className="text-center">
@@ -242,6 +246,7 @@ function ReportForm() {
           </div>
         </form>
       </div>
+      <Footer />
     </div>
   );
 }

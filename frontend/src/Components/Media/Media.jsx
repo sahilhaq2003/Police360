@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Camera, Video, Newspaper } from "lucide-react";
 import Nav from "../Nav/Nav";
 import hero from "../../assets/loginbg.jpg";
+import Footer from "../Footer/Footer";
 
 export default function Media() {
   const news = [
@@ -138,6 +139,8 @@ export default function Media() {
         </motion.section>
         </div>
       </div>
+      <br /><br /><br /><br />
+      <Footer />
     </div>
   );
 }
