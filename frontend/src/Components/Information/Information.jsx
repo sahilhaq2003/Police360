@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Info, Phone, FileText, HelpCircle, Shield } from "lucide-react";
 import Nav from "../Nav/Nav";
 import hero from "../../assets/loginbg.jpg";
+import Footer from "../Footer/Footer";
 
 export default function Information() {
   const contacts = [
@@ -161,6 +162,8 @@ export default function Information() {
         </motion.section>
         </div>
       </div>
+      <br /><br /><br /><br /><br />
+      <Footer />
     </div>
   );
 }

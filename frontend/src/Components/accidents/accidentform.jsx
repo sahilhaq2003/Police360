@@ -4,6 +4,7 @@ import AdditionalDetails from './additionalDetails';
 import BasicDetails from './basicDetails';
 import Nav from '../Nav/Nav';
 import accbg from '../../assets/accbg.png';
+import Footer from '../Footer/Footer';
 
 export default function AccidentForm() {
   const [form, setForm] = useState({
@@ -227,6 +228,8 @@ export default function AccidentForm() {
           </div>
         </form>
       </div>
+      <br /><br /><br /><br /><br /><br />
+      <Footer />
     </div>
   );
 }

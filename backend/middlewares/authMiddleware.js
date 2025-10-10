@@ -9,9 +9,11 @@ const protect = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('[AUTH] Token decoded:', { id: decoded.id, role: decoded.role });
     req.user = decoded;
     next();
   } catch (err) {
+    console.error('[AUTH] Token verification failed:', err.message);
     res.status(401).json({ message: 'Invalid token' });
   }
 };

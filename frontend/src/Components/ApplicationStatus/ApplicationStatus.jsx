@@ -5,6 +5,7 @@ import { Search, ShieldCheck, Loader2, CheckCircle, XCircle } from "lucide-react
 import { useNavigate } from "react-router-dom";
 import Nav from "../Nav/Nav";
 import hero from "../../assets/loginbg.jpg";
+import Footer from "../Footer/Footer";
 
 export default function ApplicationStatus() {
   const [loading, setLoading] = useState(false);
@@ -58,7 +59,7 @@ export default function ApplicationStatus() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 font-medium text-white shadow hover:bg-indigo-700 transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#0B214A] px-6 py-3 font-medium text-white shadow hover:bg-[#0B114C] transition disabled:opacity-50"
             >
               {loading ? <Loader2 className="animate-spin" size={18} /> : <Search size={18} />} {loading ? "Opening..." : "Open Progress"}
             </button>
@@ -78,6 +79,8 @@ export default function ApplicationStatus() {
           )}
         </div>
       </div>
+      <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+      <Footer />
     </div>
   );
 }

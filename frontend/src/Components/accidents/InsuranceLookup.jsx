@@ -4,6 +4,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Nav from '../Nav/Nav';
 import accbg from '../../assets/accbg.png';
+import Footer from '../Footer/Footer';
 
 function StatusPill({ status }) {
   const map = {
@@ -308,6 +309,8 @@ export default function InsuranceLookup() {
           </div>
         )}
       </div>
+      <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+      <Footer />
     </div>
   );
 }
