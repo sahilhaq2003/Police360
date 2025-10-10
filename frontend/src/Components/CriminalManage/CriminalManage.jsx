@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import PoliceHeader from "../PoliceHeader/PoliceHeader";
 import axiosInstance from "../../utils/axiosInstance";
 import { getMediaUrl } from '../../utils/mediaUrl';
+import { calculateTotalPrisonTime, formatPrisonTime } from "../../utils/prisonTimeCalculator";
 import { 
   ShieldCheck, 
   UserX, 
@@ -19,7 +20,8 @@ import {
   Users,
   TrendingUp,
   Calendar,
-  MapPin
+  MapPin,
+  Clock
 } from "lucide-react";
 
 export default function CriminalManage() {
@@ -141,6 +143,25 @@ export default function CriminalManage() {
     } catch {
       return null;
     }
+  };
+
+  // Get calculated prison time for a criminal
+  const getCriminalPrisonTime = (criminal) => {
+    if (!criminal?.arrests || criminal.arrests.length === 0) {
+      return null;
+    }
+
+    const prisonTimeData = calculateTotalPrisonTime(criminal.arrests);
+    
+    if (prisonTimeData.totalDays === 0) {
+      return null;
+    }
+
+    return {
+      totalDays: prisonTimeData.totalDays,
+      formatted: formatPrisonTime(prisonTimeData.totalDays),
+      breakdown: prisonTimeData.breakdown
+    };
   };
 
   const filteredCriminals = criminals.filter(criminal => {
@@ -336,6 +357,9 @@ export default function CriminalManage() {
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Prison Time
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Location
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -395,6 +419,43 @@ export default function CriminalManage() {
                             ) : null;
                           })()}
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {(() => {
+                          // Only show prison time calculation for criminals who are in prison
+                          if (criminal.criminalStatus === 'in prison') {
+                            const prisonTime = getCriminalPrisonTime(criminal);
+                            return prisonTime ? (
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-4 w-4 text-gray-400" />
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {prisonTime.formatted}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    ({prisonTime.totalDays} days)
+                                  </div>
+                                  {prisonTime.breakdown.length > 1 && (
+                                    <div className="text-xs text-blue-600">
+                                      {prisonTime.breakdown.length} sentences
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-sm text-gray-400">No sentences</div>
+                            );
+                          } else {
+                            // For non-prison criminals, show a simple status indicator
+                            return (
+                              <div className="text-sm text-gray-400">
+                                {criminal.criminalStatus === 'wanted' && 'N/A'}
+                                {criminal.criminalStatus === 'arrested' && 'Pending'}
+                                {criminal.criminalStatus === 'released' && 'Completed'}
+                              </div>
+                            );
+                          }
+                        })()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-500">
@@ -467,6 +528,20 @@ export default function CriminalManage() {
               >
                 <Lock className="h-4 w-4" />
                 Prison Records
+              </button>
+              <button
+                onClick={() => navigate('/CriminalStatus')}
+                className="w-full flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                Criminal Status
+              </button>
+              <button
+                onClick={() => navigate('/crime-status')}
+                className="w-full flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                Crime Status
               </button>
             </div>
           </div>

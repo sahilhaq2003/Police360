@@ -52,6 +52,8 @@ import OfficerCaseDetails from './Components/cases/OfficerCaseDetails';
 import Criminal from './Components/CriminalManage/Criminal';
 import CriminalProfile from './Components/CriminalManage/CriminalProfile';
 import CriminalManage from './Components/CriminalManage/CriminalManage';
+import CriminalStatus from './Components/CriminalManage/CriminalStatus';
+import CrimeStatus from './Components/CriminalManage/CrimeStatus';
 
 
 import Suspect from './Components/Suspect/Suspect';
@@ -158,6 +160,8 @@ function App() {
           path="/CriminalManage/CriminalProfile/:id"
           element={<CriminalProfile />}
         />
+        <Route path="/CriminalStatus" element={<CriminalStatus />} />
+        <Route path="/crime-status" element={<CrimeStatus />} />
 
         <Route path="/CriminalManage/CriminalManage" element={<CriminalManage />} />
         <Route path="/CriminalManage/Criminal" element={<Criminal/>}/>
