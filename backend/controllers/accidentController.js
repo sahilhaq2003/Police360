@@ -11,7 +11,10 @@ function maybeCreateInsuranceRef(victim) {
 
 // --- Validation helpers ---
 const ALLOWED_TYPES = ['ROAD_ACCIDENT', 'FIRE', 'STRUCTURAL_COLLAPSE', 'OTHER'];
-const SL_BOUNDS = { lat: { min: 5.916, max: 9.835 }, lng: { min: 79.521, max: 81.879 } };
+const SL_BOUNDS = {
+  lat: { min: 5.916, max: 9.835 },
+  lng: { min: 79.521, max: 81.879 },
+};
 const NIC_REGEX = /^(\d{9}[VvXx]|\d{12})$/;
 const EMAIL_REGEX = /[^\s@]+@[^\s@]+\.[^\s@]+/;
 
@@ -23,7 +26,12 @@ function validateGeo(geo, errors) {
     errors.push('geo.lat and geo.lng must be numeric');
     return;
   }
-  if (lat < SL_BOUNDS.lat.min || lat > SL_BOUNDS.lat.max || lng < SL_BOUNDS.lng.min || lng > SL_BOUNDS.lng.max) {
+  if (
+    lat < SL_BOUNDS.lat.min ||
+    lat > SL_BOUNDS.lat.max ||
+    lng < SL_BOUNDS.lng.min ||
+    lng > SL_BOUNDS.lng.max
+  ) {
     errors.push('geo coordinates must be within Sri Lanka bounds');
   }
 }
@@ -42,7 +50,8 @@ function validateVehicle(vehicle, errors) {
   if (!vehicle) return;
   // basic type checks (all optional)
   ['plateNo', 'make', 'model', 'color', 'ownerNIC'].forEach((k) => {
-    if (vehicle[k] != null && typeof vehicle[k] !== 'string') errors.push(`vehicle.${k} must be a string`);
+    if (vehicle[k] != null && typeof vehicle[k] !== 'string')
+      errors.push(`vehicle.${k} must be a string`);
   });
 }
 
@@ -61,7 +70,8 @@ function validateAccidentPayload(body, isUpdate = false) {
   const errors = [];
   // required on create
   if (!isUpdate) {
-    if (!body.locationText || !String(body.locationText).trim()) errors.push('locationText is required');
+    if (!body.locationText || !String(body.locationText).trim())
+      errors.push('locationText is required');
     if (!body.accidentType) errors.push('accidentType is required');
   }
 
@@ -274,8 +284,10 @@ exports.assignOfficer = async (req, res) => {
 
     const officer = await Officer.findById(officerId);
     if (!officer) return res.status(404).json({ message: 'Officer not found' });
-    if (!officer.isActive) return res.status(400).json({ message: 'Officer is not active' });
-    if (officer.role !== 'Officer') return res.status(400).json({ message: 'Only Officers can be assigned' });
+    if (!officer.isActive)
+      return res.status(400).json({ message: 'Officer is not active' });
+    if (officer.role !== 'Officer')
+      return res.status(400).json({ message: 'Only Officers can be assigned' });
 
     const doc = await Accident.findByIdAndUpdate(
       req.params.id,
@@ -319,5 +331,38 @@ exports.getByInsuranceRef = async (req, res) => {
     return res
       .status(500)
       .json({ message: 'Server error', details: err.message });
+  }
+};
+
+// PUT /api/accidents/:id/notes/:noteId
+exports.updateInvestigationNote = async (req, res) => {
+  try {
+    const { id, noteId } = req.params;
+    const { note } = req.body;
+
+    if (!note || !note.trim()) {
+      return res.status(400).json({ message: 'note is required' });
+    }
+
+    const now = new Date();
+
+    // Update the matched array element using the positional operator ($)
+    const doc = await Accident.findOneAndUpdate(
+      { _id: id, 'investigationNotes._id': noteId },
+      {
+        $set: {
+          'investigationNotes.$.note': note.trim(),
+          'investigationNotes.$.updatedAt': now,
+          updatedAt: now, // bump parent doc too
+        },
+      },
+      { new: true }
+    );
+
+    if (!doc)
+      return res.status(404).json({ message: 'Note or Accident not found' });
+    return res.json(doc);
+  } catch (err) {
+    return res.status(400).json({ message: err.message });
   }
 };
