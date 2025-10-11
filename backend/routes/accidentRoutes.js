@@ -12,6 +12,7 @@ const {
   assignOfficer,
   getByInsuranceRef,
   updateInvestigationNote,
+  deleteInvestigationNote,
 } = require('../controllers/accidentController');
 
 router.post('/report', reportAccident);
@@ -25,5 +26,6 @@ router.delete('/:id', deleteAccident);
 router.post('/:id/notes', addInvestigationNote);
 router.put('/:id/notes/:noteId', updateInvestigationNote);
 router.post('/:id/assign', assignOfficer);
+router.delete('/:id/notes/:noteId', deleteInvestigationNote);
 
 module.exports = router;

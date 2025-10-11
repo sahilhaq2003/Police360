@@ -366,3 +366,22 @@ exports.updateInvestigationNote = async (req, res) => {
     return res.status(400).json({ message: err.message });
   }
 };
+
+exports.deleteInvestigationNote = async (req, res) => {
+  try {
+    const { id, noteId } = req.params;
+    const now = new Date();
+    const doc = await Accident.findByIdAndUpdate(
+      id,
+      {
+        $pull: { investigationNotes: { _id: noteId } },
+        $set: { updatedAt: now },
+      },
+      { new: true }
+    );
+    if (!doc) return res.status(404).json({ message: 'Not found' });
+    res.json(doc);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};

@@ -219,7 +219,6 @@ export default function AccidentDetails() {
                 <LabelRow label="Assigned Officer">
                   {accident.assignedOfficer
                     ? accident.assignedOfficer.name ||
-                      accident.assignedOfficer.officerId ||
                       String(accident.assignedOfficer)
                     : '—'}
                 </LabelRow>

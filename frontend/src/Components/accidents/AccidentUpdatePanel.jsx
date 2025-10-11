@@ -10,6 +10,7 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editingText, setEditingText] = useState('');
   const [editingSaving, setEditingSaving] = useState(false);
+  const [noteDeletingId, setNoteDeletingId] = useState(null);
 
   const [draft, setDraft] = useState(null);
 
@@ -194,6 +195,28 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
       });
     } finally {
       setEditingSaving(false);
+    }
+  };
+
+  const onDeleteNote = async (noteId) => {
+    if (!noteId) return;
+    if (!window.confirm('Delete this note permanently?')) return;
+
+    try {
+      setNoteDeletingId(noteId);
+      setBanner(null);
+      const { data: updated } = await axiosInstance.delete(
+        `/accidents/${accident._id}/notes/${noteId}`
+      );
+      setBanner({ type: 'success', message: 'Note deleted.' });
+      onUpdated?.(updated);
+    } catch (e) {
+      setBanner({
+        type: 'error',
+        message: e?.response?.data?.message || e?.message || 'Delete failed',
+      });
+    } finally {
+      setNoteDeletingId(null);
     }
   };
 
@@ -554,13 +577,23 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
                                     ).toLocaleString()}`
                                   : ''}
                               </div>
-                              <div className="mt-2">
+                              <div className="mt-2 flex gap-2">
                                 <button
                                   type="button"
                                   onClick={() => startEditNote(n)}
                                   className="rounded-md border border-slate-200 bg-white px-3 py-1 text-xs hover:bg-slate-50"
                                 >
                                   Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onDeleteNote(n._id)}
+                                  disabled={noteDeletingId === n._id}
+                                  className="rounded-md bg-rose-600 text-white px-3 py-1 text-xs hover:bg-rose-700 disabled:opacity-50"
+                                >
+                                  {noteDeletingId === n._id
+                                    ? 'Deleting…'
+                                    : 'Delete'}
                                 </button>
                               </div>
                             </>
