@@ -119,25 +119,13 @@ export default function CriminalManage() {
         const d = new Date(criminal.arrestDate);
         return `Arrested: ${d.toLocaleDateString()}`;
       }
-      if (criminal.criminalStatus === 'in prison') {
-        // Prefer explicit prisonDays display when available
-        if (typeof criminal.prisonDays === 'number' && !Number.isNaN(criminal.prisonDays)) {
-          return `In Prison: ${criminal.prisonDays} days`;
-        }
-        // If there's a releaseDate stored, show 'Release:' otherwise show 'In Prison since' using arrestDate if available
-        if (criminal.releaseDate) {
-          const d = new Date(criminal.releaseDate);
-          return `Release: ${d.toLocaleDateString()}`;
-        }
-        if (criminal.arrestDate) {
-          const d = new Date(criminal.arrestDate);
-          return `In Prison since ${d.toLocaleDateString()}`;
-        }
-        return null;
+      if (criminal.criminalStatus === 'in prison' && criminal.arrestDate) {
+        const d = new Date(criminal.arrestDate);
+        return `In Prison since: ${d.toLocaleDateString()}`;
       }
-      if (criminal.criminalStatus === 'released' && criminal.releaseDate) {
-        const d = new Date(criminal.releaseDate);
-        return `Released: ${d.toLocaleDateString()}`;
+      if (criminal.criminalStatus === 'released' && criminal.arrestDate) {
+        const d = new Date(criminal.arrestDate);
+        return `Arrested: ${d.toLocaleDateString()}`;
       }
       return null;
     } catch {
@@ -357,9 +345,6 @@ export default function CriminalManage() {
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Prison Time
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Location
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -419,44 +404,7 @@ export default function CriminalManage() {
                             ) : null;
                           })()}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {(() => {
-                          // Only show prison time calculation for criminals who are in prison
-                          if (criminal.criminalStatus === 'in prison') {
-                            const prisonTime = getCriminalPrisonTime(criminal);
-                            return prisonTime ? (
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4 text-gray-400" />
-                                <div>
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {prisonTime.formatted}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    ({prisonTime.totalDays} days)
-                                  </div>
-                                  {prisonTime.breakdown.length > 1 && (
-                                    <div className="text-xs text-blue-600">
-                                      {prisonTime.breakdown.length} sentences
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-sm text-gray-400">No sentences</div>
-                            );
-                          } else {
-                            // For non-prison criminals, show a simple status indicator
-                            return (
-                              <div className="text-sm text-gray-400">
-                                {criminal.criminalStatus === 'wanted' && 'N/A'}
-                                {criminal.criminalStatus === 'arrested' && 'Pending'}
-                                {criminal.criminalStatus === 'released' && 'Completed'}
-                              </div>
-                            );
-                          }
-                        })()}
-                      </td>
+                        </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-500">
                           <MapPin className="h-4 w-4 mr-1" />
