@@ -6,7 +6,7 @@ import { getMediaUrl } from '../../utils/mediaUrl';
 
 export default function Suspect() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     suspectId: '',
     fileNumber: '',
@@ -303,7 +303,7 @@ export default function Suspect() {
             <input
               value={form.address}
               onChange={(e) => {
-                const value = e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, ''); // Allow letters, numbers, spaces, commas, periods, hyphens
+                const value = e.target.value.replace(/[^a-zA-Z0-9\s,./-]/g, ''); // Allow letters, numbers, spaces, commas, periods, hyphens, and forward slashes
                 if (value.length <= 200) {
                   update('address', value);
                 }
