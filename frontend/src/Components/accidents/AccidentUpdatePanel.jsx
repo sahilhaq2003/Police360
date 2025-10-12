@@ -7,6 +7,10 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
   const [noteText, setNoteText] = useState('');
   const [noteSaving, setNoteSaving] = useState(false);
   const [banner, setBanner] = useState(null);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editingText, setEditingText] = useState('');
+  const [editingSaving, setEditingSaving] = useState(false);
+  const [noteDeletingId, setNoteDeletingId] = useState(null);
 
   const [draft, setDraft] = useState(null);
 
@@ -156,6 +160,65 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
   };
 
   const evidence = useMemo(() => draft?.evidence || [], [draft]);
+
+  const startEditNote = (note) => {
+    setEditingNoteId(note._id);
+    setEditingText(note.note || '');
+  };
+
+  const cancelEditNote = () => {
+    setEditingNoteId(null);
+    setEditingText('');
+  };
+
+  const saveEditNote = async () => {
+    if (!editingNoteId || !editingText.trim()) return;
+    try {
+      setEditingSaving(true);
+      setBanner(null);
+
+      // using your axiosInstance directly:
+      const { data: updated } = await axiosInstance.put(
+        `/accidents/${accident._id}/notes/${editingNoteId}`,
+        { note: editingText.trim() }
+      );
+
+      setEditingNoteId(null);
+      setEditingText('');
+      setBanner({ type: 'success', message: 'Note updated.' });
+      onUpdated?.(updated);
+    } catch (e) {
+      setBanner({
+        type: 'error',
+        message:
+          e?.response?.data?.message || e?.message || 'Update note failed',
+      });
+    } finally {
+      setEditingSaving(false);
+    }
+  };
+
+  const onDeleteNote = async (noteId) => {
+    if (!noteId) return;
+    if (!window.confirm('Delete this note permanently?')) return;
+
+    try {
+      setNoteDeletingId(noteId);
+      setBanner(null);
+      const { data: updated } = await axiosInstance.delete(
+        `/accidents/${accident._id}/notes/${noteId}`
+      );
+      setBanner({ type: 'success', message: 'Note deleted.' });
+      onUpdated?.(updated);
+    } catch (e) {
+      setBanner({
+        type: 'error',
+        message: e?.response?.data?.message || e?.message || 'Delete failed',
+      });
+    } finally {
+      setNoteDeletingId(null);
+    }
+  };
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
@@ -480,6 +543,95 @@ export default function AccidentUpdatePanel({ accident, onUpdated }) {
                 ))}
               </div>
             )}
+          </section>
+
+          <section>
+            {Array.isArray(accident.investigationNotes) &&
+              accident.investigationNotes.length > 0 && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h2 className="mb-4 text-lg font-medium text-slate-900">
+                    Investigation Notes
+                  </h2>
+                  <ul className="space-y-3">
+                    {accident.investigationNotes.map((n) => {
+                      const isEditing = editingNoteId === n._id;
+                      return (
+                        <li
+                          key={n._id}
+                          className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+                        >
+                          {!isEditing ? (
+                            <>
+                              <div className="text-sm text-slate-900 whitespace-pre-wrap">
+                                {n.note}
+                              </div>
+                              <div className="mt-1 text-xs text-slate-500">
+                                {n.addedBy ? `By ${n.addedBy} • ` : ''}
+                                {n.updatedAt
+                                  ? `Updated ${new Date(
+                                      n.updatedAt
+                                    ).toLocaleString()}`
+                                  : n.createdAt
+                                  ? `Added ${new Date(
+                                      n.createdAt
+                                    ).toLocaleString()}`
+                                  : ''}
+                              </div>
+                              <div className="mt-2 flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditNote(n)}
+                                  className="rounded-md border border-slate-200 bg-white px-3 py-1 text-xs hover:bg-slate-50"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onDeleteNote(n._id)}
+                                  disabled={noteDeletingId === n._id}
+                                  className="rounded-md bg-rose-600 text-white px-3 py-1 text-xs hover:bg-rose-700 disabled:opacity-50"
+                                >
+                                  {noteDeletingId === n._id
+                                    ? 'Deleting…'
+                                    : 'Delete'}
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <textarea
+                                rows={3}
+                                className="w-full rounded-xl border-slate-300 shadow-sm px-3 py-2"
+                                value={editingText}
+                                onChange={(e) => setEditingText(e.target.value)}
+                              />
+                              <div className="mt-2 flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={cancelEditNote}
+                                  className="rounded-md border border-slate-200 bg-white px-3 py-1 text-xs hover:bg-slate-50"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={saveEditNote}
+                                  disabled={
+                                    editingSaving || !editingText.trim()
+                                  }
+                                  className="rounded-md bg-[#0B214A] px-3 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
+                                >
+                                  {editingSaving ? 'Saving…' : 'Save'}
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
           </section>
         </div>
       )}

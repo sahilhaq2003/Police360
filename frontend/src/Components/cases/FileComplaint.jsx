@@ -3,6 +3,7 @@ import axiosInstance from "../../utils/axiosInstance";
 import { useNavigate, useLocation } from "react-router-dom";
 import Nav from '../Nav/Nav';
 import hero from '../../assets/loginbg.jpg';
+import Footer from "../Footer/Footer";
 
 const complaintTypes = ["eCrime", "Tourist Police", "Police Report Inquiry", "File Complaint", "Criminal Status of Financial Cases", "Other"];
 const idTypes = ["National ID", "Passport", "Driver's License", "Voter ID", "Other"];
@@ -735,6 +736,8 @@ export default function FileComplaint() {
         </form>
         </div>
       </div>
+      <br /><br /><br /><br />
+      <Footer />
     </div>
   );
 }
