@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { UserCheck, ArrowLeft } from 'lucide-react';
+import { UserCheck, ArrowLeft, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
@@ -199,6 +199,14 @@ function AllAccidents() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-medium shadow hover:opacity-90 transition"
             >
               📊 Export Excel
+            </button>
+            <button
+              onClick={() => navigate('/Accidents/reports')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#0B214A] text-white text-sm font-medium bg-[#0B214A] hover:opacity-90 transition"
+              title="Open the dynamic report builder"
+            >
+              <FileText className="w-4 h-4" />
+              Reports
             </button>
           </div>
         </div>

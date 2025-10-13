@@ -4,6 +4,11 @@ import PoliceHeader from "../PoliceHeader/PoliceHeader";
 import { getMediaUrl } from '../../utils/mediaUrl';
 import axiosInstance from "../../utils/axiosInstance";
 import CriminalPrintExport from "./CriminalPrintExport";
+import { 
+  calculateTotalPrisonTime, 
+  formatPrisonTime, 
+  calculateTimeServed 
+} from "../../utils/prisonTimeCalculator";
 
 export default function CriminalProfile() {
   const [criminal, setCriminal] = useState(null);
@@ -67,6 +72,34 @@ export default function CriminalProfile() {
     }
     
     return "N/A";
+  };
+
+  // Calculate prison time from arrests
+  const getPrisonTimeInfo = () => {
+    if (!criminal?.arrests || criminal.arrests.length === 0) {
+      return null;
+    }
+
+    const prisonTimeData = calculateTotalPrisonTime(criminal.arrests);
+    
+    if (prisonTimeData.totalDays === 0) {
+      return null;
+    }
+
+    // Calculate time served for arrested, in prison, and released criminals
+    let timeServedInfo = null;
+    if ((criminal.criminalStatus === 'arrested' || criminal.criminalStatus === 'in prison' || criminal.criminalStatus === 'released') && criminal.arrestDate) {
+      timeServedInfo = calculateTimeServed(
+        criminal.arrestDate, 
+        prisonTimeData.totalDays, 
+        criminal.releaseDate
+      );
+    }
+
+    return {
+      ...prisonTimeData,
+      timeServed: timeServedInfo
+    };
   };
 
   const getStatusBadge = (status) => {
@@ -275,10 +308,17 @@ export default function CriminalProfile() {
                     </div>
                   )}
                   
-                  {criminal.criminalStatus === 'in prison' && criminal.prisonDays && (
+                  {criminal.criminalStatus === 'in prison' && criminal.arrestDate && (
                     <div>
-                      <span className="font-semibold text-gray-600">Prison Time:</span>
-                      <p className="text-gray-800">{criminal.prisonDays} days</p>
+                      <span className="font-semibold text-gray-600">Arrest Date:</span>
+                      <p className="text-gray-800">{formatDate(criminal.arrestDate)}</p>
+                    </div>
+                  )}
+                  
+                  {criminal.criminalStatus === 'released' && criminal.arrestDate && (
+                    <div>
+                      <span className="font-semibold text-gray-600">Arrest Date:</span>
+                      <p className="text-gray-800">{formatDate(criminal.arrestDate)}</p>
                     </div>
                   )}
                   
@@ -289,6 +329,128 @@ export default function CriminalProfile() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Prison Time Analysis - For arrested, in prison, and released criminals */}
+            {(criminal.criminalStatus === 'arrested' || criminal.criminalStatus === 'in prison' || criminal.criminalStatus === 'released') && getPrisonTimeInfo() && (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-xl font-bold text-[#0B214A] mb-4 border-b border-gray-200 pb-2">
+                  Prison Time Analysis
+                </h2>
+                
+                {(() => {
+                  const prisonInfo = getPrisonTimeInfo();
+                  return (
+                    <div className="space-y-4">
+                      {/* Total Sentence */}
+                      <div className="bg-blue-50 rounded-lg p-4">
+                        <h3 className="font-semibold text-blue-800 mb-2">Total Sentence</h3>
+                        <p className="text-2xl font-bold text-blue-900">
+                          {formatPrisonTime(prisonInfo.totalDays)}
+                        </p>
+                        <p className="text-sm text-blue-700 mt-1">
+                          ({prisonInfo.totalDays} days total)
+                        </p>
+                      </div>
+
+                      {/* Time Served/Status Information */}
+                      {prisonInfo.timeServed && (
+                        <div className="bg-orange-50 rounded-lg p-4">
+                          {criminal.criminalStatus === 'arrested' && (
+                            <>
+                              <h3 className="font-semibold text-orange-800 mb-2">Time Since Arrest</h3>
+                              <p className="text-xl font-bold text-orange-900">
+                                {formatPrisonTime(prisonInfo.timeServed.timeServed)}
+                              </p>
+                              <p className="text-sm text-orange-700 mt-1">
+                                ({prisonInfo.timeServed.timeServed} days since arrest)
+                              </p>
+                            </>
+                          )}
+                          
+                          {criminal.criminalStatus === 'in prison' && (
+                            <>
+                              <h3 className="font-semibold text-orange-800 mb-2">Time Served</h3>
+                              <p className="text-xl font-bold text-orange-900">
+                                {formatPrisonTime(prisonInfo.timeServed.timeServed)}
+                              </p>
+                              <p className="text-sm text-orange-700 mt-1">
+                                ({prisonInfo.timeServed.timeServed} days served)
+                              </p>
+                              
+                              {prisonInfo.timeServed.timeRemaining > 0 && (
+                                <div className="mt-3">
+                                  <h4 className="font-semibold text-orange-800">Time Remaining:</h4>
+                                  <p className="text-lg font-bold text-orange-900">
+                                    {formatPrisonTime(prisonInfo.timeServed.timeRemaining)}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {prisonInfo.timeServed.isComplete && (
+                                <div className="mt-3">
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                    ✓ Sentence Completed
+                                  </span>
+                                </div>
+                              )}
+                            </>
+                          )}
+                          
+                          {criminal.criminalStatus === 'released' && (
+                            <>
+                              <h3 className="font-semibold text-green-800 mb-2">Total Time Served</h3>
+                              <p className="text-xl font-bold text-green-900">
+                                {formatPrisonTime(prisonInfo.timeServed.timeServed)}
+                              </p>
+                              <p className="text-sm text-green-700 mt-1">
+                                ({prisonInfo.timeServed.timeServed} days total)
+                              </p>
+                              
+                              {prisonInfo.timeServed.isComplete ? (
+                                <div className="mt-3">
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                    ✓ Sentence Completed
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="mt-3">
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                    ⚠ Early Release
+                                  </span>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Breakdown by Arrest */}
+                      {prisonInfo.breakdown.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold text-gray-800 mb-3">Sentence Breakdown</h3>
+                          <div className="space-y-2">
+                            {prisonInfo.breakdown.map((item, index) => (
+                              <div key={index} className="flex justify-between items-center bg-gray-50 rounded p-3">
+                                <div>
+                                  <p className="font-medium text-gray-800">{item.charge}</p>
+                                  <p className="text-sm text-gray-600">
+                                    {item.date ? formatDate(item.date) : 'No date'} • Term: {item.term}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold text-gray-800">{formatPrisonTime(item.days)}</p>
+                                  <p className="text-sm text-gray-600">({item.days} days)</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -352,8 +514,8 @@ export default function CriminalProfile() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Fingerprints */}
-            {criminal.fingerprints && criminal.fingerprints.length > 0 && (
+            {/* Fingerprints - Hidden for wanted criminals */}
+            {criminal.criminalStatus !== 'wanted' && criminal.fingerprints && criminal.fingerprints.length > 0 && (
               <div className="bg-white rounded-lg shadow-lg p-6">
                 <h2 className="text-xl font-bold text-[#0B214A] mb-4 border-b border-gray-200 pb-2">
                   Fingerprints

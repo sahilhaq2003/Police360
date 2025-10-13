@@ -114,7 +114,6 @@ export default function CriminalRecord() {
     criminalStatus: "",
     rewardPrice: "",
     arrestDate: "",
-    prisonDays: "",
     releaseDate: "",
     dob: { d: "", m: "", y: "" },
     otherInfo: "",
@@ -167,7 +166,6 @@ export default function CriminalRecord() {
         criminalStatus: criminal.criminalStatus || "",
         rewardPrice: criminal.rewardPrice ? String(criminal.rewardPrice) : "",
         arrestDate: criminal.arrestDate ? new Date(criminal.arrestDate).toISOString().split('T')[0] : "",
-        prisonDays: criminal.prisonDays ? String(criminal.prisonDays) : "",
         releaseDate: criminal.releaseDate ? new Date(criminal.releaseDate).toISOString().split('T')[0] : "",
         dob: criminal.dob ? {
           d: criminal.dob.day ? String(criminal.dob.day) : "",
@@ -360,27 +358,15 @@ export default function CriminalRecord() {
       }
     }
 
-    if (form.criminalStatus === 'in prison' && form.prisonDays) {
-      const days = Number(form.prisonDays);
-      if (days < 1 || days > 36500) {
-        alert('Prison time must be between 1-36,500 days (100 years)');
-        return;
-      }
-    }
 
-    if (form.criminalStatus === 'arrested' && form.arrestDate) {
+    if ((form.criminalStatus === 'arrested' || form.criminalStatus === 'in prison' || form.criminalStatus === 'released') && form.arrestDate) {
       if (new Date(form.arrestDate) > new Date()) {
         alert('Arrest date cannot be in the future');
         return;
       }
     }
 
-    if (form.criminalStatus === 'released' && form.releaseDate) {
-      if (new Date(form.releaseDate) > new Date()) {
-        alert('Release date cannot be in the future');
-        return;
-      }
-    }
+
 
     // Prepare DOB structure to match model
     const dobData = {};
@@ -451,9 +437,7 @@ export default function CriminalRecord() {
       
       // Status-specific fields
       rewardPrice: form.criminalStatus === 'wanted' && form.rewardPrice ? parseInt(form.rewardPrice) : undefined,
-      arrestDate: form.criminalStatus === 'arrested' && form.arrestDate ? new Date(form.arrestDate) : undefined,
-      prisonDays: form.criminalStatus === 'in prison' && form.prisonDays ? parseInt(form.prisonDays) : undefined,
-      releaseDate: form.criminalStatus === 'released' && form.releaseDate ? new Date(form.releaseDate) : undefined,
+      arrestDate: (form.criminalStatus === 'arrested' || form.criminalStatus === 'in prison' || form.criminalStatus === 'released') && form.arrestDate ? new Date(form.arrestDate) : undefined,
       
       // Arrays
       arrests: arrestsData,
@@ -647,7 +631,7 @@ export default function CriminalRecord() {
             <input
               value={form.address}
               onChange={(e) => {
-                const value = e.target.value.replace(/[^a-zA-Z0-9\s,.\-\/]/g, ''); // Allow letters, numbers, spaces, commas, periods, hyphens, and forward slashes
+                const value = e.target.value.replace(/[^a-zA-Z0-9\s,.\-/]/g, ''); // Allow letters, numbers, spaces, commas, periods, hyphens, and forward slashes
                 if (value.length <= 200) {
                   update("address", value);
                 }
@@ -866,7 +850,7 @@ export default function CriminalRecord() {
               </div>
             )}
 
-            {form.criminalStatus === 'arrested' && (
+            {(form.criminalStatus === 'arrested' || form.criminalStatus === 'in prison' || form.criminalStatus === 'released') && (
               <div className="mt-3">
                 <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Arrest Date</label>
                 <input
@@ -882,45 +866,7 @@ export default function CriminalRecord() {
               </div>
             )}
 
-            {form.criminalStatus === 'in prison' && (
-              <div className="mt-3">
-                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Prison Time (days)</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={36500}
-                  step={1}
-                  placeholder="Enter days (max: 100 years)"
-                  value={form.prisonDays}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
-                    if (value === '' || (Number(value) >= 1 && Number(value) <= 36500)) {
-                      update("prisonDays", value);
-                    }
-                  }}
-                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
-                />
-                {form.prisonDays && (Number(form.prisonDays) < 1 || Number(form.prisonDays) > 36500) && (
-                  <p className="text-xs text-red-500 mt-1">Prison time must be between 1-36,500 days (100 years)</p>
-                )}
-              </div>
-            )}
 
-            {form.criminalStatus === 'released' && (
-              <div className="mt-3">
-                <label className="mb-1 block text-[11px] uppercase tracking-wide text-gray-600">Release Date</label>
-                <input
-                  type="date"
-                  max={new Date().toISOString().split('T')[0]}
-                  value={form.releaseDate}
-                  onChange={(e) => update("releaseDate", e.target.value)}
-                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
-                />
-                {form.releaseDate && new Date(form.releaseDate) > new Date() && (
-                  <p className="text-xs text-red-500 mt-1">Release date cannot be in the future</p>
-                )}
-              </div>
-            )}
 
             {/* DOB */}
             <div className="mt-3">
@@ -1033,50 +979,52 @@ export default function CriminalRecord() {
 
         {/* Fingerprints & Other Info */}
         <div className="mt-6 grid grid-cols-12 gap-6 bg-white p-4 rounded-md">
-          {/* Fingerprints */}
-          <div className="col-span-12 lg:col-span-7">
-            <div className="mb-2 border-b border-gray-300 pb-1 text-[12px] font-semibold uppercase tracking-wide text-gray-700">
-              Fingerprints (Optional)
+          {/* Fingerprints - Hidden for wanted criminals */}
+          {form.criminalStatus !== 'wanted' && (
+            <div className="col-span-12 lg:col-span-7">
+              <div className="mb-2 border-b border-gray-300 pb-1 text-[12px] font-semibold uppercase tracking-wide text-gray-700">
+                Fingerprints (Optional)
+              </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              {prints.map((p, i) => (
+                <div key={i} className="rounded border border-gray-300 p-3 text-center">
+                  <div className="mb-2 h-30 w-full overflow-hidden rounded bg-gray-50">
+                    {p.url ? (
+                      <img src={getMediaUrl(p.url)} alt={`fp-${i + 1}`} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <span className="text-xs text-gray-400">#{i + 1}</span>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => choosePrint(i)}
+                    className="w-full rounded border border-gray-400 bg-white px-2 py-1 text-xs hover:bg-gray-50"
+                  >
+                    {p.url ? "Replace" : "Upload (Optional)"}
+                  </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={printInputRefs.current[i]}
+                    onChange={(e) => handlePrintFile(i, e)}
+                    className="hidden"
+                  />
+                </div>
+              ))}
             </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            {prints.map((p, i) => (
-              <div key={i} className="rounded border border-gray-300 p-3 text-center">
-                <div className="mb-2 h-30 w-full overflow-hidden rounded bg-gray-50">
-                  {p.url ? (
-                    <img src={getMediaUrl(p.url)} alt={`fp-${i + 1}`} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <span className="text-xs text-gray-400">#{i + 1}</span>
-                    </div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => choosePrint(i)}
-                  className="w-full rounded border border-gray-400 bg-white px-2 py-1 text-xs hover:bg-gray-50"
-                >
-                  {p.url ? "Replace" : "Upload (Optional)"}
-                </button>
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={printInputRefs.current[i]}
-                  onChange={(e) => handlePrintFile(i, e)}
-                  className="hidden"
-                />
-              </div>
-            ))}
-          </div>
-
-            <button
-              type="button"
-              onClick={uploadAllPrints}
-              className="mt-4 rounded border border-gray-400 bg-white px-3 py-1.5 text-xs font-medium hover:bg-gray-50 mb-10"
-            >
-              Upload All Fingerprints
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={uploadAllPrints}
+                className="mt-4 rounded border border-gray-400 bg-white px-3 py-1.5 text-xs font-medium hover:bg-gray-50 mb-10"
+              >
+                Upload All Fingerprints
+              </button>
+            </div>
+          )}
         </div>
         <h1 className="text-3xl font-semibold mx-auto max-w-7xl mb-10">Criminal Crime</h1>  
 

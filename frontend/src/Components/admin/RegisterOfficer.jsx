@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Home, Server, Key, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, Home, Server, Key, Loader2, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import loginBg from '../../assets/loginbg.jpg';
 import AdminHeader from '../AdminHeader/AdminHeader';
@@ -187,6 +187,18 @@ export default function RegisterOfficer() {
           <p className="mt-2 text-center text-yellow-300">
             Create officer accounts efficiently and securely.
           </p>
+        </div>
+
+        {/* Registration Button - Top Right */}
+        <div className="absolute top-4 right-4">
+          <button
+            onClick={() => navigate('/admin')}
+            className="flex items-center gap-2 px-3 py-2 bg-[#0B214A] text-white rounded-lg hover:bg-[#0A1E42] transition font-medium text-sm"
+            title="Back to Admin Dashboard"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </button>
         </div>
 
         {/* Form Panel */}
