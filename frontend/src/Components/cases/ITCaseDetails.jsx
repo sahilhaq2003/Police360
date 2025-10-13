@@ -382,7 +382,21 @@ export default function ITCaseDetails() {
 
           {/* Action Buttons */}
           <div className="mb-6 flex gap-3 justify-center">
-            {!editing ? (
+            {caseData.status === 'CLOSED' ? (
+              // View-only mode for closed cases
+              <>
+                <button
+                  onClick={exportPDF}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                >
+                  📄 Export PDF
+                </button>
+                <div className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg flex items-center gap-2">
+                  <span>🔒</span>
+                  <span>Case Closed - View Only</span>
+                </div>
+              </>
+            ) : !editing ? (
               <>
                 <button
                   onClick={exportPDF}
