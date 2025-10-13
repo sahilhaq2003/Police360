@@ -1,5 +1,5 @@
 import React, { use, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
 import { Link } from "react-router-dom";
@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 // Export utilities
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import PLogo from '../../assets/PLogo.png';
 
 function LabelRow({ label, children }) {
   return (
@@ -34,12 +35,16 @@ function StatusPill({ status }) {
 export default function CaseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [recentChanges, setRecentChanges] = useState(location.state?.updatedFields || null);
 
   const [c, setC] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [banner, setBanner] = useState(null);
   const [noteText, setNoteText] = useState('');
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editingText, setEditingText] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -60,6 +65,13 @@ export default function CaseDetails() {
   }, [id]);
 
   const attachments = useMemo(() => c?.attachments || [], [c]);
+
+  // Dismiss recent changes (clear navigation state so it doesn't reappear)
+  const dismissRecent = () => {
+    setRecentChanges(null);
+    // replace history state to remove the diff so refresh won't show it again
+    navigate(location.pathname, { replace: true, state: {} });
+  };
 
   if (loading) {
     return (
@@ -145,8 +157,21 @@ export default function CaseDetails() {
   const exportPDF = () => {
     if (!c) return;
     const doc = new jsPDF();
+    // Header with logo and agency text
+    const img = PLogo; // imported asset
+    // draw image on the left  (x, y, width, height)
+    try {
+      // jsPDF accepts data URLs or imported image paths when bundler inlines them
+      doc.addImage(img, 'PNG', 14, 8, 28, 28);
+    } catch (e) {
+      // fallback: ignore if image can't be added (some bundlers require base64)
+      // console.warn('Failed to add logo to PDF', e);
+    }
+
     doc.setFontSize(16);
-    doc.text('Case Details', 14, 16);
+    doc.text('Police360 — Complaint Details', 48, 18);
+    doc.setFontSize(10);
+    doc.text(`Exported: ${new Date().toLocaleString()}`, 48, 26);
 
     const tableColumn = ['Field', 'Value'];
     const rows = [
@@ -167,10 +192,11 @@ export default function CaseDetails() {
       ['Last Updated', c.updatedAt ? new Date(c.updatedAt).toLocaleString() : '—'],
     ];
 
+    // Start table below header (y ~ 40 to account for logo + text)
     autoTable(doc, {
       head: [tableColumn],
       body: rows,
-      startY: 24,
+      startY: 44,
     });
 
     // If investigation notes exist, add them as a second table
@@ -199,11 +225,33 @@ export default function CaseDetails() {
             <p className="text-sm text-[#5A6B85] mt-1">Review and update complaint investigation</p>
           </div>
           <div className="absolute right-0 top-0">
-            <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">← Back</button>
+            <button onClick={() => navigate('/it/cases')} className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">← Back</button>
           </div>
         </div>
 
         <div className="mx-auto max-w-4xl space-y-6">
+          {recentChanges && recentChanges.length > 0 && (
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-4 shadow">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="text-md font-semibold">Recent Changes</h4>
+                  <p className="text-sm text-slate-600">Fields changed by your last update</p>
+                </div>
+                <div>
+                  <button onClick={dismissRecent} className="text-sm text-indigo-700 underline">Dismiss</button>
+                </div>
+              </div>
+              <ul className="mt-3 space-y-2 text-sm">
+                {recentChanges.map((d, i) => (
+                  <li key={i} className="rounded-md bg-white border p-2">
+                    <div className="font-medium">{d.path}</div>
+                    <div className="text-xs text-slate-600">Before: <span className="text-rose-700">{String(d.before ?? '—')}</span></div>
+                    <div className="text-xs text-slate-600">After: <span className="text-emerald-700">{String(d.after ?? '—')}</span></div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="rounded-2xl border border-[#EEF2F7] bg-white p-6 shadow">
             <div className="flex items-center justify-between">
               <div>
@@ -330,8 +378,48 @@ export default function CaseDetails() {
               <ul className="space-y-3">
                 {c.investigationNotes.map((n, idx) => (
                   <li key={n._id || idx} className="rounded-lg border border-[#EEF2F7] bg-[#F9FBFF] p-3">
-                    <div className="text-sm text-slate-900">{n.note}</div>
-                    <div className="mt-1 text-xs text-slate-500">{n.author?.name ? `By ${n.author.name} • ` : ''}{n.createdAt ? new Date(n.createdAt).toLocaleString() : ''}</div>
+                    {editingNoteId === n._id ? (
+                      <div>
+                        <textarea value={editingText} onChange={e => setEditingText(e.target.value)} className="w-full border p-2 rounded-md mb-2" />
+                        <div className="flex gap-2">
+                          <button onClick={async () => {
+                            // save edit
+                            try {
+                              const res = await axiosInstance.put(`/cases/${id}/notes/${n._id}`, { note: editingText });
+                              setC(res.data?.data || res.data);
+                              setBanner({ type: 'success', message: 'Note updated' });
+                              setTimeout(() => setBanner(null), 2500);
+                              setEditingNoteId(null);
+                              setEditingText('');
+                            } catch (err) {
+                              setBanner({ type: 'error', message: err?.response?.data?.message || 'Failed to update note' });
+                              setTimeout(() => setBanner(null), 2500);
+                            }
+                          }} className="px-3 py-1 bg-indigo-600 text-white rounded">Save</button>
+                          <button onClick={() => { setEditingNoteId(null); setEditingText(''); }} className="px-3 py-1 border rounded">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="text-sm text-slate-900">{n.note}</div>
+                        <div className="mt-1 text-xs text-slate-500">{n.author?.name ? `By ${n.author.name} • ` : ''}{n.createdAt ? new Date(n.createdAt).toLocaleString() : ''}</div>
+                        <div className="mt-2 flex gap-2">
+                          <button onClick={() => { setEditingNoteId(n._id); setEditingText(n.note || ''); }} className="text-sm text-indigo-700 underline">Edit</button>
+                          <button onClick={async () => {
+                            if (!window.confirm('Delete this note?')) return;
+                            try {
+                              const res = await axiosInstance.delete(`/cases/${id}/notes/${n._id}`);
+                              setC(res.data?.data || res.data);
+                              setBanner({ type: 'success', message: 'Note deleted' });
+                              setTimeout(() => setBanner(null), 2500);
+                            } catch (err) {
+                              setBanner({ type: 'error', message: err?.response?.data?.message || 'Failed to delete note' });
+                              setTimeout(() => setBanner(null), 2500);
+                            }
+                          }} className="text-sm text-rose-600 underline">Delete</button>
+                        </div>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
