@@ -154,15 +154,17 @@ exports.getByTrackingId = async (req, res) => {
 // GET /api/accidents  (officers only, list with filters)
 exports.listAccidents = async (req, res) => {
   try {
-    const { page = 1, limit = 20, status, type, q, assignedToMe } = req.query;
+    const { page = 1, limit = 20, status, type, q, assignedToMe, assignedOfficer } = req.query;
 
     const filter = {};
     if (status) filter.status = status;
     if (type) filter.accidentType = type;
 
-    // Filter by assigned officer
+    // Filter by assigned officer (support both methods)
     if (assignedToMe === 'true' && req.user?.id) {
       filter.assignedOfficer = req.user.id;
+    } else if (assignedOfficer) {
+      filter.assignedOfficer = assignedOfficer;
     }
 
     if (q) {
