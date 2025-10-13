@@ -1,5 +1,8 @@
 // src/pages/ReportSuccess.jsx
 import React, { useState } from "react";
+import Nav from "../Nav/Nav";
+import Footer from "../Footer/Footer";
+import hero from '../../assets/loginbg.jpg';
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 export default function ReportSuccess() {
@@ -21,9 +24,20 @@ export default function ReportSuccess() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-sky-50 flex items-center justify-center px-4 py-10">
+    <div className="min-h-screen relative">
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${hero})` }}
+        aria-hidden
+      />
+      {/* Overlay to improve contrast */}
+      <div className="absolute inset-0 bg-black/40" aria-hidden />
+
+      <div className="relative z-10 flex items-center justify-center px-4 py-10">
+      <Nav /><br /><br />
       <div className="w-full max-w-xl">
-        {/* Card */}
+        {/* Card */}<br /><br /><br /><br />
         <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-xl ring-1 ring-black/5">
           {/* Decorative top blur */}
           <div className="pointer-events-none absolute -top-24 right-0 h-56 w-56 rounded-full bg-emerald-200/50 blur-3xl" />
@@ -128,7 +142,10 @@ export default function ReportSuccess() {
             Contact support
           </button>
         </p>
-      </div>
+  </div>
+  </div>
+  <br /><br />
+  <Footer />
     </div>
   );
 }

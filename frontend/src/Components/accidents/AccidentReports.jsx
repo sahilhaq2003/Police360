@@ -372,7 +372,7 @@ export default function AccidentReports() {
       <div className="max-w-screen-2xl mx-auto px-6 py-10">
         <div className="mb-6">
           <h1 className="text-3xl font-extrabold tracking-tight">
-            Dynamic Reports
+            Generate Accident Reports
           </h1>
           <p className="text-sm text-[#5A6B85] mt-1">
             Filter, group, and export decision-ready reports.
