@@ -1,21 +1,34 @@
-import React, { useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import axiosInstance from "../../utils/axiosInstance";
 import Nav from "../Nav/Nav";
 import hero from '../../assets/loginbg.jpg';
+import Footer from "../Footer/Footer";
 
 export default function ComplaintProgress() {
   const navigate = useNavigate();
-  const [complaintId, setComplaintId] = useState("");
+  const location = useLocation();
+  const params = useParams();
+  const initialId = location.state?.reportNumber || params.id || "";
+  const [complaintId, setComplaintId] = useState(initialId);
   const [complaint, setComplaint] = useState(null);
   const [assignOfficerId, setAssignOfficerId] = useState("");
   const [noteText, setNoteText] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!complaintId.trim()) {
+  const handleSearch = async (eOrId) => {
+    // allow calling with an event (form submit) or with an id string
+    let idToSearch = '';
+    if (typeof eOrId === 'string') idToSearch = eOrId;
+    else if (eOrId && eOrId.preventDefault) {
+      eOrId.preventDefault();
+      idToSearch = complaintId;
+    } else {
+      idToSearch = complaintId;
+    }
+
+    if (!idToSearch.trim()) {
       setError("Please enter a complaint ID.");
       return;
     }
@@ -24,7 +37,7 @@ export default function ComplaintProgress() {
     setComplaint(null);
 
     try {
-      const res = await axiosInstance.get(`/cases/${complaintId}`);
+      const res = await axiosInstance.get(`/cases/${idToSearch}`);
       setComplaint(res.data?.data || null);
     } catch (err) {
       setError(err?.response?.data?.message || "Complaint not found.");
@@ -32,6 +45,15 @@ export default function ComplaintProgress() {
       setLoading(false);
     }
   };
+
+  // Auto-run search on mount if initialId was provided (via route param or navigation state)
+  useEffect(() => {
+    if (initialId && initialId.trim()) {
+      // run search with provided id
+      handleSearch(initialId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAssign = async () => {
     if (!assignOfficerId.trim() || !complaint) return;
@@ -95,12 +117,12 @@ export default function ComplaintProgress() {
             value={complaintId}
             onChange={(e) => setComplaintId(e.target.value)}
             placeholder="Enter Complaint ID"
-            className="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+            className="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#0B214A] outline-none bg-white"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow"
+            className="w-full sm:w-auto bg-[#0B214A] text-white px-6 py-3 rounded-lg hover:bg-[#0B114C] disabled:opacity-50 shadow"
           >
             {loading ? "Searching..." : "Search"}
           </button>
@@ -180,6 +202,8 @@ export default function ComplaintProgress() {
         )}
         </div>
       </div>
+      <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+      <Footer />
     </div>
   );
 }

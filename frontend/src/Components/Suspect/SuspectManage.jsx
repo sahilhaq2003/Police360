@@ -220,7 +220,6 @@ export default function SuspectManage() {
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">{s.name || 'Unknown'}</div>
-                            <div className="text-sm text-gray-500">{s.crimeInfo || 'No details'}</div>
                           </div>
                         </div>
                       </td>

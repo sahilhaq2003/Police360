@@ -43,6 +43,47 @@ const ViewRequests = () => {
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, denied: 0 });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [deletingId, setDeletingId] = useState("");
+  const [appointmentErrors, setAppointmentErrors] = useState({});
+
+  // Get current datetime in YYYY-MM-DDTHH:mm format for datetime-local input
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Validate appointment date
+  const validateAppointmentDate = (dateTime) => {
+    if (!dateTime) {
+      return 'Please select an appointment date and time';
+    }
+    const selectedDate = new Date(dateTime);
+    const now = new Date();
+    
+    if (selectedDate <= now) {
+      return 'Please select a future date and time for the appointment';
+    }
+    return '';
+  };
+
+  // Handle appointment date change
+  const handleAppointmentChange = (requestId, value) => {
+    setAppointmentInputs((prev) => ({
+      ...prev,
+      [requestId]: value,
+    }));
+    
+    // Clear error when user changes date
+    setAppointmentErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[requestId];
+      return newErrors;
+    });
+  };
 
   const load = async () => {
     setLoading(true);
@@ -74,6 +115,20 @@ const ViewRequests = () => {
   const updateStatus = async (id, status, appointmentDate) => {
     setUpdatingId(id);
     setError("");
+    
+    // Validate appointment date if provided
+    if (appointmentDate) {
+      const validationError = validateAppointmentDate(appointmentDate);
+      if (validationError) {
+        setAppointmentErrors((prev) => ({
+          ...prev,
+          [id]: validationError,
+        }));
+        setUpdatingId("");
+        return;
+      }
+    }
+    
     try {
       const body = appointmentDate ? { status, appointmentDate } : { status };
       const res = await axiosInstance.put(`/requests/${id}`, body);
@@ -81,6 +136,15 @@ const ViewRequests = () => {
       setRequests((prev) =>
         prev.map((r) => (r._id === id ? { ...r, ...updated } : r))
       );
+      
+      // Clear appointment error on successful update
+      if (appointmentDate) {
+        setAppointmentErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[id];
+          return newErrors;
+        });
+      }
     } catch (e) {
       setError(e?.response?.data?.message || "Failed to update status");
     } finally {
@@ -455,17 +519,22 @@ const ViewRequests = () => {
                           <>
                             <div className="flex items-center gap-2">
                               <Calendar className="w-4 h-4 text-[#0B214A]" />
-                              <input
-                                type="datetime-local"
-                                className="border border-[#D6DEEB] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0B214A] focus:border-transparent"
-                                value={appointmentInputs[r._id] || ""}
-                                onChange={(e) =>
-                                  setAppointmentInputs((prev) => ({
-                                    ...prev,
-                                    [r._id]: e.target.value,
-                                  }))
-                                }
-                              />
+                              <div className="flex flex-col">
+                                <input
+                                  type="datetime-local"
+                                  className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent ${
+                                    appointmentErrors[r._id]
+                                      ? 'border-red-400 focus:ring-red-300'
+                                      : 'border-[#D6DEEB] focus:ring-[#0B214A]'
+                                  }`}
+                                  value={appointmentInputs[r._id] || ""}
+                                  onChange={(e) => handleAppointmentChange(r._id, e.target.value)}
+                                  min={getCurrentDateTime()}
+                                />
+                                {appointmentErrors[r._id] && (
+                                  <p className="text-red-600 text-xs mt-1">{appointmentErrors[r._id]}</p>
+                                )}
+                              </div>
                             </div>
                             <button
                               onClick={() =>

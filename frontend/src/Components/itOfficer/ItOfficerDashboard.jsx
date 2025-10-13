@@ -179,7 +179,7 @@ const ItOfficerDashboard = () => {
                   />
                   <ActionCard
                     icon={<FileText className="h-10 w-10" />}
-                    title="Criminal Complaints"
+                    title="Complaints"
                     description="Review and process complaint reports"
                     onClick={() => navigate('/it/cases')}
                     color="purple"

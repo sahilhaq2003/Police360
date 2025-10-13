@@ -52,6 +52,20 @@ const ItDutySchedules = () => {
   });
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateError, setDateError] = useState('');
+
+  // Get today's date in YYYY-MM-DD format
+  const getTodayString = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  // Handle date change and clear errors
+  const handleDateChange = (e) => {
+    const selectedDate = e.target.value;
+    setForm((v) => ({ ...v, date: selectedDate }));
+    setDateError(''); // Clear error when user changes date
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -90,6 +104,19 @@ const ItDutySchedules = () => {
   const save = async (e) => {
     e.preventDefault();
     if (!form.officer || !form.date || !form.startTime || !form.endTime) return;
+    
+    // Validate date is not in the past
+    const selectedDate = new Date(form.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+    
+    if (selectedDate < today) {
+      setDateError('Please select a future date. Past dates are not allowed.');
+      return;
+    }
+    
+    setDateError(''); // Clear any previous date errors
+    
     const payload = {
       officer: form.officer,
       date: form.date,
@@ -499,9 +526,14 @@ const ItDutySchedules = () => {
             </select>
             <input
               type="date"
-              className="border border-[#E5E9F2] rounded-md px-3 py-2 text-sm"
+              className={`border rounded-md px-3 py-2 text-sm ${
+                dateError 
+                  ? 'border-red-400 focus:ring-2 focus:ring-red-300' 
+                  : 'border-[#E5E9F2] focus:ring-2 focus:ring-[#0B214A]'
+              }`}
               value={form.date}
-              onChange={(e) => setForm((v) => ({ ...v, date: e.target.value }))}
+              onChange={handleDateChange}
+              min={getTodayString()}
               required
             />
             <input
@@ -546,6 +578,13 @@ const ItDutySchedules = () => {
               }
             />
           </div>
+
+          {/* Date validation error */}
+          {dateError && (
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+              {dateError}
+            </div>
+          )}
         </form>
 
         {/* Table */}

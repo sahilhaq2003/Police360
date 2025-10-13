@@ -24,6 +24,7 @@ export default function RegisterOfficer() {
     password: ''
   });
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -34,14 +35,90 @@ export default function RegisterOfficer() {
     }
   }, [navigate]);
 
+  // Validation functions
+  const validateContactNumber = (contactNumber) => {
+    if (!contactNumber) {
+      return 'Contact number is required';
+    }
+    if (!contactNumber.startsWith('07')) {
+      return 'Contact number must start with 07';
+    }
+    if (contactNumber.length !== 10) {
+      return 'Contact number must have exactly 10 characters';
+    }
+    if (!/^\d+$/.test(contactNumber)) {
+      return 'Contact number must contain only digits';
+    }
+    return '';
+  };
+
+  const validatePassword = (password) => {
+    if (!password) {
+      return 'Password is required';
+    }
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!/\d/.test(password)) {
+      return 'Password must contain at least one number';
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return 'Password must contain at least one special character';
+    }
+    return '';
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    
+    const contactError = validateContactNumber(data.contactNumber);
+    if (contactError) {
+      errors.contactNumber = contactError;
+    }
+
+    const passwordError = validatePassword(data.password);
+    if (passwordError) {
+      errors.password = passwordError;
+    }
+
+    return errors;
+  };
+
   const onChange = ({ target: { name, value } }) => {
     setData((d) => ({ ...d, [name]: value }));
     if (error) setError('');
+    
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form before submission
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setError('Please fix the validation errors below');
+      return;
+    }
+    
     setLoading(true);
+    setValidationErrors({});
+    setError('');
+    
     try {
       await axiosInstance.post('/officers', data);
       alert('Officer registered successfully');
@@ -141,7 +218,11 @@ export default function RegisterOfficer() {
                   >
                     {label}
                   </label>
-                  <div className="flex items-center bg-gray-100 rounded-md border border-gray-300 px-3 py-2 focus-within:ring-2 focus-within:ring-yellow-400">
+                  <div className={`flex items-center bg-gray-100 rounded-md border px-3 py-2 focus-within:ring-2 ${
+                    validationErrors[key] 
+                      ? 'border-red-400 focus-within:ring-red-300' 
+                      : 'border-gray-300 focus-within:ring-yellow-400'
+                  }`}>
                     {Icon && <Icon className="text-gray-500 mr-2" size={16} />}
                     {type === 'select' ? (
                       <select
@@ -169,6 +250,9 @@ export default function RegisterOfficer() {
                       />
                     )}
                   </div>
+                  {validationErrors[key] && (
+                    <p className="text-red-600 text-xs mt-1">{validationErrors[key]}</p>
+                  )}
                 </div>
               );
             })}
