@@ -494,15 +494,15 @@ export default function CreateCase() {
     }
   }
 
-  const inputField = "w-full px-4 py-3 rounded-lg border border-slate-200 bg-white text-slate-700 placeholder-slate-400 focus:border-[#0B214A] focus:ring-2 focus:ring-[#0B214A]/20 transition";
+  const inputField = "w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 placeholder-slate-400 focus:border-[#0B214A] focus:ring-2 focus:ring-[#0B214A]/20 transition";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
       <PoliceHeader />
-      <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="bg-white border border-[#E4E9F2] rounded-2xl shadow p-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="bg-white border border-[#E4E9F2] rounded-2xl shadow p-6">
           {/* Header */}
-          <div className="mb-8 relative">
+          <div className="mb-6 relative">
             <div className="text-center">
               <h1 className="text-3xl font-extrabold text-slate-800">Create New Case</h1>
               <p className="text-sm text-slate-600 mt-1">IT Officer - Create a new case based on complaint analysis</p>
@@ -531,7 +531,7 @@ export default function CreateCase() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-10">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Section: Case ID */}
             <section>
               <h3 className="text-lg font-semibold text-slate-700 mb-3">
@@ -628,7 +628,7 @@ export default function CreateCase() {
               <h3 className="text-lg font-semibold text-slate-700 mb-3">
                 Complainant Information
               </h3>
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <input
                   value={form.complainant.name}
                   onChange={(e) => onChange("complainant.name", e.target.value)}
@@ -673,7 +673,7 @@ export default function CreateCase() {
               <h3 className="text-lg font-semibold text-slate-700 mb-3">
                 Complaint Details
               </h3>
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <select
                   value={form.complaintDetails.typeOfComplaint}
                   onChange={(e) =>
@@ -717,9 +717,9 @@ export default function CreateCase() {
                     onChange("complaintDetails.description", e.target.value)
                   }
                   placeholder="Complaint Description"
-                  className={`${inputField} h-28`}
+                  className={`${inputField} h-24 md:col-span-2`}
                 />
-                <div>
+                <div className="md:col-span-2">
                   <input 
                     type="file" 
                     multiple 
@@ -737,14 +737,14 @@ export default function CreateCase() {
               <h3 className="text-lg font-semibold text-slate-700 mb-3">
                 IT Officer Analysis & Recommendations
               </h3>
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <textarea
                   value={form.itOfficerDetails.caseAnalysis}
                   onChange={(e) =>
                     onChange("itOfficerDetails.caseAnalysis", e.target.value)
                   }
                   placeholder="Case Analysis - Your assessment of the complaint"
-                  className={`${inputField} h-24`}
+                  className={`${inputField} h-20 md:col-span-1`}
                 />
                 <textarea
                   value={form.itOfficerDetails.technicalDetails}
@@ -752,7 +752,7 @@ export default function CreateCase() {
                     onChange("itOfficerDetails.technicalDetails", e.target.value)
                   }
                   placeholder="Technical Details - Any technical aspects or digital evidence"
-                  className={`${inputField} h-24`}
+                  className={`${inputField} h-20 md:col-span-1`}
                 />
                 <textarea
                   value={form.itOfficerDetails.recommendedActions}
@@ -760,9 +760,9 @@ export default function CreateCase() {
                     onChange("itOfficerDetails.recommendedActions", e.target.value)
                   }
                   placeholder="Recommended Actions - Suggested next steps"
-                  className={`${inputField} h-24`}
+                  className={`${inputField} h-20 md:col-span-2`}
                 />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 md:col-span-2">
                   <select
                     value={form.itOfficerDetails.urgencyLevel}
                     onChange={(e) =>
@@ -792,7 +792,7 @@ export default function CreateCase() {
                     ))}
                   </select>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 md:col-span-2">
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -828,7 +828,7 @@ export default function CreateCase() {
               <h3 className="text-lg font-semibold text-slate-700 mb-3">
                 Officer Assignment
               </h3>
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <select
                   value={form.assignedOfficer}
                   onChange={(e) => onChange("assignedOfficer", e.target.value)}
@@ -872,7 +872,7 @@ export default function CreateCase() {
               </div>
               
               {showResourceAllocation && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Support Officers */}
                 <div>
                   <h4 className="text-md font-medium text-slate-600 mb-2">Support Officers</h4>
@@ -1012,8 +1012,8 @@ export default function CreateCase() {
               </div>
               
               {showAdditionalInfo && (
-                <div className="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <select
                       value={form.idInfo.idType}
                       onChange={(e) => onChange("idInfo.idType", e.target.value)}
@@ -1060,7 +1060,7 @@ export default function CreateCase() {
               <button
                 type="button"
                 onClick={handleClear}
-                className="px-6 py-3 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
+                className="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
               >
                 Clear Form
               </button>
@@ -1068,14 +1068,14 @@ export default function CreateCase() {
                 <button
                   type="button"
                   onClick={() => navigate("/it/cases")}
-                  className="px-6 py-3 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
+                  className="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-3 rounded-lg bg-[#0B214A] text-white hover:bg-[#0A1E42] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-7 py-2.5 rounded-lg bg-[#0B214A] text-white hover:bg-[#0A1E42] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? "Creating Case..." : "Create Case"}
                 </button>
