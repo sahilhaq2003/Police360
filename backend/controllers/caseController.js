@@ -513,7 +513,7 @@ exports.createCase = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      id: doc._id,   // ✅ send back the new case ID
+      id: doc._id,   //send back the new case ID
       data: doc
     });
   } catch (err) {

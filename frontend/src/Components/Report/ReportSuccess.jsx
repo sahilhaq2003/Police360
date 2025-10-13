@@ -104,7 +104,7 @@ export default function ReportSuccess() {
               
                 
               <button
-                onClick={() => navigate(`/cases/update/${reportNumber}`, { state: { report: passedReport } })}
+                onClick={() => navigate(`/complaint-progress/${reportNumber}`, { state: { reportNumber } })}
                 className="w-full sm:w-auto rounded-xl bg-indigo-600 px-5 py-2.5 font-medium text-white shadow-sm hover:bg-indigo-700 transition"
               >
                 View
