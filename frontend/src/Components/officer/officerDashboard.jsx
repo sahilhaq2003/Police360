@@ -160,7 +160,7 @@ const OfficerDashboard = () => {
 
   const quickStats = useMemo(() => ([
     { 
-      label: 'Assigned Items', 
+      label: 'Assigned ', 
       value: stats.assigned, 
       icon: <ClipboardCheck className="h-6 w-6" />,
       color: 'from-blue-500 to-blue-600',
