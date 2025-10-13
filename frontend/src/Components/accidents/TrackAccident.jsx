@@ -3,6 +3,7 @@ import axiosInstance from '../../utils/axiosInstance';
 import Nav from '../Nav/Nav';
 import accbg from '../../assets/accbg.png';
 import hero from "../../assets/loginbg.jpg";
+import Footer from '../Footer/Footer';
 
 function StatusPill({ status }) {
   const map = {
@@ -183,6 +184,8 @@ export default function TrackAccident() {
           </div>
         </div>
       </div>
+      <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+      <Footer />
     </div>
   );
 }

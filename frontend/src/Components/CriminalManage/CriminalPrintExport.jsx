@@ -2,8 +2,50 @@ import React from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { getMediaUrl } from '../../utils/mediaUrl';
+import { 
+  calculateTotalPrisonTime, 
+  formatPrisonTime, 
+  calculateTimeServed 
+} from "../../utils/prisonTimeCalculator";
 
 export default function CriminalPrintExport({ criminal }) {
+  // Calculate prison time information
+  const getPrisonTimeInfo = (criminal) => {
+    if (!criminal?.arrests || criminal.arrests.length === 0) {
+      return null;
+    }
+
+    const prisonTimeData = calculateTotalPrisonTime(criminal.arrests);
+    
+    if (prisonTimeData.totalDays === 0) {
+      return null;
+    }
+
+    // Calculate time served for arrested, in prison, and released criminals
+    let timeServedInfo = null;
+    if ((criminal.criminalStatus === 'arrested' || criminal.criminalStatus === 'in prison' || criminal.criminalStatus === 'released') && criminal.arrestDate) {
+      timeServedInfo = calculateTimeServed(
+        criminal.arrestDate, 
+        prisonTimeData.totalDays, 
+        criminal.releaseDate
+      );
+    }
+
+    return {
+      ...prisonTimeData,
+      timeServed: timeServedInfo
+    };
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   const buildPrintableHtml = (criminal) => {
     const arrestsRows = (criminal.arrests || []).map(a => `
         <tr>
@@ -23,6 +65,53 @@ export default function CriminalPrintExport({ criminal }) {
           <div style="font-size:11px;color:#444;margin-top:6px;font-weight:bold;">${fp.name || 'Fingerprint'}</div>
         </div>
       `).join('');
+
+    // Generate prison time analysis HTML
+    const prisonInfo = getPrisonTimeInfo(criminal);
+    const prisonTimeHtml = prisonInfo && (criminal.criminalStatus === 'arrested' || criminal.criminalStatus === 'in prison' || criminal.criminalStatus === 'released') ? `
+      <div class="section">
+        <h3>Prison Time Analysis</h3>
+        <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin: 10px 0;">
+          <div style="margin-bottom: 10px;">
+            <strong>Total Sentence:</strong> ${formatPrisonTime(prisonInfo.totalDays)} (${prisonInfo.totalDays} days total)
+          </div>
+          ${prisonInfo.timeServed ? `
+            <div style="margin-bottom: 10px;">
+              ${criminal.criminalStatus === 'arrested' ? `
+                <strong>Time Since Arrest:</strong> ${formatPrisonTime(prisonInfo.timeServed.timeServed)} (${prisonInfo.timeServed.timeServed} days since arrest)
+              ` : criminal.criminalStatus === 'in prison' ? `
+                <strong>Time Served:</strong> ${formatPrisonTime(prisonInfo.timeServed.timeServed)} (${prisonInfo.timeServed.timeServed} days served)
+                ${prisonInfo.timeServed.timeRemaining > 0 ? `
+                  <br/><strong>Time Remaining:</strong> ${formatPrisonTime(prisonInfo.timeServed.timeRemaining)}
+                ` : ''}
+                ${prisonInfo.timeServed.isComplete ? `
+                  <br/><span style="color: green; font-weight: bold;">✓ Sentence Completed</span>
+                ` : ''}
+              ` : criminal.criminalStatus === 'released' ? `
+                <strong>Total Time Served:</strong> ${formatPrisonTime(prisonInfo.timeServed.timeServed)} (${prisonInfo.timeServed.timeServed} days total)
+                ${prisonInfo.timeServed.isComplete ? `
+                  <br/><span style="color: green; font-weight: bold;">✓ Sentence Completed</span>
+                ` : `
+                  <br/><span style="color: orange; font-weight: bold;">⚠ Early Release</span>
+                `}
+              ` : ''}
+            </div>
+          ` : ''}
+          ${prisonInfo.breakdown.length > 0 ? `
+            <div>
+              <strong>Sentence Breakdown:</strong>
+              <ul style="margin: 5px 0 0 20px;">
+                ${prisonInfo.breakdown.map(item => `
+                  <li style="margin-bottom: 5px;">
+                    <strong>${item.charge}</strong> - ${item.date ? formatDate(item.date) : 'No date'} • Term: ${item.term} (${formatPrisonTime(item.days)})
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    ` : '';
 
     return `
       <html>
@@ -143,8 +232,7 @@ export default function CriminalPrintExport({ criminal }) {
             <h3>Criminal Status</h3>
             <div class="status-badge status-${criminal.criminalStatus?.replace(' ', '-') || 'unknown'}">${criminal.criminalStatus?.toUpperCase() || 'UNKNOWN'}</div>
             ${criminal.rewardPrice && criminal.criminalStatus === 'wanted' ? `<div><strong>Reward:</strong> LKR ${criminal.rewardPrice.toLocaleString()}</div>` : ''}
-            ${criminal.arrestDate && criminal.criminalStatus === 'arrested' ? `<div><strong>Arrest Date:</strong> ${new Date(criminal.arrestDate).toLocaleDateString()}</div>` : ''}
-            ${criminal.prisonDays && criminal.criminalStatus === 'in prison' ? `<div><strong>Prison Time:</strong> ${criminal.prisonDays} days</div>` : ''}
+            ${criminal.arrestDate && (criminal.criminalStatus === 'arrested' || criminal.criminalStatus === 'in prison' || criminal.criminalStatus === 'released') ? `<div><strong>Arrest Date:</strong> ${new Date(criminal.arrestDate).toLocaleDateString()}</div>` : ''}
             ${criminal.releaseDate && criminal.criminalStatus === 'released' ? `<div><strong>Release Date:</strong> ${new Date(criminal.releaseDate).toLocaleDateString()}</div>` : ''}
           </div>
 
@@ -175,6 +263,8 @@ export default function CriminalPrintExport({ criminal }) {
               </table>
             </div>
           ` : ''}
+
+          ${prisonTimeHtml}
 
           ${criminal.fingerprints && criminal.fingerprints.length > 0 ? `
             <div class="section">
@@ -243,7 +333,7 @@ export default function CriminalPrintExport({ criminal }) {
           const lines = doc.splitTextToSize(String(text), maxWidth);
           doc.text(lines, x, y);
           return y + (lines.length * fontSize * 0.4) + 5;
-        } catch (error) {
+        } catch {
           // Fallback for text that can't be split
           doc.text(String(text).substring(0, 50), x, y);
           return y + fontSize + 5;
@@ -319,20 +409,17 @@ export default function CriminalPrintExport({ criminal }) {
       if (criminal.rewardPrice && criminal.criminalStatus === 'wanted') {
         yPosition = addText(`Reward: LKR ${criminal.rewardPrice.toLocaleString()}`, 20, yPosition);
       }
-      if (criminal.arrestDate && criminal.criminalStatus === 'arrested') {
+      if (criminal.arrestDate && (criminal.criminalStatus === 'arrested' || criminal.criminalStatus === 'in prison' || criminal.criminalStatus === 'released')) {
         try {
           yPosition = addText(`Arrest Date: ${new Date(criminal.arrestDate).toLocaleDateString()}`, 20, yPosition);
-        } catch (error) {
+        } catch {
           yPosition = addText(`Arrest Date: ${criminal.arrestDate}`, 20, yPosition);
         }
-      }
-      if (criminal.prisonDays && criminal.criminalStatus === 'in prison') {
-        yPosition = addText(`Prison Time: ${criminal.prisonDays} days`, 20, yPosition);
       }
       if (criminal.releaseDate && criminal.criminalStatus === 'released') {
         try {
           yPosition = addText(`Release Date: ${new Date(criminal.releaseDate).toLocaleDateString()}`, 20, yPosition);
-        } catch (error) {
+        } catch {
           yPosition = addText(`Release Date: ${criminal.releaseDate}`, 20, yPosition);
         }
       }
@@ -378,7 +465,7 @@ export default function CriminalPrintExport({ criminal }) {
           arrest.date ? (() => {
             try {
               return new Date(arrest.date).toLocaleDateString();
-            } catch (error) {
+            } catch {
               return String(arrest.date);
             }
           })() : 'N/A',
@@ -415,6 +502,58 @@ export default function CriminalPrintExport({ criminal }) {
         }
       }
 
+      // Prison Time Analysis Section
+      const prisonInfo = getPrisonTimeInfo(criminal);
+      if (prisonInfo && (criminal.criminalStatus === 'arrested' || criminal.criminalStatus === 'in prison' || criminal.criminalStatus === 'released')) {
+        yPosition = addSectionHeader('Prison Time Analysis', yPosition);
+        
+        // Background box for prison time analysis
+        doc.setFillColor(240, 248, 255);
+        doc.rect(15, yPosition - 10, pageWidth - 30, 60, 'F');
+        doc.setDrawColor(200, 220, 255);
+        doc.rect(15, yPosition - 10, pageWidth - 30, 60);
+        
+        yPosition = addText(`Total Sentence: ${formatPrisonTime(prisonInfo.totalDays)} (${prisonInfo.totalDays} days total)`, 20, yPosition);
+        
+        if (prisonInfo.timeServed) {
+          if (criminal.criminalStatus === 'arrested') {
+            yPosition = addText(`Time Since Arrest: ${formatPrisonTime(prisonInfo.timeServed.timeServed)} (${prisonInfo.timeServed.timeServed} days since arrest)`, 20, yPosition);
+          } else if (criminal.criminalStatus === 'in prison') {
+            yPosition = addText(`Time Served: ${formatPrisonTime(prisonInfo.timeServed.timeServed)} (${prisonInfo.timeServed.timeServed} days served)`, 20, yPosition);
+            if (prisonInfo.timeServed.timeRemaining > 0) {
+              yPosition = addText(`Time Remaining: ${formatPrisonTime(prisonInfo.timeServed.timeRemaining)}`, 20, yPosition);
+            }
+            if (prisonInfo.timeServed.isComplete) {
+              doc.setTextColor(0, 128, 0);
+              yPosition = addText('✓ Sentence Completed', 20, yPosition);
+              doc.setTextColor(0, 0, 0);
+            }
+          } else if (criminal.criminalStatus === 'released') {
+            yPosition = addText(`Total Time Served: ${formatPrisonTime(prisonInfo.timeServed.timeServed)} (${prisonInfo.timeServed.timeServed} days total)`, 20, yPosition);
+            if (prisonInfo.timeServed.isComplete) {
+              doc.setTextColor(0, 128, 0);
+              yPosition = addText('✓ Sentence Completed', 20, yPosition);
+              doc.setTextColor(0, 0, 0);
+            } else {
+              doc.setTextColor(255, 140, 0);
+              yPosition = addText('⚠ Early Release', 20, yPosition);
+              doc.setTextColor(0, 0, 0);
+            }
+          }
+        }
+        
+        if (prisonInfo.breakdown.length > 0) {
+          yPosition += 5;
+          yPosition = addText('Sentence Breakdown:', 20, yPosition);
+          prisonInfo.breakdown.forEach((item, index) => {
+            const breakdownText = `${index + 1}. ${item.charge} - ${item.date ? formatDate(item.date) : 'No date'} • Term: ${item.term} (${formatPrisonTime(item.days)})`;
+            yPosition = addText(breakdownText, 25, yPosition, pageWidth - 45);
+          });
+        }
+        
+        yPosition += 10;
+      }
+
       // Additional Information Sections
       if (criminal.otherInfo) {
         yPosition = addSectionHeader('Other Information', yPosition);
@@ -444,8 +583,8 @@ export default function CriminalPrintExport({ criminal }) {
       doc.setTextColor(128, 128, 128);
       try {
         doc.text(`Record Created: ${criminal.createdAt ? new Date(criminal.createdAt).toLocaleString() : 'N/A'}`, 20, yPosition);
-        doc.text(`Last Updated: ${criminal.updatedAt ? new Date(criminal.updatedAt).toLocaleString() : 'N/A'}`, 20, yPosition + 10);
-      } catch (error) {
+        doc.text(`Last Updated: ${criminal.updatedAt ? new Date(criminal.updatedAt).toLocaleDateString() : 'N/A'}`, 20, yPosition + 10);
+      } catch {
         doc.text(`Record Created: ${criminal.createdAt || 'N/A'}`, 20, yPosition);
         doc.text(`Last Updated: ${criminal.updatedAt || 'N/A'}`, 20, yPosition + 10);
       }
