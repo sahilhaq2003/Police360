@@ -208,11 +208,32 @@ export default function ITCaseDetails() {
     if (!caseData) return;
 
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text('IT Case Report', 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Case ID: ${caseData.caseId}`, 14, 25);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 35);
+    const brandPrimary = [11, 33, 74];
+    const brandLight = [238, 242, 247];
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const didDrawPage = () => {
+      // Header
+      doc.setFillColor(...brandPrimary);
+      doc.rect(0, 0, pageWidth, 28, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.text('Police360 - IT Case Report', 14, 18);
+
+      // Subheader
+      doc.setFillColor(...brandLight);
+      doc.rect(0, 28, pageWidth, 10, 'F');
+      doc.setTextColor(11, 33, 74);
+      doc.setFontSize(9);
+      doc.text(`Case ID: ${caseData.caseId}   |   Status: ${caseData.status}   |   Urgency: ${caseData.itOfficerDetails?.urgencyLevel || 'N/A'}`, 14, 35);
+
+      // Footer
+      const str = `Page ${doc.internal.getNumberOfPages()} | Generated ${new Date().toLocaleDateString()}`;
+      doc.setTextColor(100);
+      doc.setFontSize(8);
+      doc.text(str, pageWidth - 14, pageHeight - 8, { align: 'right' });
+    };
 
     // Case Summary
     autoTable(doc, {
@@ -229,15 +250,19 @@ export default function ITCaseDetails() {
         ['Created Date', caseData.createdAt ? new Date(caseData.createdAt).toLocaleDateString() : 'N/A'],
         ['Last Updated', caseData.updatedAt ? new Date(caseData.updatedAt).toLocaleDateString() : 'N/A']
       ],
-      startY: 45,
-      styles: { fontSize: 9 },
-      headStyles: { fontSize: 9, fillColor: [11, 33, 74] }
+      margin: { top: 45, bottom: 18, left: 14, right: 14 },
+      styles: { fontSize: 9, lineColor: brandLight, lineWidth: 0.1 },
+      headStyles: { fontSize: 9, fillColor: brandPrimary, textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [249, 250, 251] },
+      didDrawPage
     });
 
     // Complainant Information
     doc.addPage();
-    doc.setFontSize(14);
-    doc.text('Complainant Information', 14, 15);
+    didDrawPage();
+    doc.setFontSize(12);
+    doc.setTextColor(11, 33, 74);
+    doc.text('Complainant Information', 14, 45);
     
     autoTable(doc, {
       head: [['Field', 'Value']],
@@ -247,14 +272,16 @@ export default function ITCaseDetails() {
         ['Email', caseData.complainant?.email || 'N/A'],
         ['Address', caseData.complainant?.address || 'N/A']
       ],
-      startY: 25,
-      styles: { fontSize: 9 },
-      headStyles: { fontSize: 9, fillColor: [11, 33, 74] }
+      margin: { top: 50, bottom: 18, left: 14, right: 14 },
+      styles: { fontSize: 9, lineColor: brandLight, lineWidth: 0.1 },
+      headStyles: { fontSize: 9, fillColor: brandPrimary, textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [249, 250, 251] }
     });
 
     // Complaint Details
-    doc.setFontSize(14);
-    doc.text('Complaint Details', 14, 70);
+    doc.setFontSize(12);
+    doc.setTextColor(11, 33, 74);
+    doc.text('Complaint Details', 14, 95);
     
     autoTable(doc, {
       head: [['Field', 'Value']],
@@ -264,16 +291,19 @@ export default function ITCaseDetails() {
         ['Location', caseData.complaintDetails?.location || 'N/A'],
         ['Description', caseData.complaintDetails?.description || 'N/A']
       ],
-      startY: 80,
-      styles: { fontSize: 9 },
-      headStyles: { fontSize: 9, fillColor: [11, 33, 74] }
+      margin: { top: 100, bottom: 18, left: 14, right: 14 },
+      styles: { fontSize: 9, lineColor: brandLight, lineWidth: 0.1 },
+      headStyles: { fontSize: 9, fillColor: brandPrimary, textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [249, 250, 251] }
     });
 
     // IT Officer Analysis
     if (caseData.itOfficerDetails) {
       doc.addPage();
-      doc.setFontSize(14);
-      doc.text('IT Officer Analysis', 14, 15);
+      didDrawPage();
+      doc.setFontSize(12);
+      doc.setTextColor(11, 33, 74);
+      doc.text('IT Officer Analysis', 14, 45);
       
       autoTable(doc, {
         head: [['Field', 'Value']],
@@ -282,17 +312,20 @@ export default function ITCaseDetails() {
           ['Technical Details', caseData.itOfficerDetails.technicalDetails || 'N/A'],
           ['Recommended Actions', caseData.itOfficerDetails.recommendedActions || 'N/A']
         ],
-        startY: 25,
-        styles: { fontSize: 9 },
-        headStyles: { fontSize: 9, fillColor: [11, 33, 74] }
+        margin: { top: 50, bottom: 18, left: 14, right: 14 },
+        styles: { fontSize: 9, lineColor: brandLight, lineWidth: 0.1 },
+        headStyles: { fontSize: 9, fillColor: brandPrimary, textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [249, 250, 251] }
       });
     }
 
     // Investigation Notes
     if (caseData.investigationNotes && caseData.investigationNotes.length > 0) {
       doc.addPage();
-      doc.setFontSize(14);
-      doc.text('Investigation Notes', 14, 15);
+      didDrawPage();
+      doc.setFontSize(12);
+      doc.setTextColor(11, 33, 74);
+      doc.text('Investigation Notes', 14, 45);
       
       const notesData = caseData.investigationNotes.map(note => [
         note.note || 'N/A',
@@ -303,9 +336,10 @@ export default function ITCaseDetails() {
       autoTable(doc, {
         head: [['Note', 'Author', 'Date']],
         body: notesData,
-        startY: 25,
-        styles: { fontSize: 8 },
-        headStyles: { fontSize: 8, fillColor: [11, 33, 74] }
+        margin: { top: 50, bottom: 18, left: 14, right: 14 },
+        styles: { fontSize: 8, lineColor: brandLight, lineWidth: 0.1 },
+        headStyles: { fontSize: 8, fillColor: brandPrimary, textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [249, 250, 251] }
       });
     }
 

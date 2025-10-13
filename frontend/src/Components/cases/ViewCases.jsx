@@ -100,20 +100,37 @@ const ViewCases = () => {
     }
 
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`${activeTab === 'ongoing' ? 'Ongoing' : 'Closed'} Cases Report`, 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 25);
-    
-    // Add filter information
-    let filterInfo = `Filters: Status - ${activeTab === 'ongoing' ? 'Ongoing' : 'Closed'}`;
-    if (urgencyFilter !== 'ALL') {
-      filterInfo += `, Urgency - ${urgencyFilter}`;
-    }
-    if (searchTerm) {
-      filterInfo += `, Search - "${searchTerm}"`;
-    }
-    doc.text(filterInfo, 14, 32);
+    const brandPrimary = [11, 33, 74];
+    const brandLight = [238, 242, 247];
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Build filter information
+    let filterInfo = `Status: ${activeTab === 'ongoing' ? 'Ongoing' : 'Closed'}`;
+    if (urgencyFilter !== 'ALL') filterInfo += `  |  Urgency: ${urgencyFilter}`;
+    if (searchTerm) filterInfo += `  |  Search: "${searchTerm}"`;
+
+    const didDrawPage = (data) => {
+      // Header band
+      doc.setFillColor(...brandPrimary);
+      doc.rect(0, 0, pageWidth, 28, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.text(`Police360 - ${activeTab === 'ongoing' ? 'Ongoing' : 'Closed'} Cases Report`, 14, 18);
+
+      // Subheader info bar
+      doc.setFillColor(...brandLight);
+      doc.rect(0, 28, pageWidth, 10, 'F');
+      doc.setTextColor(11, 33, 74);
+      doc.setFontSize(9);
+      doc.text(filterInfo, 14, 35);
+
+      // Footer with page number and timestamp
+      const str = `Page ${doc.internal.getNumberOfPages()} | Generated ${new Date().toLocaleDateString()}`;
+      doc.setTextColor(100);
+      doc.setFontSize(8);
+      doc.text(str, pageWidth - 14, pageHeight - 8, { align: 'right' });
+    };
 
          const tableColumn = [
            'Case ID',
@@ -142,9 +159,11 @@ const ViewCases = () => {
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: 40,
-      styles: { fontSize: 8 },
-      headStyles: { fontSize: 8, fillColor: [11, 33, 74] }
+      margin: { top: 45, bottom: 18, left: 14, right: 14 },
+      styles: { fontSize: 8, lineColor: brandLight, lineWidth: 0.1 },
+      headStyles: { fontSize: 8, fillColor: brandPrimary, textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [249, 250, 251] },
+      didDrawPage
     });
 
     doc.save(`${activeTab}-cases-report.pdf`);
