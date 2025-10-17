@@ -1,5 +1,9 @@
 {
   "dependencies": {
     "bcryptjs": "^3.0.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.4",
+    "vite": "^7.1.10"
   }
 }
