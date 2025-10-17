@@ -370,7 +370,7 @@ export default function FileComplaint() {
                   placeholder="Email (must contain @ symbol)"
                   className={`${inputField} ${validationErrors['complainant.email'] ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''}`}
                 />
-                <p className="text-xs text-gray-500 mt-1">💡 Hint: Make sure to include @ symbol in your email address</p>
+                <p className="text-xs text-gray-500 mt-1">Hint: Make sure to include @ symbol in your email address</p>
                 {validationErrors['complainant.email'] && (
                   <p className="text-red-600 text-xs mt-1">{validationErrors['complainant.email']}</p>
                 )}

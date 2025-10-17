@@ -8,6 +8,7 @@ export default function UpdateComplaint() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState(null);
+  const [original, setOriginal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [banner, setBanner] = useState(null);
   const location = useLocation();
@@ -31,8 +32,11 @@ export default function UpdateComplaint() {
       try {
         console.log('DEBUG: axios baseURL', axiosInstance.defaults.baseURL);
         console.log('DEBUG: GET URL', `${axiosInstance.defaults.baseURL.replace(/\/+$/, '')}/cases/${id}`);
-        const res = await axiosInstance.get(`/cases/${id}`);
-        setForm(res.data?.data || res.data);
+  const res = await axiosInstance.get(`/cases/${id}`);
+  const fetched = res.data?.data || res.data;
+  setForm(fetched);
+  // keep an immutable snapshot to compute diffs after update
+  setOriginal(JSON.parse(JSON.stringify(fetched)));
       } catch (err) {
         console.error('fetchComplaint error', err);
         const status = err?.response?.status;
@@ -93,7 +97,34 @@ export default function UpdateComplaint() {
       const res = await axiosInstance.put(`/cases/${id}`, form, { headers });
       const updated = res?.data?.data || res?.data;
       if (res?.data?.success) {
-        navigate(`/cases/${id}`); // back to details page
+        // compute a simple diff between original and updated
+        const diffs = [];
+        const flatten = (obj, prefix = '') => {
+          if (!obj || typeof obj !== 'object') return { [prefix]: obj };
+          return Object.keys(obj).reduce((acc, key) => {
+            const path = prefix ? `${prefix}.${key}` : key;
+            if (obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+              return { ...acc, ...flatten(obj[key], path) };
+            }
+            acc[path] = obj[key];
+            return acc;
+          }, {});
+        };
+
+        const flatOriginal = original ? flatten(original) : {};
+        const flatUpdated = updated ? flatten(updated) : {};
+        const keys = Array.from(new Set([...Object.keys(flatOriginal), ...Object.keys(flatUpdated)]));
+        keys.forEach((k) => {
+          const before = flatOriginal[k];
+          const after = flatUpdated[k];
+          // compare simple serialized values
+          const beforeS = before === undefined ? '' : JSON.stringify(before);
+          const afterS = after === undefined ? '' : JSON.stringify(after);
+          if (beforeS !== afterS) diffs.push({ path: k, before: before, after: after });
+        });
+
+        // navigate back to details and include the diffs in state
+        navigate(`/cases/${id}`, { state: { updatedFields: diffs } });
       } else {
         setBanner({ type: 'success', message: 'Update completed' });
       }
