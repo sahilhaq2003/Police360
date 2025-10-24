@@ -1,5 +1,5 @@
 const Officer = require('../models/Officer');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const dupKey = (err) => err && err.code === 11000;
 const castId = (err) => err && err.name === 'CastError' && err.path === '_id';
