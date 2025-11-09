@@ -36,12 +36,26 @@ const OfficerDashboard = () => {
       setLoading(true);
       try {
         const myId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        
+        // Check if user is logged in
+        if (!token || !myId) {
+          console.warn('No token or user ID found, redirecting to login');
+          navigate('/login');
+          return;
+        }
+        
         console.log('Fetching data for officer ID:', myId);
         
         // Fetch all data in parallel
         const [reportsRes, accRes, caseRes, itCaseRes] = await Promise.all([
           axiosInstance.get('/reporting/my').catch(err => {
-            console.warn('Reports API not available:', err.message);
+            // Don't redirect on 401 for this endpoint, just log and return empty
+            if (err?.response?.status === 401) {
+              console.warn('Reports API unauthorized (may not be available for this officer):', err.message);
+            } else {
+              console.warn('Reports API not available:', err.message);
+            }
             return { data: [] };
           }),
           axiosInstance.get('/accidents', { 
