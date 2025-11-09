@@ -34,8 +34,8 @@ const AdminDashboard = () => {
   const [kpis, setKpis] = useState({ activeCount: 0, officer: 0, it: 0, admin: 0 });
 
   // Reports
-  const [complaintReports, setComplaintReports] = useState([]);
   const [accidentReports, setAccidentReports] = useState([]);
+  const [publicComplaints, setPublicComplaints] = useState([]);
 
   // UI
   const [loading, setLoading] = useState(true);
@@ -81,59 +81,65 @@ const AdminDashboard = () => {
           admin: serverKpis?.admin || adminOfficers.length,
         });
 
-        // Load reports data (with error handling for each)
+        // Load accidents data
         try {
-          // Backend returns various shapes (e.g. { reports: [...] } or { data: { reports: [...] } } ), so accept several
-          const reportsRes = await axiosInstance.get('/reports');
-          const allReports =
-            reportsRes?.data?.reports ||
-            reportsRes?.data?.data?.reports ||
-            reportsRes?.data?.data ||
-            reportsRes?.data ||
-            [];
-
-          // Debug logging to help trace why lists might be empty in the UI
-          try {
-            const total = Array.isArray(allReports) ? allReports.length : 0;
-            console.log('AdminDashboard: fetched reports', { total, sample: Array.isArray(allReports) ? allReports.slice(0, 3) : allReports });
-          } catch (logErr) {
-            console.warn('AdminDashboard: could not log reports', logErr);
-          }
-
-          const complaintKeywords = [
-            'complaint',
-            'file criminal complaint',
-            'police report',
-            'police report inquiry',
-            'criminal complaint',
-          ];
-          const complaintDocs = Array.isArray(allReports)
-            ? allReports.filter(r => {
-                const t = String(r.reportType || '').toLowerCase();
-                return complaintKeywords.some(k => t.includes(k));
-              })
-            : [];
-          setComplaintReports(complaintDocs.slice(0, 6));
-
-          const accDocs = Array.isArray(allReports)
-            ? allReports.filter(r => String(r.reportType || '').toLowerCase().includes('accident'))
-            : [];
-          setAccidentReports(accDocs.slice(0, 6));
-
-          console.log('AdminDashboard: complaintCount, accidentCount', { complaints: complaintDocs.length, accidents: accDocs.length, totalFetched: Array.isArray(allReports) ? allReports.length : 0 });
-        } catch (reportError) {
-          // If reports fail, just set empty arrays and continue
-          console.warn('Reports data failed to load:', reportError);
-          setComplaintReports([]);
+          const accidentsRes = await axiosInstance.get('/accidents', {
+            params: {
+              page: 1,
+              limit: 10 // Fetch more to ensure we have enough for preview
+            }
+          });
+          const accidentsData = accidentsRes?.data?.items || accidentsRes?.data?.data || [];
+          const accidentsArray = Array.isArray(accidentsData) ? accidentsData : [];
+          setAccidentReports(accidentsArray.slice(0, 6));
+          console.log('AdminDashboard: accidents loaded:', { total: accidentsArray.length, sample: accidentsArray.slice(0, 3) });
+        } catch (accidentsError) {
+          console.warn('Accidents failed to load:', accidentsError);
           setAccidentReports([]);
+        }
+
+        // Fetch IT cases (Public Complaints)
+        try {
+          const itCasesRes = await axiosInstance.get('/it-cases', {
+            params: {
+              page: 1,
+              pageSize: 10 // Fetch more to ensure we have enough for preview
+            }
+          });
+          console.log('AdminDashboard: IT cases API response:', itCasesRes?.data);
+          
+          // Backend returns: { success: true, data: cases } or { data: cases }
+          const casesData = itCasesRes?.data?.data || itCasesRes?.data || [];
+          const casesArray = Array.isArray(casesData) ? casesData : [];
+          
+          // Sort by createdAt descending (most recent first) and take first 6
+          const recentCases = casesArray
+            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+            .slice(0, 6);
+          
+          setPublicComplaints(recentCases);
+          console.log('AdminDashboard: IT cases loaded:', { 
+            total: casesArray.length, 
+            displayed: recentCases.length,
+            sample: recentCases.slice(0, 3).map(c => ({
+              id: c._id,
+              caseId: c.caseId,
+              complainantName: c.complainant?.name,
+              status: c.status
+            }))
+          });
+        } catch (itCasesError) {
+          console.error('IT cases failed to load:', itCasesError);
+          console.error('Error details:', itCasesError?.response?.data || itCasesError?.message);
+          setPublicComplaints([]);
         }
       } catch (e) {
         console.error('Dashboard load error:', e);
         // Don't show error for now, just set default values
         setOfficers([]);
         setKpis({ activeCount: 0, officer: 0, it: 0, admin: 0 });
-        setComplaintReports([]);
         setAccidentReports([]);
+        setPublicComplaints([]);
       } finally {
         setLoading(false);
       }
@@ -142,9 +148,9 @@ const AdminDashboard = () => {
   }, []);
 
   // Recent data
-  const recentComplaintReports = useMemo(() => complaintReports.slice(0, 6), [complaintReports]);
   const recentAccidentReports = useMemo(() => accidentReports.slice(0, 6), [accidentReports]);
   const recentOfficers = useMemo(() => officers.slice(0, 5), [officers]);
+  const recentPublicComplaints = useMemo(() => publicComplaints.slice(0, 6), [publicComplaints]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
@@ -204,13 +210,13 @@ const AdminDashboard = () => {
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-gray-600">Active Officers</p>
-                <p className="text-3xl font-bold text-gray-900">
+                <div className="text-3xl font-bold text-gray-900">
                   {loading ? (
                     <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
                   ) : (
                     kpis.activeCount
                   )}
-                </p>
+                </div>
               </div>
             </div>
           </div>
@@ -225,13 +231,13 @@ const AdminDashboard = () => {
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-gray-600">Field Officers</p>
-                <p className="text-3xl font-bold text-gray-900">
+                <div className="text-3xl font-bold text-gray-900">
                   {loading ? (
                     <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
                   ) : (
                     kpis.officer
                   )}
-                </p>
+                </div>
               </div>
             </div>
           </div>
@@ -246,13 +252,13 @@ const AdminDashboard = () => {
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-gray-600">IT Specialists</p>
-                <p className="text-3xl font-bold text-gray-900">
+                <div className="text-3xl font-bold text-gray-900">
                   {loading ? (
                     <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
                   ) : (
                     kpis.it
                   )}
-                </p>
+                </div>
               </div>
             </div>
           </div>
@@ -267,13 +273,13 @@ const AdminDashboard = () => {
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-gray-600">Command Staff</p>
-                <p className="text-3xl font-bold text-gray-900">
+                <div className="text-3xl font-bold text-gray-900">
                   {loading ? (
                     <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
                   ) : (
                     kpis.admin
                   )}
-                </p>
+                </div>
               </div>
             </div>
           </div>
@@ -346,17 +352,17 @@ const AdminDashboard = () => {
           {/* Report Status Overview removed */}
 
           {/* Recent Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Recent Officers */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-full">
               <div className="bg-gray-800 px-6 py-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <Users className="h-5 w-5" />
                   Recent Officers
                 </h3>
               </div>
-              <div className="p-6">
-                <div className="space-y-3">
+              <div className="p-6 flex flex-col flex-1">
+                <div className="space-y-3 flex-1">
                   {loading ? (
                     <SkeletonRow />
                   ) : recentOfficers.length ? (
@@ -371,7 +377,7 @@ const AdminDashboard = () => {
                     </div>
                   )}
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-auto pt-4 border-t border-gray-200">
                   <button
                     onClick={() => navigate('/admin/officers')}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
@@ -383,57 +389,21 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Recent Complaints */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className="bg-gray-800 px-6 py-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <ListChecks className="h-5 w-5" />
-                  Recent Complaints
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-3">
-                  {loading ? (
-                    <SkeletonRow />
-                  ) : recentComplaintReports.length ? (
-                    recentComplaintReports.map(r => (
-                      <ReportRow key={r._id} r={r} onOpen={() => navigate(`/admin/reports/${r._id}`)} />
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <ListChecks className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm text-gray-500">No recent complaints</p>
-                      <p className="text-xs text-gray-400 mt-1">Complaints will appear here when submitted</p>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <button
-                    onClick={() => navigate('/admin/reports')}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
-                  >
-                    View All Complaints
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
             {/* Recent Accident Reports */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-full">
               <div className="bg-gray-800 px-6 py-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <CarFront className="h-5 w-5" />
                   Recent Accidents
                 </h3>
               </div>
-              <div className="p-6">
-                <div className="space-y-3">
+              <div className="p-6 flex flex-col flex-1">
+                <div className="space-y-3 flex-1">
                   {loading ? (
                     <SkeletonRow />
                   ) : recentAccidentReports.length ? (
                     recentAccidentReports.map(r => (
-                      <ReportRow key={r._id} r={r} onOpen={() => navigate(`/admin/reports/${r._id}`)} />
+                      <ReportRow key={r._id} r={r} onOpen={() => navigate(`/accidents/${r._id}`)} />
                     ))
                   ) : (
                     <div className="text-center py-8">
@@ -443,12 +413,52 @@ const AdminDashboard = () => {
                     </div>
                   )}
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-auto pt-4 border-t border-gray-200">
                   <button
-                    onClick={() => navigate('/admin/reports')}
+                    onClick={() => navigate('/accidents')}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
                   >
                     View All Accidents
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Public Complaints */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-full">
+              <div className="bg-gray-800 px-6 py-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Recent Public Complaints
+                </h3>
+              </div>
+              <div className="p-6 flex flex-col flex-1">
+                <div className="space-y-3 flex-1">
+                  {loading ? (
+                    <SkeletonRow />
+                  ) : recentPublicComplaints.length ? (
+                    recentPublicComplaints.map(complaint => (
+                      <PublicComplaintRow
+                        key={complaint._id}
+                        complaint={complaint}
+                        onOpen={() => navigate(`/it/case-details/${complaint._id}`, { state: { from: 'admin-dashboard' } })}
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Eye className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-gray-500">No recent public complaints</p>
+                      <p className="text-xs text-gray-400 mt-1">Public complaints will appear here when submitted</p>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-auto pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => navigate('/it/cases')}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    View All Public Complaints
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -473,48 +483,100 @@ const AdminDashboard = () => {
 
 /* ===== Reusable UI Components ===== */
 
-const ReportRow = ({ r, onOpen }) => {
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Completed':
-        return 'bg-green-100 text-green-700 border-green-200';
-      case 'In Progress':
-        return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'Under Review':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'Rejected':
-        return 'bg-red-100 text-red-700 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
+const PublicComplaintRow = ({ complaint, onOpen }) => {
+  const statusColors = {
+    'new': 'bg-yellow-100 text-yellow-700',
+    'assigned': 'bg-blue-100 text-blue-700',
+    'in_progress': 'bg-blue-100 text-blue-700',
+    'pending_close': 'bg-orange-100 text-orange-700',
+    'closed': 'bg-green-100 text-green-700',
+    'declined': 'bg-red-100 text-red-700',
+    'pending': 'bg-yellow-100 text-yellow-700',
+    'in progress': 'bg-blue-100 text-blue-700',
+    'completed': 'bg-green-100 text-green-700',
+    'rejected': 'bg-red-100 text-red-700',
   };
 
-  const getReportIcon = (reportType) => {
-    if (reportType?.includes('Accident')) {
-      return <CarFront className="w-3 h-3 text-orange-600" />;
-    }
-    return <ListChecks className="w-3 h-3 text-blue-600" />;
-  };
+  const caseId = complaint.caseId || complaint._id?.substring(0, 8) || 'CASE';
+  const initials = caseId.substring(0, 2).toUpperCase();
+  const complainantName = complaint.complainant?.name || 'Anonymous';
+  const location = complaint.complaintDetails?.location || 'Location not specified';
+  const date = complaint.createdAt;
+  const status = complaint.status || 'NEW';
 
   return (
     <button
       onClick={onOpen}
       className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer group"
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">
+          {initials}
+        </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-900 group-hover:text-gray-800 transition-colors">
-            {getReportIcon(r.reportType)}
-            <span>{r.reportNumber || '—'}</span>
+          <div className="text-sm font-medium text-gray-900 group-hover:text-gray-800 transition-colors">
+            {complainantName}
           </div>
-          <div className="text-xs text-gray-600 mt-1 truncate">
-            {r.reporterName || 'Anonymous'} • {new Date(r.submittedAt || r.createdAt).toLocaleDateString()}
+          <div className="text-xs text-gray-600 truncate">
+            {caseId} • {date ? new Date(date).toLocaleDateString() : 'Date not available'}
           </div>
-          <div className="text-xs text-gray-500 mt-1 truncate">
-            {r.incidentLocation || 'Location not specified'}
+          <div className="text-xs text-gray-500 truncate">
+            {location}
           </div>
         </div>
-        <span className={`text-xs px-2 py-1 rounded-full border ${getStatusColor(r.status)}`}>
+        <span className={`text-xs px-2 py-1 rounded-full font-semibold ${statusColors[status?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>
+          {status}
+        </span>
+      </div>
+    </button>
+  );
+};
+
+const ReportRow = ({ r, onOpen }) => {
+  const getStatusColor = (status) => {
+    const statusLower = (status || '').toLowerCase();
+    if (statusLower.includes('completed') || statusLower === 'closed') {
+      return 'bg-green-100 text-green-700';
+    }
+    if (statusLower.includes('progress') || statusLower === 'in_progress') {
+      return 'bg-blue-100 text-blue-700';
+    }
+    if (statusLower.includes('review') || statusLower === 'pending') {
+      return 'bg-yellow-100 text-yellow-700';
+    }
+    if (statusLower.includes('rejected') || statusLower === 'declined') {
+      return 'bg-red-100 text-red-700';
+    }
+    return 'bg-gray-100 text-gray-700';
+  };
+
+  const trackingId = r.trackingId || r.reportNumber || '—';
+  const initials = trackingId.substring(0, 2).toUpperCase();
+  const reporterName = r.reporterName || r.victim?.name || 'Anonymous';
+  const location = r.locationText || r.incidentLocation || r.location || 'Location not specified';
+  const date = r.createdAt || r.submittedAt || r.incidentDate;
+
+  return (
+    <button
+      onClick={onOpen}
+      className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer group"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold">
+          {initials}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-gray-900 group-hover:text-gray-800 transition-colors">
+            {trackingId}
+          </div>
+          <div className="text-xs text-gray-600 truncate">
+            {reporterName} • {date ? new Date(date).toLocaleDateString() : 'Date not available'}
+          </div>
+          <div className="text-xs text-gray-500 truncate">
+            {location}
+          </div>
+        </div>
+        <span className={`text-xs px-2 py-1 rounded-full font-semibold ${getStatusColor(r.status)}`}>
           {r.status || 'Pending'}
         </span>
       </div>
