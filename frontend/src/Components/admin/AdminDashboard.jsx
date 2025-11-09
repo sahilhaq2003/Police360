@@ -3,15 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
 import AdminHeader from '../AdminHeader/AdminHeader';
 import {
-  FileText,
   UserCheck,
   UserPlus,
   Users,
   ShieldCheck,
   UserCog,
   BarChart3,
-  LogOut,
-  Search,
   CheckCircle2,
   Clock4,
   ClipboardCheck,
@@ -23,7 +20,8 @@ import {
   TrendingUp,
   Clock,
   Badge,
-  AlertTriangle,
+  Eye,
+  ArrowRight,
 } from 'lucide-react';
 
 const ACCIDENT_TYPE = 'Unknown Accident Report';
@@ -36,68 +34,106 @@ const AdminDashboard = () => {
   const [kpis, setKpis] = useState({ activeCount: 0, officer: 0, it: 0, admin: 0 });
 
   // Reports
-  const [allReports, setAllReports] = useState([]);         // recent mix, we’ll split client-side
-  const [accidentReports, setAccidentReports] = useState([]); // explicit accident fetch
-  const [reportStats, setReportStats] = useState({
-    totalReports: 0,
-    todayReports: 0,
-    byStatus: { Pending: 0, 'Under Review': 0, 'In Progress': 0, Completed: 0, Rejected: 0 },
-  });
+  const [complaintReports, setComplaintReports] = useState([]);
+  const [accidentReports, setAccidentReports] = useState([]);
 
   // UI
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [q, setQ] = useState('');   // officer quick jump
-  const [rq, setRq] = useState(''); // report quick jump
 
   useEffect(() => {
     const load = async () => {
-      setError('');
       setLoading(true);
       try {
-        const [officersRes, reportsRes, accRes, statsRes] = await Promise.all([
-          axiosInstance.get('/officers', {
-            params: {
-              q: '',
-              role: 'All',
-              status: 'All',
-              station: 'All',
-              hideAdmins: 'false',
-              sort: 'createdAt:desc',
-              page: 1,
-              pageSize: 5,
-            },
-          }),
-          // Get a slightly larger pool to split into normal/accident on client
-          axiosInstance.get('/reports', { params: { page: 1, limit: 15 } }),
-          // Explicit Accident reports (server filter by reportType)
-          axiosInstance.get('/reports', { params: { page: 1, limit: 10, reportType: ACCIDENT_TYPE } }),
-          axiosInstance.get('/reports/stats'),
-        ]);
-
-        // Officers
-        setOfficers(officersRes.data?.data || []);
-        setKpis(officersRes.data?.kpis || { activeCount: 0, officer: 0, it: 0, admin: 0 });
-
-        // Reports pool
-        const pool = reportsRes.data?.data?.docs || reportsRes.data?.data || [];
-        setAllReports(pool);
-
-        // Accident reports direct
-        const accDocs = accRes.data?.data?.docs || accRes.data?.data || [];
-        setAccidentReports(accDocs);
-
-        // Stats
-        const raw = statsRes.data?.data || {};
-        const mapStatus = { Pending: 0, 'Under Review': 0, 'In Progress': 0, Completed: 0, Rejected: 0 };
-        (raw.statusStats || []).forEach(s => { mapStatus[s._id] = s.count; });
-        setReportStats({
-          totalReports: raw.totalReports || 0,
-          todayReports: raw.todayReports || 0,
-          byStatus: mapStatus,
+        // Load officers data first
+        const officersRes = await axiosInstance.get('/officers', {
+          params: {
+            q: '',
+            role: 'All',
+            status: 'All',
+            station: 'All',
+            hideAdmins: 'false',
+            sort: 'createdAt:desc',
+            page: 1,
+            pageSize: 100, // Get more officers for accurate counts
+          },
         });
+
+        // Process officers data
+        const officersData = officersRes.data?.data || [];
+        const officersArray = Array.isArray(officersData) ? officersData : [];
+        setOfficers(officersArray);
+
+        console.log('Officers data loaded:', officersArray.length, 'officers');
+        console.log('Server KPIs:', officersRes.data?.kpis);
+
+        // Calculate KPIs from actual data
+        const activeOfficers = officersArray.filter(o => o.isActive !== false);
+        const fieldOfficers = officersArray.filter(o => o.role === 'Officer');
+        const itOfficers = officersArray.filter(o => o.role === 'IT Officer');
+        const adminOfficers = officersArray.filter(o => o.role === 'Admin');
+
+        // Use server KPIs if available, otherwise calculate from data
+        const serverKpis = officersRes.data?.kpis;
+        setKpis({
+          activeCount: serverKpis?.activeCount || activeOfficers.length,
+          officer: serverKpis?.officer || fieldOfficers.length,
+          it: serverKpis?.it || itOfficers.length,
+          admin: serverKpis?.admin || adminOfficers.length,
+        });
+
+        // Load reports data (with error handling for each)
+        try {
+          // Backend returns various shapes (e.g. { reports: [...] } or { data: { reports: [...] } } ), so accept several
+          const reportsRes = await axiosInstance.get('/reports');
+          const allReports =
+            reportsRes?.data?.reports ||
+            reportsRes?.data?.data?.reports ||
+            reportsRes?.data?.data ||
+            reportsRes?.data ||
+            [];
+
+          // Debug logging to help trace why lists might be empty in the UI
+          try {
+            const total = Array.isArray(allReports) ? allReports.length : 0;
+            console.log('AdminDashboard: fetched reports', { total, sample: Array.isArray(allReports) ? allReports.slice(0, 3) : allReports });
+          } catch (logErr) {
+            console.warn('AdminDashboard: could not log reports', logErr);
+          }
+
+          const complaintKeywords = [
+            'complaint',
+            'file criminal complaint',
+            'police report',
+            'police report inquiry',
+            'criminal complaint',
+          ];
+          const complaintDocs = Array.isArray(allReports)
+            ? allReports.filter(r => {
+                const t = String(r.reportType || '').toLowerCase();
+                return complaintKeywords.some(k => t.includes(k));
+              })
+            : [];
+          setComplaintReports(complaintDocs.slice(0, 6));
+
+          const accDocs = Array.isArray(allReports)
+            ? allReports.filter(r => String(r.reportType || '').toLowerCase().includes('accident'))
+            : [];
+          setAccidentReports(accDocs.slice(0, 6));
+
+          console.log('AdminDashboard: complaintCount, accidentCount', { complaints: complaintDocs.length, accidents: accDocs.length, totalFetched: Array.isArray(allReports) ? allReports.length : 0 });
+        } catch (reportError) {
+          // If reports fail, just set empty arrays and continue
+          console.warn('Reports data failed to load:', reportError);
+          setComplaintReports([]);
+          setAccidentReports([]);
+        }
       } catch (e) {
-        setError(e?.response?.data?.message || 'Failed to load dashboard data');
+        console.error('Dashboard load error:', e);
+        // Don't show error for now, just set default values
+        setOfficers([]);
+        setKpis({ activeCount: 0, officer: 0, it: 0, admin: 0 });
+        setComplaintReports([]);
+        setAccidentReports([]);
       } finally {
         setLoading(false);
       }
@@ -105,53 +141,10 @@ const AdminDashboard = () => {
     load();
   }, []);
 
-  // Split into Normal vs Accident
-  const normalReports = useMemo(
-    () =>
-      (allReports || [])
-        .filter(r => r?.reportType !== ACCIDENT_TYPE)
-        .slice(0, 10),
-    [allReports]
-  );
-  const recentAccidentReports = useMemo(() => (accidentReports || []).slice(0, 10), [accidentReports]);
-
-  const recentOfficers = useMemo(() => officers, [officers]);
-
-  const quickJumpOfficer = async () => {
-    const term = q.trim();
-    if (!term) return;
-    try {
-      const res = await axiosInstance.get('/officers/search', {
-        params: {
-          query: term,
-          role: 'All',
-          status: 'All',
-          station: 'All',
-          hideAdmins: 'true',
-          limit: 1,
-        },
-      });
-      const hit = Array.isArray(res.data) ? res.data[0] : null;
-      if (hit?._id) navigate(`/admin/officer/${hit._id}`);
-    } catch {}
-  };
-
-  const quickJumpReport = async () => {
-    const term = rq.trim();
-    if (!term) return;
-    try {
-      const res = await axiosInstance.get('/reports', { params: { page: 1, limit: 1, search: term } });
-      const list = res.data?.data?.docs || res.data?.data || [];
-      const hit = list[0];
-      if (hit?._id) navigate(`/admin/reports/${hit._id}`);
-    } catch {}
-  };
-
-  const logout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    navigate('/login');
-  };
+  // Recent data
+  const recentComplaintReports = useMemo(() => complaintReports.slice(0, 6), [complaintReports]);
+  const recentAccidentReports = useMemo(() => accidentReports.slice(0, 6), [accidentReports]);
+  const recentOfficers = useMemo(() => officers.slice(0, 5), [officers]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
@@ -165,7 +158,7 @@ const AdminDashboard = () => {
               <ShieldCheck className="h-8 w-8" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold">Chief Command Center</h1>
+              <h1 className="text-3xl md:text-4xl font-bold">Administrative Command Center</h1>
               <p className="text-blue-100 mt-2">Welcome back, Chief</p>
               <div className="flex items-center gap-4 mt-2 text-sm">
                 <span className="flex items-center gap-1">
@@ -196,24 +189,16 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-        </div>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-
-        {/* Error */}
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm">
-            {error}
-          </div>
-        )}
-
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200">
             <div className="relative p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-3 rounded-lg bg-gray-100">
-                  <div className="text-gray-700"><Users className="h-6 w-6" /></div>
+                <div className="p-3 rounded-lg bg-blue-100">
+                  <Users className="h-6 w-6 text-blue-600" />
                 </div>
                 <TrendingUp className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
               </div>
@@ -233,8 +218,8 @@ const AdminDashboard = () => {
           <div className="group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200">
             <div className="relative p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-3 rounded-lg bg-gray-100">
-                  <div className="text-gray-700"><UserCheck className="h-6 w-6" /></div>
+                <div className="p-3 rounded-lg bg-green-100">
+                  <UserCheck className="h-6 w-6 text-green-600" />
                 </div>
                 <TrendingUp className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
               </div>
@@ -254,8 +239,8 @@ const AdminDashboard = () => {
           <div className="group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200">
             <div className="relative p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-3 rounded-lg bg-gray-100">
-                  <div className="text-gray-700"><UserCog className="h-6 w-6" /></div>
+                <div className="p-3 rounded-lg bg-purple-100">
+                  <UserCog className="h-6 w-6 text-purple-600" />
                 </div>
                 <TrendingUp className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
               </div>
@@ -275,8 +260,8 @@ const AdminDashboard = () => {
           <div className="group relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200">
             <div className="relative p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-3 rounded-lg bg-gray-100">
-                  <div className="text-gray-700"><ShieldCheck className="h-6 w-6" /></div>
+                <div className="p-3 rounded-lg bg-red-100">
+                  <ShieldCheck className="h-6 w-6 text-red-600" />
                 </div>
                 <TrendingUp className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
               </div>
@@ -321,15 +306,7 @@ const AdminDashboard = () => {
             </div>
             
             <div className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <ActionCard
-                  icon={<FileText className="h-7 w-7" />}
-                  title="View Reports"
-                  description="Access complaints, accidents, and summarized analytics"
-                  onClick={() => navigate('/admin/reports')}
-                  color="blue"
-                  priority="high"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <ActionCard
                   icon={<UserCheck className="h-7 w-7" />}
                   title="Manage Officers"
@@ -366,84 +343,88 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Report Status Overview */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gray-800 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Report Status Overview
-                </h3>
-                <span className="bg-gray-700 text-white text-xs px-2 py-1 rounded-full">
-                  {loading ? 'Loading…' : `Total: ${reportStats.totalReports} • Today: ${reportStats.todayReports}`}
-                </span>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <Clock4 className="w-6 h-6 text-gray-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">{loading ? '—' : reportStats.byStatus['Pending']}</div>
-                  <div className="text-sm text-gray-600">Pending</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <ClipboardCheck className="w-6 h-6 text-gray-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">{loading ? '—' : reportStats.byStatus['Under Review']}</div>
-                  <div className="text-sm text-gray-600">Under Review</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <FileText className="w-6 h-6 text-gray-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">{loading ? '—' : reportStats.byStatus['In Progress']}</div>
-                  <div className="text-sm text-gray-600">In Progress</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <CheckCircle2 className="w-6 h-6 text-gray-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">{loading ? '—' : reportStats.byStatus['Completed']}</div>
-                  <div className="text-sm text-gray-600">Completed</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <Ban className="w-6 h-6 text-gray-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">{loading ? '—' : reportStats.byStatus['Rejected']}</div>
-                  <div className="text-sm text-gray-600">Rejected</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Report Status Overview removed */}
 
-          {/* Reports Overview */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Normal Reports */}
+          {/* Recent Activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Officers */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
               <div className="bg-gray-800 px-6 py-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <ListChecks className="h-5 w-5" />
-                  Recent Reports
+                  <Users className="h-5 w-5" />
+                  Recent Officers
                 </h3>
               </div>
               <div className="p-6">
                 <div className="space-y-3">
                   {loading ? (
                     <SkeletonRow />
-                  ) : normalReports.length ? (
-                    normalReports.slice(0, 6).map(r => (
+                  ) : recentOfficers.length ? (
+                    recentOfficers.map(officer => (
+                      <OfficerRow key={officer._id} officer={officer} onOpen={() => navigate(`/admin/officer/${officer._id}`)} />
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-gray-500">No recent officers</p>
+                      <p className="text-xs text-gray-400 mt-1">Officers will appear here when registered</p>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => navigate('/admin/officers')}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    View All Officers
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Complaints */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="bg-gray-800 px-6 py-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <ListChecks className="h-5 w-5" />
+                  Recent Complaints
+                </h3>
+              </div>
+              <div className="p-6">
+                <div className="space-y-3">
+                  {loading ? (
+                    <SkeletonRow />
+                  ) : recentComplaintReports.length ? (
+                    recentComplaintReports.map(r => (
                       <ReportRow key={r._id} r={r} onOpen={() => navigate(`/admin/reports/${r._id}`)} />
                     ))
                   ) : (
                     <div className="text-center py-8">
                       <ListChecks className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm text-gray-500">No normal reports found</p>
+                      <p className="text-sm text-gray-500">No recent complaints</p>
+                      <p className="text-xs text-gray-400 mt-1">Complaints will appear here when submitted</p>
                     </div>
                   )}
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => navigate('/admin/reports')}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    View All Complaints
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Accident Reports */}
+            {/* Recent Accident Reports */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
               <div className="bg-gray-800 px-6 py-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <CarFront className="h-5 w-5" />
-                  Recent Accident Reports
+                  Recent Accidents
                 </h3>
               </div>
               <div className="p-6">
@@ -451,15 +432,25 @@ const AdminDashboard = () => {
                   {loading ? (
                     <SkeletonRow />
                   ) : recentAccidentReports.length ? (
-                    recentAccidentReports.slice(0, 6).map(r => (
-                      <ReportRow key={r._id} r={r} onOpen={() => navigate(`/admin/reports/${r._id}`)} accent />
+                    recentAccidentReports.map(r => (
+                      <ReportRow key={r._id} r={r} onOpen={() => navigate(`/admin/reports/${r._id}`)} />
                     ))
                   ) : (
                     <div className="text-center py-8">
                       <CarFront className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm text-gray-500">No accident reports found</p>
+                      <p className="text-sm text-gray-500">No recent accidents</p>
+                      <p className="text-xs text-gray-400 mt-1">Accident reports will appear here when submitted</p>
                     </div>
                   )}
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => navigate('/admin/reports')}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    View All Accidents
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -471,7 +462,7 @@ const AdminDashboard = () => {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm border border-gray-200">
             <ShieldCheck className="h-4 w-4 text-blue-600" />
             <span className="text-sm text-gray-600">
-              &copy; {new Date().getFullYear()} Police360 Chief Command Center - Administrative Operations
+              &copy; {new Date().getFullYear()} Police360 Administrative Command Center
             </span>
           </div>
         </div>
@@ -480,19 +471,30 @@ const AdminDashboard = () => {
   );
 };
 
-/* ===== Reusable UI ===== */
+/* ===== Reusable UI Components ===== */
 
-const ReportRow = ({ r, onOpen, accent = false }) => {
-  const badgeClass =
-    r.status === 'Completed'
-      ? 'bg-gray-100 text-gray-700'
-      : r.status === 'Rejected'
-      ? 'bg-gray-100 text-gray-700'
-      : r.status === 'In Progress'
-      ? 'bg-gray-100 text-gray-700'
-      : r.status === 'Under Review'
-      ? 'bg-gray-100 text-gray-700'
-      : 'bg-gray-100 text-gray-700';
+const ReportRow = ({ r, onOpen }) => {
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Completed':
+        return 'bg-green-100 text-green-700 border-green-200';
+      case 'In Progress':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'Under Review':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'Rejected':
+        return 'bg-red-100 text-red-700 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+
+  const getReportIcon = (reportType) => {
+    if (reportType?.includes('Accident')) {
+      return <CarFront className="w-3 h-3 text-orange-600" />;
+    }
+    return <ListChecks className="w-3 h-3 text-blue-600" />;
+  };
 
   return (
     <button
@@ -501,37 +503,58 @@ const ReportRow = ({ r, onOpen, accent = false }) => {
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-gray-900 group-hover:text-gray-800 transition-colors">
-            {r.reportNumber || '—'} • {r.reportType}
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-900 group-hover:text-gray-800 transition-colors">
+            {getReportIcon(r.reportType)}
+            <span>{r.reportNumber || '—'}</span>
           </div>
           <div className="text-xs text-gray-600 mt-1 truncate">
-            {r.reporterName} • {new Date(r.submittedAt || r.createdAt).toLocaleDateString()}
+            {r.reporterName || 'Anonymous'} • {new Date(r.submittedAt || r.createdAt).toLocaleDateString()}
           </div>
           <div className="text-xs text-gray-500 mt-1 truncate">
-            {r.incidentLocation}
+            {r.incidentLocation || 'Location not specified'}
           </div>
         </div>
-        <span className={`text-xs px-2 py-1 rounded-full ${badgeClass}`}>
-          {r.status}
+        <span className={`text-xs px-2 py-1 rounded-full border ${getStatusColor(r.status)}`}>
+          {r.status || 'Pending'}
         </span>
       </div>
     </button>
   );
 };
 
-const KpiCard = ({ icon, label, value }) => (
-  <div className="bg-white rounded-2xl border border-[#E4E9F2] shadow p-5 flex items-center justify-between">
-    <div>
-      <div className="text-sm text-[#5A6B85]">{label}</div>
-      <div className="text-2xl font-extrabold mt-1">{value}</div>
-    </div>
-    <div className="rounded-xl p-3 bg-[#F0F5FF] text-[#00296B]">{icon}</div>
-  </div>
-);
+const OfficerRow = ({ officer, onOpen }) => {
+  const initials = (officer.name || '').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+  
+  return (
+    <button
+      onClick={onOpen}
+      className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer group"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+          {initials || '👤'}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-gray-900 group-hover:text-gray-800 transition-colors">
+            {officer.name}
+          </div>
+          <div className="text-xs text-gray-600 truncate">
+            {officer.officerId} • {officer.role} • {officer.station}
+          </div>
+        </div>
+        <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+          officer.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        }`}>
+          {officer.isActive ? 'Active' : 'Inactive'}
+        </span>
+      </div>
+    </button>
+  );
+};
 
-const ActionCard = ({ icon, title, description, onClick, color = "blue", priority = "medium" }) => {
+const ActionCard = ({ icon, title, description, onClick, priority = "medium" }) => {
   const priorityClasses = {
-    high: "ring-2 ring-gray-300 shadow-lg",
+    high: "ring-2 ring-blue-300 shadow-lg",
     medium: "ring-1 ring-gray-200 shadow-md",
     low: "shadow-sm"
   };
@@ -545,7 +568,7 @@ const ActionCard = ({ icon, title, description, onClick, color = "blue", priorit
         <div className="flex items-center justify-between mb-4">
           <div className="text-gray-700">{icon}</div>
           {priority === 'high' && (
-            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+            <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
           )}
         </div>
         <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-gray-800 transition-colors">{title}</h3>
@@ -554,23 +577,6 @@ const ActionCard = ({ icon, title, description, onClick, color = "blue", priorit
     </div>
   );
 };
-
-const MiniStat = ({ label, value }) => (
-  <div className="rounded-xl border border-[#EEF2F7] bg-[#FAFBFF] p-4">
-    <div className="text-sm text-[#5A6B85]">{label}</div>
-    <div className="text-xl font-bold mt-1">{value}</div>
-  </div>
-);
-
-const ReportStatCard = ({ icon, label, value }) => (
-  <div className="rounded-xl border border-[#EEF2F7] bg-[#FAFBFF] p-4 flex items-center justify-between">
-    <div className="flex items-center gap-2">
-      <span className="text-[#00296B]">{icon}</span>
-      <div className="text-sm text-[#5A6B85]">{label}</div>
-    </div>
-    <div className="text-xl font-bold">{value}</div>
-  </div>
-);
 
 const SkeletonRow = () => (
   <div className="animate-pulse space-y-3">

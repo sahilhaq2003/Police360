@@ -1,0 +1,15 @@
+.navbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.nav-link {
+  color: #fff;
+  text-decoration: none;
+}
+
+button {
+  padding: 6px 10px;
+  border-radius: 6px;
+}
