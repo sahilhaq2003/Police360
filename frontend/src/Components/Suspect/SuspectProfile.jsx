@@ -76,7 +76,7 @@ export default function SuspectProfile() {
                     src={getMediaUrl(suspect.photo)}
                     alt="photo"
                     className="w-full h-full object-cover"
-                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/placeholder.png'; }}
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/PLogo.png'; }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400"><span className="text-sm">NO PHOTO</span></div>
@@ -126,7 +126,7 @@ export default function SuspectProfile() {
                             src={getMediaUrl(p.url)}
                             alt={`fp-${i+1}`}
                             className="w-full h-full object-cover"
-                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/placeholder.png'; }}
+                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/PLogo.png'; }}
                           />
                         ) : (
                           <span className="text-xs text-gray-500">Print #{i+1}</span>
