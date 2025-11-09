@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axiosInstance from "../../utils/axiosInstance";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
+import AdminHeader from '../AdminHeader/AdminHeader';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const complaintTypes = ["eCrime", "Tourist Police", "Police Report Inquiry", "File Complaint", "Criminal Status of Financial Cases", "Other"];
 const idTypes = ["National ID", "Passport", "Driver's License", "Voter ID", "Other"];
@@ -13,7 +16,11 @@ const urgencyOptions = ["LOW", "MEDIUM", "HIGH"];
 
 export default function ITCaseDetails() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
+  
+  // Check if user came from admin dashboard
+  const fromAdmin = location.state?.from === 'admin-dashboard';
   
   const [caseData, setCaseData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -86,7 +93,7 @@ export default function ITCaseDetails() {
       if (res.data.success) {
         setBanner({ type: "success", message: "Case deleted successfully!" });
         setTimeout(() => {
-          navigate("/it/view-cases");
+          navigate(fromAdmin ? "/admin/dashboard" : "/it/view-cases");
         }, 1500);
       } else {
         setBanner({ type: "error", message: "Failed to delete case" });
@@ -346,10 +353,144 @@ export default function ITCaseDetails() {
     doc.save(`case-${caseData.caseId}-report.pdf`);
   };
 
+  // Export Excel function
+  const exportExcel = () => {
+    if (!caseData) return;
+
+    try {
+      // Prepare data for Excel
+      const excelData = [
+        ['Case Information', ''],
+        ['Case ID', caseData.caseId || 'N/A'],
+        ['Status', caseData.status || 'N/A'],
+        ['Priority', caseData.priority || 'N/A'],
+        ['Urgency Level', caseData.itOfficerDetails?.urgencyLevel || 'N/A'],
+        ['Assigned Department', caseData.itOfficerDetails?.assignedDepartment || 'N/A'],
+        ['Created Date', caseData.createdAt ? new Date(caseData.createdAt).toLocaleDateString() : 'N/A'],
+        ['Last Updated', caseData.updatedAt ? new Date(caseData.updatedAt).toLocaleDateString() : 'N/A'],
+        ['', ''],
+        ['Complainant Information', ''],
+        ['Name', caseData.complainant?.name || 'N/A'],
+        ['Phone', caseData.complainant?.phone || 'N/A'],
+        ['Email', caseData.complainant?.email || 'N/A'],
+        ['Address', caseData.complainant?.address || 'N/A'],
+        ['', ''],
+        ['Complaint Details', ''],
+        ['Type of Complaint', caseData.complaintDetails?.typeOfComplaint || 'N/A'],
+        ['Incident Date', caseData.complaintDetails?.incidentDate ? new Date(caseData.complaintDetails.incidentDate).toLocaleDateString() : 'N/A'],
+        ['Location', caseData.complaintDetails?.location || 'N/A'],
+        ['Description', caseData.complaintDetails?.description || 'N/A'],
+        ['', ''],
+        ['IT Officer Analysis', ''],
+        ['Case Analysis', caseData.itOfficerDetails?.caseAnalysis || 'N/A'],
+        ['Technical Details', caseData.itOfficerDetails?.technicalDetails || 'N/A'],
+        ['Recommended Actions', caseData.itOfficerDetails?.recommendedActions || 'N/A'],
+        ['', ''],
+        ['Assigned Officer', ''],
+        ['Officer Name', caseData.assignedOfficer?.name || 'Not Assigned'],
+        ['Officer ID', caseData.assignedOfficer?.officerId || 'N/A'],
+        ['Department', caseData.assignedOfficer?.department || 'N/A'],
+      ];
+
+      // Add investigation notes if available
+      if (caseData.investigationNotes && caseData.investigationNotes.length > 0) {
+        excelData.push(['', '']);
+        excelData.push(['Investigation Notes', '']);
+        excelData.push(['Note', 'Author', 'Date']);
+        caseData.investigationNotes.forEach(note => {
+          excelData.push([
+            note.note || 'N/A',
+            typeof note.author === 'object' ? note.author.name : 'Unknown',
+            note.createdAt ? new Date(note.createdAt).toLocaleDateString() : 'N/A'
+          ]);
+        });
+      }
+
+      // Create worksheet
+      const ws = XLSX.utils.aoa_to_sheet(excelData);
+      
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 25 }, // First column
+        { wch: 50 }, // Second column
+      ];
+
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Case Details');
+
+      // Generate and save Excel file
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, `case-${caseData.caseId}-report.xlsx`);
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+      alert('Failed to export Excel file. Please try again.');
+    }
+  };
+
+  // Export JSON function
+  const exportJSON = () => {
+    if (!caseData) return;
+
+    try {
+      // Create a clean JSON object with all case data
+      const jsonData = {
+        caseId: caseData.caseId,
+        status: caseData.status,
+        priority: caseData.priority,
+        urgencyLevel: caseData.itOfficerDetails?.urgencyLevel,
+        assignedDepartment: caseData.itOfficerDetails?.assignedDepartment,
+        createdAt: caseData.createdAt,
+        updatedAt: caseData.updatedAt,
+        complainant: {
+          name: caseData.complainant?.name,
+          phone: caseData.complainant?.phone,
+          email: caseData.complainant?.email,
+          address: caseData.complainant?.address,
+        },
+        complaintDetails: {
+          typeOfComplaint: caseData.complaintDetails?.typeOfComplaint,
+          incidentDate: caseData.complaintDetails?.incidentDate,
+          location: caseData.complaintDetails?.location,
+          description: caseData.complaintDetails?.description,
+        },
+        itOfficerDetails: {
+          caseAnalysis: caseData.itOfficerDetails?.caseAnalysis,
+          technicalDetails: caseData.itOfficerDetails?.technicalDetails,
+          recommendedActions: caseData.itOfficerDetails?.recommendedActions,
+        },
+        assignedOfficer: caseData.assignedOfficer ? {
+          name: caseData.assignedOfficer.name,
+          officerId: caseData.assignedOfficer.officerId,
+          department: caseData.assignedOfficer.department,
+        } : null,
+        investigationNotes: caseData.investigationNotes?.map(note => ({
+          note: note.note,
+          author: typeof note.author === 'object' ? note.author.name : 'Unknown',
+          createdAt: note.createdAt,
+        })) || [],
+        resourceAllocation: caseData.resourceAllocation || null,
+        estimatedLoss: caseData.estimatedLoss,
+        exportedAt: new Date().toISOString(),
+      };
+
+      // Convert to JSON string with formatting
+      const jsonString = JSON.stringify(jsonData, null, 2);
+      
+      // Create blob and download
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      saveAs(blob, `case-${caseData.caseId}-data.json`);
+    } catch (error) {
+      console.error('Error exporting JSON:', error);
+      alert('Failed to export JSON file. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC]">
-        <PoliceHeader />
+        {fromAdmin ? <AdminHeader /> : <PoliceHeader />}
         <div className="max-w-7xl mx-auto px-4 py-10">
           <div className="bg-white border border-[#E4E9F2] rounded-2xl shadow p-8">
             <div className="text-center">
@@ -365,16 +506,16 @@ export default function ITCaseDetails() {
   if (!caseData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC]">
-        <PoliceHeader />
+        {fromAdmin ? <AdminHeader /> : <PoliceHeader />}
         <div className="max-w-7xl mx-auto px-4 py-10">
           <div className="bg-white border border-[#E4E9F2] rounded-2xl shadow p-8">
             <div className="text-center">
               <p className="text-red-600">Case not found</p>
               <button 
-                onClick={() => navigate("/it/view-cases")}
+                onClick={() => navigate(fromAdmin ? "/admin/dashboard" : "/it/view-cases")}
                 className="mt-4 px-4 py-2 bg-[#0B214A] text-white rounded-lg hover:bg-[#0A1E42]"
               >
-                Back to Cases
+                {fromAdmin ? "Back to Admin Dashboard" : "Back to Cases"}
               </button>
             </div>
           </div>
@@ -385,7 +526,7 @@ export default function ITCaseDetails() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
-      <PoliceHeader />
+      {fromAdmin ? <AdminHeader /> : <PoliceHeader />}
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-white border border-[#E4E9F2] rounded-2xl shadow p-6">
           
@@ -397,10 +538,10 @@ export default function ITCaseDetails() {
             </div>
             <div className="absolute right-0 top-0 flex gap-2">
               <button 
-                onClick={() => navigate("/it/view-cases")} 
+                onClick={() => navigate(fromAdmin ? "/admin/dashboard" : "/it/view-cases")} 
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50"
               >
-                ← Back to Cases
+                ← {fromAdmin ? "Back to Admin Dashboard" : "Back to Cases"}
               </button>
             </div>
           </div>
@@ -417,15 +558,59 @@ export default function ITCaseDetails() {
           )}
 
           {/* Action Buttons */}
-          <div className="mb-6 flex gap-2 justify-center">
-            {caseData.status === 'CLOSED' ? (
+          <div className="mb-6 flex gap-2 justify-center flex-wrap">
+            {fromAdmin ? (
+              // Admin view-only mode - only download options
+              <>
+                <button
+                  onClick={exportPDF}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+                >
+                  <span>📄</span>
+                  <span>Download PDF</span>
+                </button>
+                <button
+                  onClick={exportExcel}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                >
+                  <span>📊</span>
+                  <span>Download Excel</span>
+                </button>
+                <button
+                  onClick={exportJSON}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
+                >
+                  <span>📋</span>
+                  <span>Download JSON</span>
+                </button>
+                <div className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg flex items-center gap-2">
+                  <span>👁️</span>
+                  <span>Admin View - Read Only</span>
+                </div>
+              </>
+            ) : caseData.status === 'CLOSED' ? (
               // View-only mode for closed cases
               <>
                 <button
                   onClick={exportPDF}
-                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
                 >
-                  📄 Export PDF
+                  <span>📄</span>
+                  <span>Download PDF</span>
+                </button>
+                <button
+                  onClick={exportExcel}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                >
+                  <span>📊</span>
+                  <span>Download Excel</span>
+                </button>
+                <button
+                  onClick={exportJSON}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
+                >
+                  <span>📋</span>
+                  <span>Download JSON</span>
                 </button>
                 <div className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg flex items-center gap-2">
                   <span>🔒</span>
@@ -436,9 +621,24 @@ export default function ITCaseDetails() {
               <>
                 <button
                   onClick={exportPDF}
-                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
                 >
-                  📄 Export PDF
+                  <span>📄</span>
+                  <span>Download PDF</span>
+                </button>
+                <button
+                  onClick={exportExcel}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                >
+                  <span>📊</span>
+                  <span>Download Excel</span>
+                </button>
+                <button
+                  onClick={exportJSON}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
+                >
+                  <span>📋</span>
+                  <span>Download JSON</span>
                 </button>
                 <button
                   onClick={() => setEditing(true)}
@@ -522,7 +722,7 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.complainant?.name || ""}
                     onChange={(e) => handleInputChange("complainant.name", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
@@ -531,7 +731,7 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.complainant?.phone || ""}
                     onChange={(e) => handleInputChange("complainant.phone", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
@@ -540,7 +740,7 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.complainant?.email || ""}
                     onChange={(e) => handleInputChange("complainant.email", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
@@ -549,7 +749,7 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.complainant?.address || ""}
                     onChange={(e) => handleInputChange("complainant.address", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
@@ -565,7 +765,7 @@ export default function ITCaseDetails() {
                   <select
                     value={caseData.complaintDetails?.typeOfComplaint || ""}
                     onChange={(e) => handleInputChange("complaintDetails.typeOfComplaint", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className={`${inputField} disabled:bg-gray-50`}
                   >
                     <option value="">Select complaint type</option>
@@ -580,7 +780,7 @@ export default function ITCaseDetails() {
                     type="date"
                     value={caseData.complaintDetails?.incidentDate ? new Date(caseData.complaintDetails.incidentDate).toISOString().split('T')[0] : ""}
                     onChange={(e) => handleInputChange("complaintDetails.incidentDate", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
@@ -589,7 +789,7 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.complaintDetails?.location || ""}
                     onChange={(e) => handleInputChange("complaintDetails.location", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
@@ -598,7 +798,7 @@ export default function ITCaseDetails() {
                   <textarea
                     value={caseData.complaintDetails?.description || ""}
                     onChange={(e) => handleInputChange("complaintDetails.description", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     rows={3}
                     className={`${inputField} h-20 disabled:bg-gray-50`}
                   />
@@ -615,7 +815,7 @@ export default function ITCaseDetails() {
                   <select
                     value={caseData.itOfficerDetails?.urgencyLevel || "MEDIUM"}
                     onChange={(e) => handleInputChange("itOfficerDetails.urgencyLevel", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className={`${inputField} disabled:bg-gray-50`}
                   >
                     {urgencyOptions.map(level => (
@@ -628,7 +828,7 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.itOfficerDetails?.assignedDepartment || ""}
                     onChange={(e) => handleInputChange("itOfficerDetails.assignedDepartment", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
@@ -637,7 +837,7 @@ export default function ITCaseDetails() {
                   <textarea
                     value={caseData.itOfficerDetails?.caseAnalysis || ""}
                     onChange={(e) => handleInputChange("itOfficerDetails.caseAnalysis", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     rows={3}
                     className={`${inputField} h-20 disabled:bg-gray-50`}
                   />
@@ -647,7 +847,7 @@ export default function ITCaseDetails() {
                   <textarea
                     value={caseData.itOfficerDetails?.technicalDetails || ""}
                     onChange={(e) => handleInputChange("itOfficerDetails.technicalDetails", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     rows={3}
                     className={`${inputField} h-20 disabled:bg-gray-50`}
                   />
@@ -657,7 +857,7 @@ export default function ITCaseDetails() {
                   <textarea
                     value={caseData.itOfficerDetails?.recommendedActions || ""}
                     onChange={(e) => handleInputChange("itOfficerDetails.recommendedActions", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     rows={3}
                     className={`${inputField} h-20 disabled:bg-gray-50`}
                   />
@@ -703,7 +903,7 @@ export default function ITCaseDetails() {
                   <select
                     value={caseData.priority || "MEDIUM"}
                     onChange={(e) => handleInputChange("priority", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
                   >
                     {priorityOptions.map(priority => (
@@ -716,7 +916,7 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.estimatedLoss || ""}
                     onChange={(e) => handleInputChange("estimatedLoss", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
                   />
                 </div>
