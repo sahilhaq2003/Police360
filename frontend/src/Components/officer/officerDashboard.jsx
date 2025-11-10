@@ -36,19 +36,33 @@ const OfficerDashboard = () => {
       setLoading(true);
       try {
         const myId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        
+        // Check if user is logged in
+        if (!token || !myId) {
+          console.warn('No token or user ID found, redirecting to login');
+          navigate('/login');
+          return;
+        }
+        
         console.log('Fetching data for officer ID:', myId);
         
         // Fetch all data in parallel
-        const [reportsRes, accRes, caseRes] = await Promise.all([
+        const [reportsRes, accRes, caseRes, itCaseRes] = await Promise.all([
           axiosInstance.get('/reporting/my').catch(err => {
-            console.warn('Reports API not available:', err.message);
+            // Don't redirect on 401 for this endpoint, just log and return empty
+            if (err?.response?.status === 401) {
+              console.warn('Reports API unauthorized (may not be available for this officer):', err.message);
+            } else {
+              console.warn('Reports API not available:', err.message);
+            }
             return { data: [] };
           }),
           axiosInstance.get('/accidents', { 
             params: { 
+              assignedOfficer: myId,
               page: 1, 
-              limit: 50, 
-              assignedToMe: 'true' 
+              limit: 50
             } 
           }).catch(err => {
             console.warn('Accidents API error:', err.message);
@@ -63,30 +77,74 @@ const OfficerDashboard = () => {
           }).catch(err => {
             console.warn('Cases API error:', err.message);
             return { data: { data: [] } };
+          }),
+          axiosInstance.get('/it-cases', { 
+            params: { 
+              assignedOfficer: myId,
+              page: 1,
+              pageSize: 50
+            } 
+          }).catch(err => {
+            console.warn('IT Cases API error:', err.message);
+            return { data: { data: [] } };
           })
         ]);
 
         // Process reports data
         const reportsData = reportsRes.data || [];
         setReports(reportsData);
-        
-        const stat = { assigned: 0, inProgress: 0, completed: 0 };
-        reportsData.forEach(r => {
-          if (r.status === 'In Progress') stat.inProgress++;
-          else if (r.status === 'Completed') stat.completed++;
-          else stat.assigned++;
-        });
-        setStats(stat);
 
         // Process accidents data
         const accidentsData = accRes.data?.items || accRes.data || [];
         console.log('Fetched accidents:', accidentsData.length);
+        console.log('Accidents assigned to officer:', accidentsData.map(a => ({
+          id: a._id,
+          trackingId: a.trackingId,
+          assignedTo: a.assignedOfficer?._id || a.assignedOfficer,
+          status: a.status
+        })));
         setMyAccidents(accidentsData);
 
-        // Process cases data
-        const casesData = caseRes.data?.data || caseRes.data || [];
-        console.log('Fetched cases:', casesData.length);
-        setMyCases(casesData);
+        // Process cases data - combine regular cases and IT cases
+        const regularCases = caseRes.data?.data || caseRes.data || [];
+        const itCases = itCaseRes.data?.data || itCaseRes.data || [];
+        
+        // Mark IT cases with a flag for differentiation
+        const markedITCases = itCases.map(c => ({ ...c, isITCase: true }));
+        const markedRegularCases = regularCases.map(c => ({ ...c, isITCase: false }));
+        
+        const allCases = [...markedITCases, ...markedRegularCases];
+        console.log('Fetched cases:', regularCases.length, 'regular,', itCases.length, 'IT cases');
+        setMyCases(allCases);
+
+        // Calculate stats from all cases and accidents
+        const stat = { assigned: 0, inProgress: 0, completed: 0 };
+        
+        // Count cases
+        allCases.forEach(c => {
+          const status = c.status?.toUpperCase();
+          if (status === 'IN_PROGRESS' || status === 'IN PROGRESS') {
+            stat.inProgress++;
+          } else if (status === 'CLOSED' || status === 'COMPLETED') {
+            stat.completed++;
+          } else {
+            stat.assigned++;
+          }
+        });
+
+        // Count accidents
+        accidentsData.forEach(a => {
+          const status = a.status?.toUpperCase();
+          if (status === 'UNDER_INVESTIGATION') {
+            stat.inProgress++;
+          } else if (status === 'RESOLVED' || status === 'CLOSED') {
+            stat.completed++;
+          } else {
+            stat.assigned++;
+          }
+        });
+
+        setStats(stat);
 
       } catch (err) {
         console.error('Dashboard data fetch error:', err);
@@ -116,7 +174,7 @@ const OfficerDashboard = () => {
 
   const quickStats = useMemo(() => ([
     { 
-      label: 'Assigned Cases', 
+      label: 'Assigned ', 
       value: stats.assigned, 
       icon: <ClipboardCheck className="h-6 w-6" />,
       color: 'from-blue-500 to-blue-600',
@@ -306,16 +364,39 @@ const OfficerDashboard = () => {
                     <div
                       key={a._id}
                       className="p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => navigate('/officer/assign-accidents')}
+                      onClick={() => navigate(`/accidents/${a._id}`)}
                     >
-                      <div className="text-sm font-medium text-gray-900">{a.trackingId}</div>
-                      <div className="text-xs text-gray-600 mt-1">{a.accidentType?.replaceAll('_', ' ')}</div>
-                      <div className="text-xs text-gray-500 mt-1">{a.status} • {a.locationText}</div>
-                      {a.assignedOfficer && (
-                        <div className="text-xs text-blue-600 mt-1">
-                          Assigned to: {a.assignedOfficer.name}
+                      <div className="flex items-start justify-between">
+                        <div className="text-sm font-medium text-gray-900">{a.trackingId || 'N/A'}</div>
+                        <span className={`px-2 py-0.5 text-xs rounded-full ${
+                          a.status === 'UNDER_INVESTIGATION' ? 'bg-orange-100 text-orange-700' :
+                          a.status === 'RESOLVED' ? 'bg-green-100 text-green-700' :
+                          a.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {a.status?.replaceAll('_', ' ')}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {a.accidentType?.replaceAll('_', ' ') || 'Unknown Type'}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        📍 {a.locationText || 'Location not specified'}
+                      </div>
+                      {a.severity && (
+                        <div className="text-xs mt-1">
+                          <span className={`px-1.5 py-0.5 rounded ${
+                            a.severity === 'FATAL' || a.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
+                            a.severity === 'SERIOUS' ? 'bg-orange-100 text-orange-700' :
+                            'bg-blue-100 text-blue-700'
+                          }`}>
+                            {a.severity}
+                          </span>
                         </div>
                       )}
+                      <div className="text-xs text-blue-600 mt-1">
+                        {new Date(a.createdAt).toLocaleDateString()}
+                      </div>
                     </div>
                   ))
                 )}
@@ -352,13 +433,30 @@ const OfficerDashboard = () => {
                     <div
                       key={c._id}
                       className="p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/cases/${c._id}`)}
+                      onClick={() => navigate(c.isITCase ? `/it/case-details/${c._id}` : `/cases/${c._id}`)}
                     >
-                      <div className="text-sm font-medium text-gray-900">{c.complainant?.name}</div>
+                      <div className="flex items-start justify-between">
+                        <div className="text-sm font-medium text-gray-900">{c.complainant?.name}</div>
+                        {c.isITCase && (
+                          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">IT Case</span>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-600 mt-1">{c.complaintDetails?.typeOfComplaint}</div>
-                      <div className="text-xs text-gray-500 mt-1">{c.status} • {c.complaintDetails?.location}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {c.status} • {c.complaintDetails?.location}
+                        {c.isITCase && c.itOfficerDetails?.urgencyLevel && (
+                          <span className={`ml-2 px-1.5 py-0.5 rounded text-xs ${
+                            c.itOfficerDetails.urgencyLevel === 'HIGH' ? 'bg-red-100 text-red-700' :
+                            c.itOfficerDetails.urgencyLevel === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-green-100 text-green-700'
+                          }`}>
+                            {c.itOfficerDetails.urgencyLevel}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-blue-600 mt-1">
                         {new Date(c.createdAt).toLocaleDateString()}
+                        {c.caseId && <span className="ml-2 text-gray-500">#{c.caseId}</span>}
                       </div>
                     </div>
                   ))

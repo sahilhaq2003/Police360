@@ -12,6 +12,7 @@ const ViewCases = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('ongoing'); // 'ongoing' or 'closed'
+  const [urgencyFilter, setUrgencyFilter] = useState('ALL'); // 'ALL', 'HIGH', 'MEDIUM', 'LOW'
 
   useEffect(() => {
     fetchCases();
@@ -50,7 +51,10 @@ const ViewCases = () => {
       case_.complaintDetails?.typeOfComplaint?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       case_.itOfficerDetails?.caseAnalysis?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return matchesSearch;
+    const matchesUrgency = urgencyFilter === 'ALL' || 
+      case_.itOfficerDetails?.urgencyLevel === urgencyFilter;
+    
+    return matchesSearch && matchesUrgency;
   });
 
   const filteredClosedCases = closedCases.filter(case_ => {
@@ -61,7 +65,10 @@ const ViewCases = () => {
       case_.complaintDetails?.typeOfComplaint?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       case_.itOfficerDetails?.caseAnalysis?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return matchesSearch;
+    const matchesUrgency = urgencyFilter === 'ALL' || 
+      case_.itOfficerDetails?.urgencyLevel === urgencyFilter;
+    
+    return matchesSearch && matchesUrgency;
   });
 
   const getStatusColor = (status) => {
@@ -93,10 +100,37 @@ const ViewCases = () => {
     }
 
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`${activeTab === 'ongoing' ? 'Ongoing' : 'Closed'} Cases Report`, 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 25);
+    const brandPrimary = [11, 33, 74];
+    const brandLight = [238, 242, 247];
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Build filter information
+    let filterInfo = `Status: ${activeTab === 'ongoing' ? 'Ongoing' : 'Closed'}`;
+    if (urgencyFilter !== 'ALL') filterInfo += `  |  Urgency: ${urgencyFilter}`;
+    if (searchTerm) filterInfo += `  |  Search: "${searchTerm}"`;
+
+    const didDrawPage = (data) => {
+      // Header band
+      doc.setFillColor(...brandPrimary);
+      doc.rect(0, 0, pageWidth, 28, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.text(`Police360 - ${activeTab === 'ongoing' ? 'Ongoing' : 'Closed'} Cases Report`, 14, 18);
+
+      // Subheader info bar
+      doc.setFillColor(...brandLight);
+      doc.rect(0, 28, pageWidth, 10, 'F');
+      doc.setTextColor(11, 33, 74);
+      doc.setFontSize(9);
+      doc.text(filterInfo, 14, 35);
+
+      // Footer with page number and timestamp
+      const str = `Page ${doc.internal.getNumberOfPages()} | Generated ${new Date().toLocaleDateString()}`;
+      doc.setTextColor(100);
+      doc.setFontSize(8);
+      doc.text(str, pageWidth - 14, pageHeight - 8, { align: 'right' });
+    };
 
          const tableColumn = [
            'Case ID',
@@ -125,9 +159,11 @@ const ViewCases = () => {
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: 35,
-      styles: { fontSize: 8 },
-      headStyles: { fontSize: 8, fillColor: [11, 33, 74] }
+      margin: { top: 45, bottom: 18, left: 14, right: 14 },
+      styles: { fontSize: 8, lineColor: brandLight, lineWidth: 0.1 },
+      headStyles: { fontSize: 8, fillColor: brandPrimary, textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [249, 250, 251] },
+      didDrawPage
     });
 
     doc.save(`${activeTab}-cases-report.pdf`);
@@ -184,7 +220,54 @@ const ViewCases = () => {
             </button>
           </div>
           
-          {/* Toggle Buttons */}
+          {/* Urgency Filter */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Urgency:</label>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setUrgencyFilter('ALL')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  urgencyFilter === 'ALL'
+                    ? 'bg-[#0B214A] text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                All Urgency Levels
+              </button>
+              <button
+                onClick={() => setUrgencyFilter('HIGH')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  urgencyFilter === 'HIGH'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-red-100 text-red-800 hover:bg-red-200'
+                }`}
+              >
+                🔴 High Priority
+              </button>
+              <button
+                onClick={() => setUrgencyFilter('MEDIUM')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  urgencyFilter === 'MEDIUM'
+                    ? 'bg-yellow-600 text-white'
+                    : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                }`}
+              >
+                🟡 Medium Priority
+              </button>
+              <button
+                onClick={() => setUrgencyFilter('LOW')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  urgencyFilter === 'LOW'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-green-100 text-green-800 hover:bg-green-200'
+                }`}
+              >
+                🟢 Low Priority
+              </button>
+            </div>
+          </div>
+          
+          {/* Status Toggle Buttons */}
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('ongoing')}
@@ -397,6 +480,17 @@ const ViewCases = () => {
                           {new Date(case_.updatedAt).toLocaleDateString()}
                         </p>
                       </div>
+                    </div>
+
+                    {/* View Details Button */}
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <button
+                        onClick={() => navigate(`/it/case-details/${case_._id}`)}
+                        className="w-full px-4 py-2 text-sm bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition font-medium shadow-sm flex items-center justify-center gap-2"
+                      >
+                        <span>👁️</span>
+                        View Details
+                      </button>
                     </div>
 
                   </div>

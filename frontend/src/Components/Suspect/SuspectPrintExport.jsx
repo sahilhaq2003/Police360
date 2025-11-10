@@ -65,7 +65,7 @@ const SuspectPrintExport = ({ suspect }) => {
         </head>
         <body>
           <div class="header">
-            <div><img src="${getMediaUrl(suspect.photo) || '/images/placeholder.png'}" class="photo"/></div>
+            <div><img src="${getMediaUrl(suspect.photo) || '/images/PLogo.png'}" class="photo"/></div>
             <div class="meta">
               <h1>${suspect.name || 'Unknown'}</h1>
               <div><strong>Suspect ID:</strong> ${suspect.suspectId || 'N/A'}</div>

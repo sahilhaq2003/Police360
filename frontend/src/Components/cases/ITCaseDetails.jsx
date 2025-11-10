@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axiosInstance from "../../utils/axiosInstance";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
+import AdminHeader from '../AdminHeader/AdminHeader';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const complaintTypes = ["eCrime", "Tourist Police", "Police Report Inquiry", "File Complaint", "Criminal Status of Financial Cases", "Other"];
 const idTypes = ["National ID", "Passport", "Driver's License", "Voter ID", "Other"];
@@ -13,7 +16,11 @@ const urgencyOptions = ["LOW", "MEDIUM", "HIGH"];
 
 export default function ITCaseDetails() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
+  
+  // Check if user came from admin dashboard
+  const fromAdmin = location.state?.from === 'admin-dashboard';
   
   const [caseData, setCaseData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -86,7 +93,7 @@ export default function ITCaseDetails() {
       if (res.data.success) {
         setBanner({ type: "success", message: "Case deleted successfully!" });
         setTimeout(() => {
-          navigate("/it/view-cases");
+          navigate(fromAdmin ? "/admin/dashboard" : "/it/view-cases");
         }, 1500);
       } else {
         setBanner({ type: "error", message: "Failed to delete case" });
@@ -201,16 +208,39 @@ export default function ITCaseDetails() {
     }
   };
 
+  const inputField = "w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 placeholder-slate-400 focus:border-[#0B214A] focus:ring-2 focus:ring-[#0B214A]/20";
+
   // Export PDF function
   const exportPDF = () => {
     if (!caseData) return;
 
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text('IT Case Report', 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Case ID: ${caseData.caseId}`, 14, 25);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 35);
+    const brandPrimary = [11, 33, 74];
+    const brandLight = [238, 242, 247];
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const didDrawPage = () => {
+      // Header
+      doc.setFillColor(...brandPrimary);
+      doc.rect(0, 0, pageWidth, 28, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.text('Police360 - IT Case Report', 14, 18);
+
+      // Subheader
+      doc.setFillColor(...brandLight);
+      doc.rect(0, 28, pageWidth, 10, 'F');
+      doc.setTextColor(11, 33, 74);
+      doc.setFontSize(9);
+      doc.text(`Case ID: ${caseData.caseId}   |   Status: ${caseData.status}   |   Urgency: ${caseData.itOfficerDetails?.urgencyLevel || 'N/A'}`, 14, 35);
+
+      // Footer
+      const str = `Page ${doc.internal.getNumberOfPages()} | Generated ${new Date().toLocaleDateString()}`;
+      doc.setTextColor(100);
+      doc.setFontSize(8);
+      doc.text(str, pageWidth - 14, pageHeight - 8, { align: 'right' });
+    };
 
     // Case Summary
     autoTable(doc, {
@@ -227,15 +257,19 @@ export default function ITCaseDetails() {
         ['Created Date', caseData.createdAt ? new Date(caseData.createdAt).toLocaleDateString() : 'N/A'],
         ['Last Updated', caseData.updatedAt ? new Date(caseData.updatedAt).toLocaleDateString() : 'N/A']
       ],
-      startY: 45,
-      styles: { fontSize: 9 },
-      headStyles: { fontSize: 9, fillColor: [11, 33, 74] }
+      margin: { top: 45, bottom: 18, left: 14, right: 14 },
+      styles: { fontSize: 9, lineColor: brandLight, lineWidth: 0.1 },
+      headStyles: { fontSize: 9, fillColor: brandPrimary, textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [249, 250, 251] },
+      didDrawPage
     });
 
     // Complainant Information
     doc.addPage();
-    doc.setFontSize(14);
-    doc.text('Complainant Information', 14, 15);
+    didDrawPage();
+    doc.setFontSize(12);
+    doc.setTextColor(11, 33, 74);
+    doc.text('Complainant Information', 14, 45);
     
     autoTable(doc, {
       head: [['Field', 'Value']],
@@ -245,14 +279,16 @@ export default function ITCaseDetails() {
         ['Email', caseData.complainant?.email || 'N/A'],
         ['Address', caseData.complainant?.address || 'N/A']
       ],
-      startY: 25,
-      styles: { fontSize: 9 },
-      headStyles: { fontSize: 9, fillColor: [11, 33, 74] }
+      margin: { top: 50, bottom: 18, left: 14, right: 14 },
+      styles: { fontSize: 9, lineColor: brandLight, lineWidth: 0.1 },
+      headStyles: { fontSize: 9, fillColor: brandPrimary, textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [249, 250, 251] }
     });
 
     // Complaint Details
-    doc.setFontSize(14);
-    doc.text('Complaint Details', 14, 70);
+    doc.setFontSize(12);
+    doc.setTextColor(11, 33, 74);
+    doc.text('Complaint Details', 14, 95);
     
     autoTable(doc, {
       head: [['Field', 'Value']],
@@ -262,16 +298,19 @@ export default function ITCaseDetails() {
         ['Location', caseData.complaintDetails?.location || 'N/A'],
         ['Description', caseData.complaintDetails?.description || 'N/A']
       ],
-      startY: 80,
-      styles: { fontSize: 9 },
-      headStyles: { fontSize: 9, fillColor: [11, 33, 74] }
+      margin: { top: 100, bottom: 18, left: 14, right: 14 },
+      styles: { fontSize: 9, lineColor: brandLight, lineWidth: 0.1 },
+      headStyles: { fontSize: 9, fillColor: brandPrimary, textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [249, 250, 251] }
     });
 
     // IT Officer Analysis
     if (caseData.itOfficerDetails) {
       doc.addPage();
-      doc.setFontSize(14);
-      doc.text('IT Officer Analysis', 14, 15);
+      didDrawPage();
+      doc.setFontSize(12);
+      doc.setTextColor(11, 33, 74);
+      doc.text('IT Officer Analysis', 14, 45);
       
       autoTable(doc, {
         head: [['Field', 'Value']],
@@ -280,17 +319,20 @@ export default function ITCaseDetails() {
           ['Technical Details', caseData.itOfficerDetails.technicalDetails || 'N/A'],
           ['Recommended Actions', caseData.itOfficerDetails.recommendedActions || 'N/A']
         ],
-        startY: 25,
-        styles: { fontSize: 9 },
-        headStyles: { fontSize: 9, fillColor: [11, 33, 74] }
+        margin: { top: 50, bottom: 18, left: 14, right: 14 },
+        styles: { fontSize: 9, lineColor: brandLight, lineWidth: 0.1 },
+        headStyles: { fontSize: 9, fillColor: brandPrimary, textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [249, 250, 251] }
       });
     }
 
     // Investigation Notes
     if (caseData.investigationNotes && caseData.investigationNotes.length > 0) {
       doc.addPage();
-      doc.setFontSize(14);
-      doc.text('Investigation Notes', 14, 15);
+      didDrawPage();
+      doc.setFontSize(12);
+      doc.setTextColor(11, 33, 74);
+      doc.text('Investigation Notes', 14, 45);
       
       const notesData = caseData.investigationNotes.map(note => [
         note.note || 'N/A',
@@ -301,19 +343,154 @@ export default function ITCaseDetails() {
       autoTable(doc, {
         head: [['Note', 'Author', 'Date']],
         body: notesData,
-        startY: 25,
-        styles: { fontSize: 8 },
-        headStyles: { fontSize: 8, fillColor: [11, 33, 74] }
+        margin: { top: 50, bottom: 18, left: 14, right: 14 },
+        styles: { fontSize: 8, lineColor: brandLight, lineWidth: 0.1 },
+        headStyles: { fontSize: 8, fillColor: brandPrimary, textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [249, 250, 251] }
       });
     }
 
     doc.save(`case-${caseData.caseId}-report.pdf`);
   };
 
+  // Export Excel function
+  const exportExcel = () => {
+    if (!caseData) return;
+
+    try {
+      // Prepare data for Excel
+      const excelData = [
+        ['Case Information', ''],
+        ['Case ID', caseData.caseId || 'N/A'],
+        ['Status', caseData.status || 'N/A'],
+        ['Priority', caseData.priority || 'N/A'],
+        ['Urgency Level', caseData.itOfficerDetails?.urgencyLevel || 'N/A'],
+        ['Assigned Department', caseData.itOfficerDetails?.assignedDepartment || 'N/A'],
+        ['Created Date', caseData.createdAt ? new Date(caseData.createdAt).toLocaleDateString() : 'N/A'],
+        ['Last Updated', caseData.updatedAt ? new Date(caseData.updatedAt).toLocaleDateString() : 'N/A'],
+        ['', ''],
+        ['Complainant Information', ''],
+        ['Name', caseData.complainant?.name || 'N/A'],
+        ['Phone', caseData.complainant?.phone || 'N/A'],
+        ['Email', caseData.complainant?.email || 'N/A'],
+        ['Address', caseData.complainant?.address || 'N/A'],
+        ['', ''],
+        ['Complaint Details', ''],
+        ['Type of Complaint', caseData.complaintDetails?.typeOfComplaint || 'N/A'],
+        ['Incident Date', caseData.complaintDetails?.incidentDate ? new Date(caseData.complaintDetails.incidentDate).toLocaleDateString() : 'N/A'],
+        ['Location', caseData.complaintDetails?.location || 'N/A'],
+        ['Description', caseData.complaintDetails?.description || 'N/A'],
+        ['', ''],
+        ['IT Officer Analysis', ''],
+        ['Case Analysis', caseData.itOfficerDetails?.caseAnalysis || 'N/A'],
+        ['Technical Details', caseData.itOfficerDetails?.technicalDetails || 'N/A'],
+        ['Recommended Actions', caseData.itOfficerDetails?.recommendedActions || 'N/A'],
+        ['', ''],
+        ['Assigned Officer', ''],
+        ['Officer Name', caseData.assignedOfficer?.name || 'Not Assigned'],
+        ['Officer ID', caseData.assignedOfficer?.officerId || 'N/A'],
+        ['Department', caseData.assignedOfficer?.department || 'N/A'],
+      ];
+
+      // Add investigation notes if available
+      if (caseData.investigationNotes && caseData.investigationNotes.length > 0) {
+        excelData.push(['', '']);
+        excelData.push(['Investigation Notes', '']);
+        excelData.push(['Note', 'Author', 'Date']);
+        caseData.investigationNotes.forEach(note => {
+          excelData.push([
+            note.note || 'N/A',
+            typeof note.author === 'object' ? note.author.name : 'Unknown',
+            note.createdAt ? new Date(note.createdAt).toLocaleDateString() : 'N/A'
+          ]);
+        });
+      }
+
+      // Create worksheet
+      const ws = XLSX.utils.aoa_to_sheet(excelData);
+      
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 25 }, // First column
+        { wch: 50 }, // Second column
+      ];
+
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Case Details');
+
+      // Generate and save Excel file
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, `case-${caseData.caseId}-report.xlsx`);
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+      alert('Failed to export Excel file. Please try again.');
+    }
+  };
+
+  // Export JSON function
+  const exportJSON = () => {
+    if (!caseData) return;
+
+    try {
+      // Create a clean JSON object with all case data
+      const jsonData = {
+        caseId: caseData.caseId,
+        status: caseData.status,
+        priority: caseData.priority,
+        urgencyLevel: caseData.itOfficerDetails?.urgencyLevel,
+        assignedDepartment: caseData.itOfficerDetails?.assignedDepartment,
+        createdAt: caseData.createdAt,
+        updatedAt: caseData.updatedAt,
+        complainant: {
+          name: caseData.complainant?.name,
+          phone: caseData.complainant?.phone,
+          email: caseData.complainant?.email,
+          address: caseData.complainant?.address,
+        },
+        complaintDetails: {
+          typeOfComplaint: caseData.complaintDetails?.typeOfComplaint,
+          incidentDate: caseData.complaintDetails?.incidentDate,
+          location: caseData.complaintDetails?.location,
+          description: caseData.complaintDetails?.description,
+        },
+        itOfficerDetails: {
+          caseAnalysis: caseData.itOfficerDetails?.caseAnalysis,
+          technicalDetails: caseData.itOfficerDetails?.technicalDetails,
+          recommendedActions: caseData.itOfficerDetails?.recommendedActions,
+        },
+        assignedOfficer: caseData.assignedOfficer ? {
+          name: caseData.assignedOfficer.name,
+          officerId: caseData.assignedOfficer.officerId,
+          department: caseData.assignedOfficer.department,
+        } : null,
+        investigationNotes: caseData.investigationNotes?.map(note => ({
+          note: note.note,
+          author: typeof note.author === 'object' ? note.author.name : 'Unknown',
+          createdAt: note.createdAt,
+        })) || [],
+        resourceAllocation: caseData.resourceAllocation || null,
+        estimatedLoss: caseData.estimatedLoss,
+        exportedAt: new Date().toISOString(),
+      };
+
+      // Convert to JSON string with formatting
+      const jsonString = JSON.stringify(jsonData, null, 2);
+      
+      // Create blob and download
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      saveAs(blob, `case-${caseData.caseId}-data.json`);
+    } catch (error) {
+      console.error('Error exporting JSON:', error);
+      alert('Failed to export JSON file. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC]">
-        <PoliceHeader />
+        {fromAdmin ? <AdminHeader /> : <PoliceHeader />}
         <div className="max-w-7xl mx-auto px-4 py-10">
           <div className="bg-white border border-[#E4E9F2] rounded-2xl shadow p-8">
             <div className="text-center">
@@ -329,16 +506,16 @@ export default function ITCaseDetails() {
   if (!caseData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC]">
-        <PoliceHeader />
+        {fromAdmin ? <AdminHeader /> : <PoliceHeader />}
         <div className="max-w-7xl mx-auto px-4 py-10">
           <div className="bg-white border border-[#E4E9F2] rounded-2xl shadow p-8">
             <div className="text-center">
               <p className="text-red-600">Case not found</p>
               <button 
-                onClick={() => navigate("/it/view-cases")}
+                onClick={() => navigate(fromAdmin ? "/admin/dashboard" : "/it/view-cases")}
                 className="mt-4 px-4 py-2 bg-[#0B214A] text-white rounded-lg hover:bg-[#0A1E42]"
               >
-                Back to Cases
+                {fromAdmin ? "Back to Admin Dashboard" : "Back to Cases"}
               </button>
             </div>
           </div>
@@ -349,22 +526,22 @@ export default function ITCaseDetails() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F6F8FC] via-[#EEF2F7] to-[#F6F8FC] text-[#0B214A]">
-      <PoliceHeader />
-      <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="bg-white border border-[#E4E9F2] rounded-2xl shadow p-8">
+      {fromAdmin ? <AdminHeader /> : <PoliceHeader />}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="bg-white border border-[#E4E9F2] rounded-2xl shadow p-6">
           
           {/* Header */}
-          <div className="mb-8 relative">
+          <div className="mb-6 relative">
             <div className="text-center">
               <h1 className="text-3xl font-extrabold text-slate-800">IT Case Details</h1>
               <p className="text-sm text-slate-600 mt-1">Case ID: {caseData.caseId}</p>
             </div>
             <div className="absolute right-0 top-0 flex gap-2">
               <button 
-                onClick={() => navigate("/it/view-cases")} 
+                onClick={() => navigate(fromAdmin ? "/admin/dashboard" : "/it/view-cases")} 
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50"
               >
-                ← Back to Cases
+                ← {fromAdmin ? "Back to Admin Dashboard" : "Back to Cases"}
               </button>
             </div>
           </div>
@@ -381,18 +558,91 @@ export default function ITCaseDetails() {
           )}
 
           {/* Action Buttons */}
-          <div className="mb-6 flex gap-3 justify-center">
-            {!editing ? (
+          <div className="mb-6 flex gap-2 justify-center flex-wrap">
+            {fromAdmin ? (
+              // Admin view-only mode - only download options
               <>
                 <button
                   onClick={exportPDF}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
                 >
-                  📄 Export PDF
+                  <span>📄</span>
+                  <span>Download PDF</span>
+                </button>
+                <button
+                  onClick={exportExcel}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                >
+                  <span>📊</span>
+                  <span>Download Excel</span>
+                </button>
+                <button
+                  onClick={exportJSON}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
+                >
+                  <span>📋</span>
+                  <span>Download JSON</span>
+                </button>
+                <div className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg flex items-center gap-2">
+                  <span>👁️</span>
+                  <span>Admin View - Read Only</span>
+                </div>
+              </>
+            ) : caseData.status === 'CLOSED' ? (
+              // View-only mode for closed cases
+              <>
+                <button
+                  onClick={exportPDF}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+                >
+                  <span>📄</span>
+                  <span>Download PDF</span>
+                </button>
+                <button
+                  onClick={exportExcel}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                >
+                  <span>📊</span>
+                  <span>Download Excel</span>
+                </button>
+                <button
+                  onClick={exportJSON}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
+                >
+                  <span>📋</span>
+                  <span>Download JSON</span>
+                </button>
+                <div className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg flex items-center gap-2">
+                  <span>🔒</span>
+                  <span>Case Closed - View Only</span>
+                </div>
+              </>
+            ) : !editing ? (
+              <>
+                <button
+                  onClick={exportPDF}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+                >
+                  <span>📄</span>
+                  <span>Download PDF</span>
+                </button>
+                <button
+                  onClick={exportExcel}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                >
+                  <span>📊</span>
+                  <span>Download Excel</span>
+                </button>
+                <button
+                  onClick={exportJSON}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
+                >
+                  <span>📋</span>
+                  <span>Download JSON</span>
                 </button>
                 <button
                   onClick={() => setEditing(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
                   Edit Case
                 </button>
@@ -401,14 +651,14 @@ export default function ITCaseDetails() {
                     <button
                       onClick={handleApproveClose}
                       disabled={saving}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition"
+                      className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition"
                     >
                       {saving ? "Approving..." : "Approve Close Request"}
                     </button>
                     <button
                       onClick={() => setShowDeclineConfirm(true)}
                       disabled={saving}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition"
+                      className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition"
                     >
                       Decline Close Request
                     </button>
@@ -417,14 +667,14 @@ export default function ITCaseDetails() {
                 {caseData.status !== 'CLOSED' && caseData.status !== 'PENDING_CLOSE' && (
                   <button
                     onClick={() => setShowCloseConfirm(true)}
-                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition"
+                    className="px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition"
                   >
                     Close Case
                   </button>
                 )}
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                  className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                 >
                   Delete Case
                 </button>
@@ -434,13 +684,13 @@ export default function ITCaseDetails() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition"
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition"
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </button>
                 <button
                   onClick={() => setEditing(false)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                  className="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
                 >
                   Cancel
                 </button>
@@ -461,19 +711,19 @@ export default function ITCaseDetails() {
           </div>
 
           {/* Form Fields */}
-          <div className="space-y-8">
+          <div className="space-y-6">
             
             {/* Complainant Information */}
             <section>
-              <h3 className="text-lg font-semibold text-slate-700 mb-4">Complainant Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="text-lg font-semibold text-slate-700 mb-3">Complainant Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-600 mb-1">Name *</label>
                   <input
                     value={caseData.complainant?.name || ""}
                     onChange={(e) => handleInputChange("complainant.name", e.target.value)}
-                    disabled={!editing}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    disabled={!editing || fromAdmin}
+                    className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
                 <div>
@@ -481,8 +731,8 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.complainant?.phone || ""}
                     onChange={(e) => handleInputChange("complainant.phone", e.target.value)}
-                    disabled={!editing}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    disabled={!editing || fromAdmin}
+                    className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
                 <div>
@@ -490,8 +740,8 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.complainant?.email || ""}
                     onChange={(e) => handleInputChange("complainant.email", e.target.value)}
-                    disabled={!editing}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    disabled={!editing || fromAdmin}
+                    className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
                 <div>
@@ -499,8 +749,8 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.complainant?.address || ""}
                     onChange={(e) => handleInputChange("complainant.address", e.target.value)}
-                    disabled={!editing}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    disabled={!editing || fromAdmin}
+                    className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
               </div>
@@ -508,15 +758,15 @@ export default function ITCaseDetails() {
 
             {/* Complaint Details */}
             <section>
-              <h3 className="text-lg font-semibold text-slate-700 mb-4">Complaint Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="text-lg font-semibold text-slate-700 mb-3">Complaint Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-600 mb-1">Type of Complaint *</label>
                   <select
                     value={caseData.complaintDetails?.typeOfComplaint || ""}
                     onChange={(e) => handleInputChange("complaintDetails.typeOfComplaint", e.target.value)}
-                    disabled={!editing}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    disabled={!editing || fromAdmin}
+                    className={`${inputField} disabled:bg-gray-50`}
                   >
                     <option value="">Select complaint type</option>
                     {complaintTypes.map(type => (
@@ -530,8 +780,8 @@ export default function ITCaseDetails() {
                     type="date"
                     value={caseData.complaintDetails?.incidentDate ? new Date(caseData.complaintDetails.incidentDate).toISOString().split('T')[0] : ""}
                     onChange={(e) => handleInputChange("complaintDetails.incidentDate", e.target.value)}
-                    disabled={!editing}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    disabled={!editing || fromAdmin}
+                    className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -539,8 +789,8 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.complaintDetails?.location || ""}
                     onChange={(e) => handleInputChange("complaintDetails.location", e.target.value)}
-                    disabled={!editing}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    disabled={!editing || fromAdmin}
+                    className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -548,9 +798,9 @@ export default function ITCaseDetails() {
                   <textarea
                     value={caseData.complaintDetails?.description || ""}
                     onChange={(e) => handleInputChange("complaintDetails.description", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     rows={3}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    className={`${inputField} h-20 disabled:bg-gray-50`}
                   />
                 </div>
               </div>
@@ -558,15 +808,15 @@ export default function ITCaseDetails() {
 
             {/* IT Officer Details */}
             <section>
-              <h3 className="text-lg font-semibold text-slate-700 mb-4">IT Officer Analysis</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="text-lg font-semibold text-slate-700 mb-3">IT Officer Analysis</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-600 mb-1">Urgency Level</label>
                   <select
                     value={caseData.itOfficerDetails?.urgencyLevel || "MEDIUM"}
                     onChange={(e) => handleInputChange("itOfficerDetails.urgencyLevel", e.target.value)}
-                    disabled={!editing}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    disabled={!editing || fromAdmin}
+                    className={`${inputField} disabled:bg-gray-50`}
                   >
                     {urgencyOptions.map(level => (
                       <option key={level} value={level}>{level}</option>
@@ -578,8 +828,8 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.itOfficerDetails?.assignedDepartment || ""}
                     onChange={(e) => handleInputChange("itOfficerDetails.assignedDepartment", e.target.value)}
-                    disabled={!editing}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    disabled={!editing || fromAdmin}
+                    className={`${inputField} disabled:bg-gray-50`}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -587,9 +837,9 @@ export default function ITCaseDetails() {
                   <textarea
                     value={caseData.itOfficerDetails?.caseAnalysis || ""}
                     onChange={(e) => handleInputChange("itOfficerDetails.caseAnalysis", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     rows={3}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    className={`${inputField} h-20 disabled:bg-gray-50`}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -597,9 +847,9 @@ export default function ITCaseDetails() {
                   <textarea
                     value={caseData.itOfficerDetails?.technicalDetails || ""}
                     onChange={(e) => handleInputChange("itOfficerDetails.technicalDetails", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     rows={3}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    className={`${inputField} h-20 disabled:bg-gray-50`}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -607,9 +857,9 @@ export default function ITCaseDetails() {
                   <textarea
                     value={caseData.itOfficerDetails?.recommendedActions || ""}
                     onChange={(e) => handleInputChange("itOfficerDetails.recommendedActions", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     rows={3}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
+                    className={`${inputField} h-20 disabled:bg-gray-50`}
                   />
                 </div>
               </div>
@@ -617,8 +867,8 @@ export default function ITCaseDetails() {
 
             {/* Lead Officer Assignment */}
             <section>
-              <h3 className="text-lg font-semibold text-slate-700 mb-4">Lead Officer Assignment</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="text-lg font-semibold text-slate-700 mb-3">Lead Officer Assignment</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-600 mb-1">Assigned Officer</label>
                   <div className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-gray-50 text-slate-700">
@@ -646,14 +896,14 @@ export default function ITCaseDetails() {
 
             {/* Additional Information */}
             <section>
-              <h3 className="text-lg font-semibold text-slate-700 mb-4">Additional Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="text-lg font-semibold text-slate-700 mb-3">Additional Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-600 mb-1">Priority</label>
                   <select
                     value={caseData.priority || "MEDIUM"}
                     onChange={(e) => handleInputChange("priority", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
                   >
                     {priorityOptions.map(priority => (
@@ -666,7 +916,7 @@ export default function ITCaseDetails() {
                   <input
                     value={caseData.estimatedLoss || ""}
                     onChange={(e) => handleInputChange("estimatedLoss", e.target.value)}
-                    disabled={!editing}
+                    disabled={!editing || fromAdmin}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0B214A] focus:border-[#0B214A] disabled:bg-gray-50"
                   />
                 </div>

@@ -217,7 +217,7 @@ export default function CriminalPrintExport({ criminal }) {
           <div class="report-title">CRIMINAL RECORD REPORT</div>
 
           <div class="header">
-            <div><img src="${getMediaUrl(criminal.photo) || '/images/placeholder.png'}" class="photo"/></div>
+            <div><img src="${getMediaUrl(criminal.photo) || '/images/PLogo.png'}" class="photo"/></div>
             <div class="meta">
               <h1>${criminal.name || 'Unknown'}</h1>
               <div><strong>Criminal ID:</strong> ${criminal.criminalId || 'N/A'}</div>
