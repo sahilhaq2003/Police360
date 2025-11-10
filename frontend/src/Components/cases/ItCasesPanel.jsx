@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -9,29 +9,19 @@ const ItCasesPanel = () => {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [onlyUnassigned, setOnlyUnassigned] = useState(false);
+  const [showOnlyAssigned, setShowOnlyAssigned] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [searchField, setSearchField] = useState('ALL');
+  const [error, setError] = useState(null);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // debounce search input
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search.trim()), 450);
-    return () => clearTimeout(t);
-  }, [search]);
-
-  useEffect(() => {
-    // re-fetch when search term changes
-    fetchData();
-  }, [debouncedSearch, onlyUnassigned]);
-
-  const fetchData = async () => {
+  // Fetch data function with proper error handling
+  const fetchData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       // fetch cases and officers in parallel
       const params = { pageSize: 200 };
@@ -45,19 +35,111 @@ const ItCasesPanel = () => {
         params.q = debouncedSearch;
       }
 
-      const casesRes = await axiosInstance.get('/cases', { params: { ...params, page: 1, pageSize: 50 } });
-      const casesList = casesRes.data?.data || casesRes.data || [];
-      setCases(Array.isArray(casesList) ? casesList : []);
+      // Add timestamp to prevent caching without triggering CORS preflight
+      const casesRes = await axiosInstance.get('/cases', { 
+        params: { 
+          ...params, 
+          page: 1, 
+          pageSize: 50,
+          _t: Date.now() // Timestamp to prevent caching
+        }
+      });
+      
+      // Properly extract the cases array
+      let casesList = [];
+      if (casesRes.data) {
+        if (Array.isArray(casesRes.data)) {
+          casesList = casesRes.data;
+        } else if (casesRes.data.data && Array.isArray(casesRes.data.data)) {
+          casesList = casesRes.data.data;
+        } else if (casesRes.data.cases && Array.isArray(casesRes.data.cases)) {
+          casesList = casesRes.data.cases;
+        }
+      }
+      
+      // Log for debugging
+      console.log('Fetched cases:', casesList.length, 'cases');
+      console.log('Sample case:', casesList[0]);
+      
+      // Ensure assignedOfficer is properly populated and optionally filter by assigned officer
+      const processedCases = casesList.map(c => {
+        if (c.assignedOfficer && typeof c.assignedOfficer === 'string') {
+          // assignedOfficer not populated (still an ID string)
+          console.warn('assignedOfficer not populated for case:', c._id);
+        }
+        return c;
+      });
+
+      // Apply client-side filters: assigned/officer
+      let final = processedCases;
+      if (searchField === 'OFFICER' && debouncedSearch) {
+        const q = debouncedSearch.toLowerCase();
+        final = final.filter(item => {
+          const ao = item.assignedOfficer;
+          if (!ao) return false;
+          if (typeof ao === 'string') {
+            return ao.toLowerCase().includes(q);
+          }
+          const name = (ao.name || '').toLowerCase();
+          const oid = (ao.officerId || '').toLowerCase();
+          return name.includes(q) || oid.includes(q);
+        });
+      }
+
+      if (showOnlyAssigned) {
+        final = final.filter(item => !!item.assignedOfficer);
+      }
+
+      setCases(final);
     } catch (e) {
       const isTimeout = e?.code === 'ECONNABORTED';
-      console.error('Failed loading cases or officers', e);
+      console.error('Failed loading cases:', e);
+      setError(e?.response?.data?.message || e?.message || 'Failed to load cases');
       if (isTimeout) {
         alert('Request timed out. Please check the server and try again.');
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [onlyUnassigned, debouncedSearch, searchField, showOnlyAssigned]);
+
+  // Initial load and refresh when location changes (navigating back to this page)
+  useEffect(() => {
+    fetchData();
+  }, [location.key, fetchData]);
+
+  // Refresh when page becomes visible (user switches back to tab or window)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !loading) {
+        // Small delay to ensure page is fully loaded
+        setTimeout(() => {
+          fetchData();
+        }, 100);
+      }
+    };
+
+    const handleFocus = () => {
+      if (!loading) {
+        // Refresh when window regains focus
+        fetchData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [fetchData, loading]);
+
+  // debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 450);
+    return () => clearTimeout(t);
+  }, [search]);
 
 
   if (loading) {
@@ -110,6 +192,13 @@ const ItCasesPanel = () => {
           </div>
         </div>
 
+        {error && (
+          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700 text-sm">
+            {error}
+            <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
               <select value={searchField} onChange={(e) => setSearchField(e.target.value)} className="border p-2 rounded-md text-sm">
@@ -117,22 +206,52 @@ const ItCasesPanel = () => {
                 <option value="ID">Complaint ID</option>
                 <option value="NAME">Complainant Name</option>
                 <option value="TYPE">Complaint Type</option>
+                <option value="OFFICER">Assigned Officer</option>
               </select>
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={searchField === 'ALL' ? 'Search id, complainant, type, location...' : (searchField === 'ID' ? 'Enter complaint ID...' : (searchField === 'NAME' ? 'Search by complainant name...' : 'Search by complaint type...'))} className="border p-2 rounded-md text-sm w-72" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={
+                searchField === 'ALL' ? 'Search id, complainant, type, location...' :
+                (searchField === 'ID' ? 'Enter complaint ID...' :
+                (searchField === 'NAME' ? 'Search by complainant name...' :
+                (searchField === 'TYPE' ? 'Search by complaint type...' :
+                (searchField === 'OFFICER' ? 'Search by assigned officer name or ID...' : 'Search...'))))} className="border p-2 rounded-md text-sm w-72" />
               {search && <button onClick={() => { setSearch(''); setDebouncedSearch(''); }} className="text-sm text-slate-500">Clear</button>}
+              {/* Refresh Button */}
+              <button
+                onClick={fetchData}
+                className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                title="Refresh cases"
+                disabled={loading}
+              >
+                {loading ? 'Refreshing...' : '🔄 Refresh'}
+              </button>
               {/* Export Excel */}
                 <button
                   onClick={exportExcelCase}
-                  className="bg-green-600 text-white px-3 py-1 rounded"
+                  className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors"
                   title="Download Excel"
                 >
                   Export Excel
                 </button>
             </div>
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-4 text-sm">
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={onlyUnassigned} onChange={(e) => { setOnlyUnassigned(e.target.checked); fetchData(); }} />
+              <input type="checkbox" checked={onlyUnassigned} onChange={(e) => { setOnlyUnassigned(e.target.checked); if (e.target.checked) setShowOnlyAssigned(false); }} />
               <span>Show only unassigned NEW complaints</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={showOnlyAssigned} onChange={(e) => {
+                const val = e.target.checked;
+                setShowOnlyAssigned(val);
+                if (val) {
+                  setOnlyUnassigned(false);
+                  // immediate local filter for snappy UI
+                  setCases(prev => prev.filter(item => !!item.assignedOfficer));
+                } else {
+                  // restore full data from server
+                  fetchData();
+                }
+              }} />
+              <span>Show only assigned complaints</span>
             </label>
           </div>
         </div>
@@ -159,12 +278,54 @@ const ItCasesPanel = () => {
                     <td className="px-4 py-3 align-middle truncate max-w-[160px]">{c._id}</td>
                     <td className="px-4 py-3 align-middle">{c.complainant?.name}</td>
                     <td className="px-4 py-3 align-middle">{c.complaintDetails?.typeOfComplaint}</td>
-                    <td className="px-4 py-3 align-middle">{c.status}</td>
+                    <td className="px-4 py-3 align-middle">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        c.status === 'NEW' ? 'bg-amber-100 text-amber-800' :
+                        c.status === 'ASSIGNED' ? 'bg-blue-100 text-blue-800' :
+                        c.status === 'IN_PROGRESS' ? 'bg-indigo-100 text-indigo-800' :
+                        c.status === 'CLOSED' ? 'bg-green-100 text-green-800' :
+                        c.status === 'DECLINED' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {c.status?.replace(/_/g, ' ')}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 align-middle truncate max-w-[220px]">{c.complaintDetails?.location || '—'}</td>
-                    <td className="px-4 py-3 align-middle">{c.assignedOfficer ? (c.assignedOfficer.name || c.assignedOfficer.officerId) : '—'}</td>
+                    <td className="px-4 py-3 align-middle">
+                      {c.assignedOfficer ? (
+                        typeof c.assignedOfficer === 'object' && c.assignedOfficer !== null ? (
+                          <div className="flex flex-col">
+                            <span className="font-medium text-slate-900">
+                              {c.assignedOfficer.name || c.assignedOfficer.officerId || 'Unknown'}
+                            </span>
+                            {c.assignedOfficer.officerId && c.assignedOfficer.name && (
+                              <span className="text-xs text-slate-500">ID: {c.assignedOfficer.officerId}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-600">Assigned (ID: {c.assignedOfficer})</span>
+                        )
+                      ) : (
+                        <span className="text-slate-400 italic">Unassigned</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 align-middle">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => navigate(`/cases/${c._id}`)} className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[#D6DEEB] text-xs hover:bg-[#F5F7FB]">View</button>
+                        <button 
+                          onClick={() => navigate(`/cases/${c._id}`)} 
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[#D6DEEB] text-xs hover:bg-[#F5F7FB] transition-colors"
+                        >
+                          View
+                        </button>
+                        {(!c.assignedOfficer || c.status === 'NEW') && (
+                          <button 
+                            onClick={() => navigate(`/create-case`, { state: { complaintId: c._id } })} 
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#0B214A] text-white text-xs hover:bg-[#0A1E42] transition-colors"
+                            title="Create Case from this complaint"
+                          >
+                            Create Case
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

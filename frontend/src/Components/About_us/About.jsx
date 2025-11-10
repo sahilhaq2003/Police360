@@ -118,11 +118,11 @@ export default function About() {
           </h2>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 text-center">
             {[
-              { name: "Tharusha", role: "Complaint Management" },
-              { name: "Sahil", role: "Officer Management" },
-              { name: "Enuri", role: "Accident Reporting" },
-              { name: "Nirmal", role: "Case Management" },
-              { name: "Thisara", role: "Criminal Records" },
+              { name: "Tharusha Thathsara", role: "Complaint Management" },
+              { name: "Sahil Haq", role: "Officer Management" },
+              { name: "Enuri Illesinghe", role: "Accident Reporting" },
+              { name: "K P Nirmal", role: "Case Management" },
+              { name: "Thisara Denuwan", role: "Criminal Records" },
             ].map((member, i) => (
               <motion.div
                 key={i}

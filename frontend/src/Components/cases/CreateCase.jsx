@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axiosInstance from "../../utils/axiosInstance";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
 
 const complaintTypes = ["eCrime", "Tourist Police", "Police Report Inquiry", "File Complaint", "Criminal Status of Financial Cases", "Other"];
@@ -9,6 +9,10 @@ const priorityOptions = ["LOW", "MEDIUM", "HIGH"];
 
 export default function CreateCase() {
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get complaintId from navigation state
+  const complaintIdFromState = location.state?.complaintId || null;
 
   const [form, setForm] = useState({
     complainant: { name: "", address: "", phone: "", email: "" },
@@ -180,6 +184,44 @@ export default function CreateCase() {
     fetchVehicles();
     fetchFirearms();
   }, []);
+
+  // Load complaint data if complaintId is provided from navigation
+  useEffect(() => {
+    const loadComplaintById = async (complaintId) => {
+      try {
+        const res = await axiosInstance.get(`/cases/${complaintId}`);
+        const complaint = res.data?.data || res.data;
+        if (complaint) {
+          setSelectedComplaintId(complaintId);
+          setComplaintSearch(`${complaint._id} - ${complaint.complainant?.name} - ${complaint.complaintDetails?.typeOfComplaint}`);
+          setForm(prev => ({
+            ...prev,
+            complainant: complaint.complainant || prev.complainant,
+            complaintDetails: {
+              ...prev.complaintDetails,
+              typeOfComplaint: complaint.complaintDetails?.typeOfComplaint || prev.complaintDetails.typeOfComplaint,
+              incidentDate: complaint.complaintDetails?.incidentDate ? new Date(complaint.complaintDetails.incidentDate).toISOString().split('T')[0] : prev.complaintDetails.incidentDate,
+              location: complaint.complaintDetails?.location || prev.complaintDetails.location,
+              description: complaint.complaintDetails?.description || prev.complaintDetails.description,
+            },
+            attachments: complaint.attachments || prev.attachments,
+            idInfo: complaint.idInfo || prev.idInfo,
+            priority: complaint.priority || prev.priority,
+            estimatedLoss: complaint.estimatedLoss || prev.estimatedLoss,
+            additionalInfo: complaint.additionalInfo || prev.additionalInfo,
+          }));
+          setBanner({ type: "success", message: `Complaint ${complaintId} loaded successfully. Please assign an officer and create the case.` });
+        }
+      } catch (error) {
+        console.error('Failed to load complaint:', error);
+        setBanner({ type: "error", message: `Failed to load complaint: ${error?.response?.data?.message || error.message}` });
+      }
+    };
+
+    if (complaintIdFromState) {
+      loadComplaintById(complaintIdFromState);
+    }
+  }, [complaintIdFromState]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -376,7 +418,9 @@ export default function CreateCase() {
     setBanner(null);
 
     // Basic validation
-    if (!selectedComplaintId) {
+    // If complaintIdFromState is provided, use it; otherwise require selection
+    const complaintIdToUse = complaintIdFromState || selectedComplaintId;
+    if (!complaintIdToUse) {
       setBanner({ type: "error", message: "Please select a related complaint." });
       setLoading(false);
       setValidationErrors(prev => ({ ...prev, 'complaintSelection': 'Please select a complaint from the dropdown' }));
@@ -429,10 +473,32 @@ export default function CreateCase() {
       if (res?.data?.success) {
         const newCase = res.data.data || res.data;
         const newCaseId = res.data.id || newCase._id || newCase.id;
-        setBanner({ type: "success", message: `Case created successfully! Case ID: ${newCase.caseId || newCaseId}` });
-        // Navigate to view-cases page after a delay
+        
+        // If we have a complaintId, assign the officer to the original complaint
+        if (complaintIdToUse && form.assignedOfficer) {
+          try {
+            await axiosInstance.post(`/cases/${complaintIdToUse}/assign`, {
+              officerId: form.assignedOfficer
+            });
+            console.log('Officer assigned to original complaint successfully');
+          } catch (assignError) {
+            console.error('Failed to assign officer to original complaint:', assignError);
+            // Don't fail the whole operation if assignment fails
+            setBanner({ 
+              type: "warning", 
+              message: `Case created successfully, but failed to assign officer to original complaint: ${assignError?.response?.data?.message || assignError.message}` 
+            });
+            setTimeout(() => {
+              navigate("/it/cases", { state: { refresh: true } });
+            }, 3000);
+            return;
+          }
+        }
+        
+        setBanner({ type: "success", message: `Case created successfully! Case ID: ${newCase.caseId || newCaseId}${complaintIdToUse ? '. Officer assigned to complaint.' : ''}` });
+        // Navigate to complaints page after a delay to show the updated assigned officer
         setTimeout(() => {
-          navigate("/it/view-cases");
+          navigate("/it/cases", { state: { refresh: true } });
         }, 2000);
       } else {
         setBanner({ type: "error", message: "Failed to create case." });
@@ -523,6 +589,8 @@ export default function CreateCase() {
               className={`mb-6 rounded-lg px-4 py-3 text-sm font-medium ${
                 banner.type === "success"
                   ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  : banner.type === "warning"
+                  ? "bg-amber-50 text-amber-700 border border-amber-200"
                   : "bg-rose-50 text-rose-700 border border-rose-200"
               }`}
             >
@@ -558,67 +626,84 @@ export default function CreateCase() {
               <h3 className="text-lg font-semibold text-slate-700 mb-3">
                 Select Related Complaint *
               </h3>
-              <div className="relative dropdown-container">
-                <input
-                  type="text"
-                  value={complaintSearch}
-                  onChange={(e) => {
-                    setComplaintSearch(e.target.value);
-                    setShowComplaintDropdown(true);
-                  }}
-                  onFocus={() => {
-                    setShowComplaintDropdown(true);
-                    clearValidationError('complaintSelection');
-                  }}
-                  placeholder="Click to search and select a complaint *"
-                  className={`${inputField} pr-10 ${validationErrors['complaintSelection'] ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''}`}
-                />
+              {complaintIdFromState ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="font-medium text-blue-800">Complaint Pre-selected</span>
+                  </div>
+                  <p className="text-sm text-blue-700">
+                    Complaint {complaintIdFromState} has been loaded. Please assign an officer and create the case.
+                  </p>
+                  <div className="mt-2 text-sm font-medium text-blue-900">
+                    {complaintSearch || `Complaint ID: ${complaintIdFromState}`}
+                  </div>
+                </div>
+              ) : (
+                <div className="relative dropdown-container">
+                  <input
+                    type="text"
+                    value={complaintSearch}
+                    onChange={(e) => {
+                      setComplaintSearch(e.target.value);
+                      setShowComplaintDropdown(true);
+                    }}
+                    onFocus={() => {
+                      setShowComplaintDropdown(true);
+                      clearValidationError('complaintSelection');
+                    }}
+                    placeholder="Click to search and select a complaint *"
+                    className={`${inputField} pr-10 ${validationErrors['complaintSelection'] ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : ''}`}
+                  />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                   <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
                 
-                {showComplaintDropdown && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {complaintSearch && filteredComplaints.length > 0 ? (
-                      filteredComplaints.map((complaint) => (
-                        <div
-                          key={complaint._id}
-                          onClick={() => handleComplaintSelection(complaint._id)}
-                          className="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-b-0"
-                        >
-                          <div className="font-medium text-slate-900">{complaint._id}</div>
-                          <div className="text-sm text-slate-600">{complaint.complainant?.name}</div>
-                          <div className="text-xs text-slate-500">{complaint.complaintDetails?.typeOfComplaint}</div>
-                        </div>
-                      ))
-                    ) : complaintSearch ? (
-                      <div className="px-4 py-3 text-slate-500 text-sm">No complaints found</div>
-                    ) : (
-                      complaints.map((complaint) => (
-                        <div
-                          key={complaint._id}
-                          onClick={() => handleComplaintSelection(complaint._id)}
-                          className="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-b-0"
-                        >
-                          <div className="font-medium text-slate-900">{complaint._id}</div>
-                          <div className="text-sm text-slate-600">{complaint.complainant?.name}</div>
-                          <div className="text-xs text-slate-500">{complaint.complaintDetails?.typeOfComplaint}</div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
+                  {showComplaintDropdown && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {complaintSearch && filteredComplaints.length > 0 ? (
+                        filteredComplaints.map((complaint) => (
+                          <div
+                            key={complaint._id}
+                            onClick={() => handleComplaintSelection(complaint._id)}
+                            className="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-b-0"
+                          >
+                            <div className="font-medium text-slate-900">{complaint._id}</div>
+                            <div className="text-sm text-slate-600">{complaint.complainant?.name}</div>
+                            <div className="text-xs text-slate-500">{complaint.complaintDetails?.typeOfComplaint}</div>
+                          </div>
+                        ))
+                      ) : complaintSearch ? (
+                        <div className="px-4 py-3 text-slate-500 text-sm">No complaints found</div>
+                      ) : (
+                        complaints.map((complaint) => (
+                          <div
+                            key={complaint._id}
+                            onClick={() => handleComplaintSelection(complaint._id)}
+                            className="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-b-0"
+                          >
+                            <div className="font-medium text-slate-900">{complaint._id}</div>
+                            <div className="text-sm text-slate-600">{complaint.complainant?.name}</div>
+                            <div className="text-xs text-slate-500">{complaint.complaintDetails?.typeOfComplaint}</div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               
               {validationErrors['complaintSelection'] && (
                 <p className="text-red-600 text-xs mt-1">{validationErrors['complaintSelection']}</p>
               )}
               
-              {selectedComplaintId && (
+              {(selectedComplaintId || complaintIdFromState) && !complaintIdFromState && (
                 <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
-                  <strong>Selected Complaint:</strong> {complaints.find(c => c._id === selectedComplaintId)?.complainant?.name} - {complaints.find(c => c._id === selectedComplaintId)?.complaintDetails?.typeOfComplaint}
+                  <strong>Selected Complaint:</strong> {complaints.find(c => c._id === (selectedComplaintId || complaintIdFromState))?.complainant?.name} - {complaints.find(c => c._id === (selectedComplaintId || complaintIdFromState))?.complaintDetails?.typeOfComplaint}
                 </div>
               )}
             </section>
