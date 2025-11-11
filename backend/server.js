@@ -28,10 +28,17 @@ dotenv.config();
 
 const app = express();
 
-// Connect to DB (for serverless, this will reconnect on each cold start)
-connectDB().catch(err => {
-  console.error('Failed to connect to MongoDB:', err);
-});
+// Initialize DB connection (don't await at module level for serverless)
+let dbConnected = false;
+connectDB()
+  .then(() => {
+    dbConnected = true;
+    console.log('[INIT] MongoDB connected successfully');
+  })
+  .catch(err => {
+    console.error('[INIT] Failed to connect to MongoDB:', err.message);
+    // Don't crash - allow healthcheck to respond
+  });
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 // Allow default vite host (5173) and alternative 5174 used by some dev setups
@@ -81,22 +88,28 @@ if (!process.env.VERCEL) {
   console.warn('[INIT] Running on Vercel serverless – local disk uploads are disabled.');
 }
 
-app.get('/api/health', (_req, res) => res.json({ ok: true }));
+app.get('/api/health', (_req, res) => res.json({ ok: true, timestamp: new Date().toISOString() }));
 
 // Diagnostic endpoint to check environment
 app.get('/api/diagnostics', (_req, res) => {
+  const mongooseState = require('mongoose').connection.readyState;
   res.json({
     env: {
       hasMongoUri: !!process.env.MONGO_URI,
+      mongoUriLength: process.env.MONGO_URI?.length || 0,
       hasJwtSecret: !!process.env.JWT_SECRET,
       hasClientUrl: !!process.env.CLIENT_URL,
+      clientUrl: process.env.CLIENT_URL,
       nodeEnv: process.env.NODE_ENV,
       isVercel: !!process.env.VERCEL,
     },
     mongodb: {
-      connected: require('mongoose').connection.readyState === 1,
-      state: require('mongoose').connection.readyState,
-    }
+      connected: mongooseState === 1,
+      state: mongooseState,
+      stateLabel: ['disconnected', 'connected', 'connecting', 'disconnecting'][mongooseState],
+      dbConnected: dbConnected,
+    },
+    timestamp: new Date().toISOString()
   });
 });
 
