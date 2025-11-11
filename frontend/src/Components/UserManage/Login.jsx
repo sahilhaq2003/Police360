@@ -24,22 +24,45 @@ const Login = () => {
 const handleSubmit = async (e) => {
   e.preventDefault();
   setLoading(true);
+  setError('');
+  setErrorType('');
+  
   try {
     const res = await axiosInstance.post('/auth/login', formData);
     const { token, officer } = res.data;
+    
+    if (!token || !officer) {
+      setError('Invalid response from server. Please try again.');
+      setErrorType('credentials');
+      return;
+    }
+    
     const storage = rememberMe ? localStorage : sessionStorage;
+    
+    // Save all auth data
     storage.setItem('token', token);
     storage.setItem('role', officer.role);
     storage.setItem('userId', officer.id);
     storage.setItem('userName', officer.name);
-
+    
+    // Verify token was saved
+    const savedToken = storage.getItem('token');
+    if (!savedToken) {
+      setError('Failed to save authentication. Please try again.');
+      setErrorType('credentials');
+      return;
+    }
+    
+    // Small delay to ensure storage is committed
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // Route based on role
     if (officer.role === 'Admin') {
-      navigate('/admin/dashboard');
+      navigate('/admin/dashboard', { replace: true });
     } else if (officer.role === 'IT Officer') {
-      navigate('/itOfficer/ItOfficerDashboard');
+      navigate('/itOfficer/ItOfficerDashboard', { replace: true });
     } else {
-      navigate('/officer/OfficerDashboard');
+      navigate('/officer/dashboard', { replace: true });
     }
   } catch (err) {
     const errorMessage = err.response?.data?.message || 'Invalid credentials.';

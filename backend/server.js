@@ -89,35 +89,16 @@ app.use('/api/reports', router);
 app.use('/api/accidents', accidentRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/it-cases', itCaseRoutes);
+app.use('/api/reporting', reportingRoutes);
 app.get('/', (_req, res) => res.send('Police360 API running'));
 
+// 404 handler - must be after all routes
 app.use((req, res) => {
   console.warn('[404] Route not found', { method: req.method, url: req.originalUrl });
   return res.status(404).json({ message: 'Route not found' });
 });
 
-app.use((err, _req, res, _next) => {
-  if (err.type === 'entity.too.large')
-    return res.status(413).json({ message: 'Payload too large' });
-  res.status(500).json({ message: 'Server error' });
-});
-
-
-app.use('/api/reporting', reportingRoutes);
-
-app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
-
-
-
-app.use('/api/reporting', reportingRoutes);
-
-
-app.use((req, res) => {
-  console.warn('[404] Route not found', { method: req.method, url: req.originalUrl });
-  return res.status(404).json({ message: 'Route not found' });
-});
-
-
+// Error handler - must be last
 app.use((err, _req, res, _next) => {
   if (err.type === 'entity.too.large')
     return res.status(413).json({ message: 'Payload too large' });
@@ -127,4 +108,10 @@ app.use((err, _req, res, _next) => {
 
 
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// When run directly (node backend/server.js) start the server.
+// When required by a serverless wrapper (Vercel / tests), export the app.
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+} else {
+  module.exports = app;
+}

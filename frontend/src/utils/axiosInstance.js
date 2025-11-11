@@ -33,11 +33,32 @@ axiosInstance.interceptors.response.use(
   (err) => {
     const status = err?.response?.status;
     if (status === 401) {
-      localStorage.removeItem("token");
-      sessionStorage.removeItem("token");
-      // avoid redirect loop if already on /login
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const currentPath = window.location.pathname;
+      
+      // Only redirect if:
+      // 1. There's no token (user not logged in), OR
+      // 2. We're on a protected route (dashboard, admin, etc.) and got 401
+      // Don't redirect if we're already on login or if it's a non-critical API call
+      const isProtectedRoute = currentPath.includes('/dashboard') || 
+                               currentPath.includes('/admin') || 
+                               currentPath.includes('/officer') ||
+                               currentPath.includes('/itOfficer');
+      
+      if (!token || isProtectedRoute) {
+        localStorage.removeItem("token");
+        sessionStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        sessionStorage.removeItem("userId");
+        localStorage.removeItem("role");
+        sessionStorage.removeItem("role");
+        localStorage.removeItem("userName");
+        sessionStorage.removeItem("userName");
+        
+        // avoid redirect loop if already on /login
+        if (currentPath !== "/login") {
+          window.location.href = "/login";
+        }
       }
     }
     return Promise.reject(err);
