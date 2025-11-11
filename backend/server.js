@@ -108,4 +108,10 @@ app.use((err, _req, res, _next) => {
 
 
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// When run directly (node backend/server.js) start the server.
+// When required by a serverless wrapper (Vercel / tests), export the app.
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+} else {
+  module.exports = app;
+}
