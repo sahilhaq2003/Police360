@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "bcryptjs": "^3.0.2"
+    "bcryptjs": "^3.0.2",
+    "serverless-http": "^2.8.0"
   }
 }
