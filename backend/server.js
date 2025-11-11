@@ -115,6 +115,9 @@ app.get('/api/diagnostics', (_req, res) => {
   });
 });
 
+// Favicon: avoid noisy 500s from automatic browser requests
+app.get('/favicon.ico', (_req, res) => res.status(204).end());
+
 app.use('/api/auth', authRoutes);
 app.use('/api/officers', officerRoutes);
 
