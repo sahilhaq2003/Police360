@@ -83,6 +83,23 @@ if (!process.env.VERCEL) {
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
+// Diagnostic endpoint to check environment
+app.get('/api/diagnostics', (_req, res) => {
+  res.json({
+    env: {
+      hasMongoUri: !!process.env.MONGO_URI,
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      hasClientUrl: !!process.env.CLIENT_URL,
+      nodeEnv: process.env.NODE_ENV,
+      isVercel: !!process.env.VERCEL,
+    },
+    mongodb: {
+      connected: require('mongoose').connection.readyState === 1,
+      state: require('mongoose').connection.readyState,
+    }
+  });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/officers', officerRoutes);
 
@@ -123,9 +140,15 @@ app.use((req, res) => {
 
 // Error handler - must be last
 app.use((err, _req, res, _next) => {
+  console.error('[ERROR]', err);
   if (err.type === 'entity.too.large')
     return res.status(413).json({ message: 'Payload too large' });
-  res.status(500).json({ message: 'Server error' });
+  if (err.message === 'Not allowed by CORS')
+    return res.status(403).json({ message: 'CORS policy violation' });
+  res.status(500).json({ 
+    message: 'Server error',
+    error: process.env.NODE_ENV === 'production' ? undefined : err.message 
+  });
 });
 
 
