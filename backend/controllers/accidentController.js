@@ -1,6 +1,6 @@
 const Accident = require('../models/AccidentModel');
 const Officer = require('../models/Officer');
-const { nanoid } = require('nanoid');
+// nanoid v5 is ESM-only; use dynamic import inside functions in CommonJS
 
 function maybeCreateInsuranceRef(victim) {
   if (!victim) return undefined;
@@ -98,6 +98,7 @@ function validateAccidentPayload(body, isUpdate = false) {
 // POST /api/accidents/report
 exports.reportAccident = async (req, res) => {
   try {
+    const { nanoid } = await import('nanoid');
     const trackingId = `ACC-${nanoid(8).toUpperCase()}`;
 
     const body = { ...req.body, trackingId };
