@@ -576,13 +576,7 @@ export default function ITCaseDetails() {
                   <span>📊</span>
                   <span>Download Excel</span>
                 </button>
-                <button
-                  onClick={exportJSON}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
-                >
-                  <span>📋</span>
-                  <span>Download JSON</span>
-                </button>
+                
                 <div className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg flex items-center gap-2">
                   <span>👁️</span>
                   <span>Admin View - Read Only</span>
@@ -605,13 +599,7 @@ export default function ITCaseDetails() {
                   <span>📊</span>
                   <span>Download Excel</span>
                 </button>
-                <button
-                  onClick={exportJSON}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
-                >
-                  <span>📋</span>
-                  <span>Download JSON</span>
-                </button>
+                
                 <div className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg flex items-center gap-2">
                   <span>🔒</span>
                   <span>Case Closed - View Only</span>
@@ -633,13 +621,7 @@ export default function ITCaseDetails() {
                   <span>📊</span>
                   <span>Download Excel</span>
                 </button>
-                <button
-                  onClick={exportJSON}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
-                >
-                  <span>📋</span>
-                  <span>Download JSON</span>
-                </button>
+                
                 <button
                   onClick={() => setEditing(true)}
                   className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
