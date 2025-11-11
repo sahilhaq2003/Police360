@@ -25,9 +25,13 @@ const caseRoutes = require('./routes/caseRoutes');
 const itCaseRoutes = require('./routes/itCaseRoutes');
 
 dotenv.config();
-connectDB();
 
 const app = express();
+
+// Connect to DB (for serverless, this will reconnect on each cold start)
+connectDB().catch(err => {
+  console.error('Failed to connect to MongoDB:', err);
+});
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 // Allow default vite host (5173) and alternative 5174 used by some dev setups
