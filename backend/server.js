@@ -66,6 +66,8 @@ app.use(
     optionsSuccessStatus: 200
   })
 );
+// Ensure preflight requests are handled early (regex avoids path-to-regexp '*' issue)
+app.options(/.*/, cors());
 
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
@@ -135,7 +137,7 @@ app.use('/api/suspects', suspectRoutes);
 
 //tharusha Routes
 
-app.use('/api/reports', router);
+// app.use('/api/reports', router);
 
 //Enuri Routes
 
