@@ -1,5 +1,5 @@
 const Officer = require('../models/Officer');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // Login Officer/Admin
@@ -8,8 +8,11 @@ exports.login = async (req, res) => {
   try {
     const officer = await Officer.findOne({ username });
 
-    if (!officer || !officer.isActive)
+    if (!officer)
       return res.status(401).json({ message: 'Invalid credentials' });
+
+    if (!officer.isActive)
+      return res.status(401).json({ message: 'Your account has been deactivated. Please contact your administrator.' });
 
     const isMatch = await bcrypt.compare(password, officer.password);
     if (!isMatch)

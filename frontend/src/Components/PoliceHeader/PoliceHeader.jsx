@@ -5,10 +5,25 @@ import logo from "../../assets/PLogo.png";
 
 export default function PoliceHeader() {
   const [currentLocation, setCurrentLocation] = useState("");
+  const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
-  const now = new Date();
-  const date = now.toLocaleDateString("en-US");
-  const time = now.toLocaleTimeString("en-US");
+  
+  const date = currentTime.toLocaleDateString("en-US");
+  const time = currentTime.toLocaleTimeString("en-US", { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: true 
+  });
+
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    // Cleanup timer on component unmount
+    return () => clearInterval(timer);
+  }, []);
 
   // Get real-time location
   useEffect(() => {

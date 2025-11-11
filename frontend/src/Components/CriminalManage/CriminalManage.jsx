@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import PoliceHeader from "../PoliceHeader/PoliceHeader";
 import axiosInstance from "../../utils/axiosInstance";
 import { getMediaUrl } from '../../utils/mediaUrl';
+import { calculateTotalPrisonTime, formatPrisonTime } from "../../utils/prisonTimeCalculator";
 import { 
   ShieldCheck, 
   UserX, 
@@ -19,7 +20,8 @@ import {
   Users,
   TrendingUp,
   Calendar,
-  MapPin
+  MapPin,
+  Clock
 } from "lucide-react";
 
 export default function CriminalManage() {
@@ -117,30 +119,37 @@ export default function CriminalManage() {
         const d = new Date(criminal.arrestDate);
         return `Arrested: ${d.toLocaleDateString()}`;
       }
-      if (criminal.criminalStatus === 'in prison') {
-        // Prefer explicit prisonDays display when available
-        if (typeof criminal.prisonDays === 'number' && !Number.isNaN(criminal.prisonDays)) {
-          return `In Prison: ${criminal.prisonDays} days`;
-        }
-        // If there's a releaseDate stored, show 'Release:' otherwise show 'In Prison since' using arrestDate if available
-        if (criminal.releaseDate) {
-          const d = new Date(criminal.releaseDate);
-          return `Release: ${d.toLocaleDateString()}`;
-        }
-        if (criminal.arrestDate) {
-          const d = new Date(criminal.arrestDate);
-          return `In Prison since ${d.toLocaleDateString()}`;
-        }
-        return null;
+      if (criminal.criminalStatus === 'in prison' && criminal.arrestDate) {
+        const d = new Date(criminal.arrestDate);
+        return `In Prison since: ${d.toLocaleDateString()}`;
       }
-      if (criminal.criminalStatus === 'released' && criminal.releaseDate) {
-        const d = new Date(criminal.releaseDate);
-        return `Released: ${d.toLocaleDateString()}`;
+      if (criminal.criminalStatus === 'released' && criminal.arrestDate) {
+        const d = new Date(criminal.arrestDate);
+        return `Arrested: ${d.toLocaleDateString()}`;
       }
       return null;
     } catch {
       return null;
     }
+  };
+
+  // Get calculated prison time for a criminal
+  const getCriminalPrisonTime = (criminal) => {
+    if (!criminal?.arrests || criminal.arrests.length === 0) {
+      return null;
+    }
+
+    const prisonTimeData = calculateTotalPrisonTime(criminal.arrests);
+    
+    if (prisonTimeData.totalDays === 0) {
+      return null;
+    }
+
+    return {
+      totalDays: prisonTimeData.totalDays,
+      formatted: formatPrisonTime(prisonTimeData.totalDays),
+      breakdown: prisonTimeData.breakdown
+    };
   };
 
   const filteredCriminals = criminals.filter(criminal => {
@@ -190,13 +199,22 @@ export default function CriminalManage() {
             <h1 className="text-4xl font-bold text-[#0B214A] mb-2">Criminal Management</h1>
             <p className="text-gray-600">Manage and monitor criminal records and status</p>
           </div>
-          <button
-            onClick={() => navigate('/CriminalManage/Criminal')}
-            className="flex items-center gap-2 bg-[#0B214A] text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-5 w-5" />
-            Add New Criminal
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={() => navigate('/CriminalManage/Criminal')}
+              className="flex items-center gap-2 bg-[#0B214A] text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+              Add New Criminal
+            </button>
+
+            <button
+              onClick={() => navigate('/officer/officerDashboard')}
+              className="flex items-center gap-2 mt-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
         </div>
 
         {/* Statistics Cards */}
@@ -386,7 +404,7 @@ export default function CriminalManage() {
                             ) : null;
                           })()}
                         </div>
-                      </td>
+                        </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-500">
                           <MapPin className="h-4 w-4 mr-1" />
@@ -459,6 +477,20 @@ export default function CriminalManage() {
                 <Lock className="h-4 w-4" />
                 Prison Records
               </button>
+              <button
+                onClick={() => navigate('/CriminalStatus')}
+                className="w-full flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                Criminal Status
+              </button>
+              <button
+                onClick={() => navigate('/crime-status')}
+                className="w-full flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                Crime Status
+              </button>
             </div>
           </div>
 
@@ -510,3 +542,7 @@ export default function CriminalManage() {
     </div>
   );
 }
+
+
+
+

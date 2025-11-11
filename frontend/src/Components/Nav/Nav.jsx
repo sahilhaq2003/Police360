@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import './Nav.css'
+import { Link, useLocation } from 'react-router-dom'
+import './nav.css'
 
 function Nav() {
+
+  const location = useLocation();
+  const activeStyle = { borderBottom: '3px solid #fff', paddingBottom: '4px' };
+  const isActive = (path) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
 
     // Load Google Translate widget
       useEffect(() => {
@@ -50,14 +57,12 @@ function Nav() {
           <div className="logo">Police360</div>
         </div>
         <nav className="navbar">
-          <a href="/" className="">
-            Home
-          </a>
-          <a href="#">About Us</a>
-          <a href="#">Open Data</a>
-          <a href="#">Application Status</a>
-          <a href="#">Information</a>
-          <a href="#">Media</a>
+          <Link to="/" className="nav-link" style={isActive('/') ? activeStyle : {}}>Home</Link>
+          <Link to="/about" className="nav-link" style={isActive('/about') ? activeStyle : {}}>About Us</Link>
+          <Link to="/open-data" className="nav-link" style={isActive('/open-data') ? activeStyle : {}}>Open Data</Link>
+          <Link to="/application-status" className="nav-link" style={isActive('/application-status') ? activeStyle : {}}>Application Status</Link>
+          <Link to="/information" className="nav-link" style={isActive('/information') ? activeStyle : {}}>Information</Link>
+          <Link to="/media" className="nav-link" style={isActive('/media') ? activeStyle : {}}>Media</Link>
         </nav>
         <div className="top-actions">
           <input type="text" placeholder="Search..." className="top-search" />

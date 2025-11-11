@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import PoliceHeader from '../PoliceHeader/PoliceHeader';
 import { getMediaUrl } from '../../utils/mediaUrl';
 import axiosInstance from '../../utils/axiosInstance';
+import SuspectPrintExport from './SuspectPrintExport';
 
 export default function SuspectProfile() {
   const [suspect, setSuspect] = useState(null);
@@ -75,7 +76,7 @@ export default function SuspectProfile() {
                     src={getMediaUrl(suspect.photo)}
                     alt="photo"
                     className="w-full h-full object-cover"
-                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/placeholder.png'; }}
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/PLogo.png'; }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400"><span className="text-sm">NO PHOTO</span></div>
@@ -93,7 +94,7 @@ export default function SuspectProfile() {
             </div>
             <div className="flex flex-col space-y-2">
               <button onClick={()=>navigate(`/SuspectManage/SuspectUpdate/${suspect._id}`)} className="px-4 py-2 bg-[#0B214A] text-white rounded hover:bg-blue-700 text-sm">Edit Record</button>
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">Print Record</button>
+              <SuspectPrintExport suspect={suspect} />
               <button onClick={()=>navigate('/SuspectManage/SuspectManage')} className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">Back to List</button>
             </div>
           </div>
@@ -125,7 +126,7 @@ export default function SuspectProfile() {
                             src={getMediaUrl(p.url)}
                             alt={`fp-${i+1}`}
                             className="w-full h-full object-cover"
-                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/placeholder.png'; }}
+                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/images/PLogo.png'; }}
                           />
                         ) : (
                           <span className="text-xs text-gray-500">Print #{i+1}</span>

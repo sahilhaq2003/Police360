@@ -1,7 +1,7 @@
 // scripts/seedAdmin.js
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const Officer = require('../models/Officer');
 
 dotenv.config();
